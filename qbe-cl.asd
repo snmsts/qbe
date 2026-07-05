@@ -18,6 +18,7 @@
                              (:file "cfg")
                              (:file "ssa")
                              (:file "mem")
+                             (:file "gvn")
                              (:file "amd64")
                              (:file "amd64-abi")
                              (:file "driver")))))

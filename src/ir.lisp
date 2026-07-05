@@ -33,6 +33,9 @@
    (start    :initform nil :accessor fn-start)
    ;; temp registry: adjustable vector, id -> tmp (fill-pointer = ntmp).
    (tmp      :initform nil :accessor fn-tmp)
+   ;; constant intern table: con-key -> con (shared with parse; getcon interns).
+   (cons     :initform nil :accessor fn-cons)
+   (ncon     :initform 0   :accessor fn-ncon)
    ;; analysis (filled by cfg.lisp)
    (rpo      :initform nil :accessor fn-rpo  :documentation "Vector: rpo-id -> blk.")
    (nblk     :initform 0   :accessor fn-nblk)))
@@ -112,4 +115,5 @@
   (flt nil)
   symname
   (symtype nil)
-  (off 0))
+  (off 0)
+  (idx nil))     ; interning order (QBE con index); for rcmp ordering

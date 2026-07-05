@@ -246,15 +246,19 @@ next `{ ... }` group (handles nested braces, e.g. unions)."
         (ordered '())
         (cur nil) (cur-ins '()) (cur-phis '())
         (param-ins '()))
-    ;; con[1]: the pre-seeded integer 0 that d_0/s_0 collapse onto.
-    (setf (gethash '(:bits 0) cons) (make-con :kind :bits :value 0))
-    (labels
+    ;; con[0]=UNDEF, con[1]= the pre-seeded integer 0 (QBE parsefn seeds these);
+    ;; con idx tracks interning order for rcmp.  Next new con gets idx 2.
+    (setf (gethash '(:bits 0) cons) (make-con :kind :bits :value 0 :idx 1))
+    (let ((ncon 2))
+     (labels
         ((tmp-for (name)
            (or (gethash name tmps)
                (setf (gethash name tmps) (make-tmp name (hash-table-count tmps)))))
          (intern-con (c)
            (let ((k (con-key c)))
-             (or (gethash k cons) (setf (gethash k cons) c))))
+             (or (gethash k cons)
+                 (progn (setf (con-idx c) ncon) (incf ncon)
+                        (setf (gethash k cons) c)))))
          (blk-for (name)
            (or (gethash name blks)
                (setf (gethash name blks)
@@ -452,7 +456,8 @@ next `{ ... }` group (handles nested braces, e.g. unions)."
         (maphash (lambda (name tm) (declare (ignore name)) (setf (aref vec (tmp-id tm)) tm))
                  tmps)
         (setf (fn-tmp fn) vec))
-      fn)))
+      (setf (fn-cons fn) cons (fn-ncon fn) ncon)
+      fn))))
 
 (defun parse-file (path)
   (with-open-file (in path :direction :input)
