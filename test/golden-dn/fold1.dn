@@ -1,0 +1,60 @@
+**** Function f1 ****
+> Dominators:
+
+> After SSA construction:
+function $f1() {
+@start
+	%x =w sar 2147483648, 31
+	retw %x
+}
+
+**** Function f2 ****
+> Dominators:
+
+> After SSA construction:
+function $f2() {
+@start
+	%x =w div 4294967040, 8
+	retw %x
+}
+
+**** Function f3 ****
+> Dominators:
+
+> After SSA construction:
+function $f3() {
+@start
+	%x =w rem 4294967284, 7
+	retw %x
+}
+
+**** Function f4 ****
+> Dominators:
+
+> After SSA construction:
+function $f4() {
+@start
+	%x =w shr 4294967296, 1
+	retw %x
+}
+
+**** Function f5 ****
+> Dominators:
+
+> After SSA construction:
+function $f5() {
+@start
+	%x =w udiv 1, 4294967297
+	retw %x
+}
+
+**** Function f6 ****
+> Dominators:
+
+> After SSA construction:
+function $f6() {
+@start
+	%x =w urem 4294967296, 7
+	retw %x
+}
+

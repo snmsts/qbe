@@ -1,0 +1,81 @@
+**** Function dragon ****
+> After slot promotion:
+function $dragon() {
+@start
+@b1
+	jnz 0, @b2, @b3
+@b2
+@b3
+@b4.1
+	jnz 0, @b3, @b4.2
+@b4.2
+	jnz 0, @b5, @b6
+@b5
+	jmp @b7
+@b6
+@b7
+	jnz 0, @b8.1, @b4.1
+@b8.1
+	jnz 0, @b3, @b8.2
+@b8.2
+	jnz 0, @b9, @b10
+@b9
+	jmp @b1
+@b10
+	jmp @b7
+}
+
+> After load elimination:
+function $dragon() {
+@start
+@b1
+	jnz 0, @b2, @b3
+@b2
+@b3
+@b4.1
+	jnz 0, @b3, @b4.2
+@b4.2
+	jnz 0, @b5, @b6
+@b5
+	jmp @b7
+@b6
+@b7
+	jnz 0, @b8.1, @b4.1
+@b8.1
+	jnz 0, @b3, @b8.2
+@b8.2
+	jnz 0, @b9, @b10
+@b9
+	jmp @b1
+@b10
+	jmp @b7
+}
+
+> Slot coalescing:
+	sums 0/0/0 (killed/fused/total)
+
+function $dragon() {
+@start
+@b1
+	jnz 0, @b2, @b3
+@b2
+@b3
+@b4.1
+	jnz 0, @b3, @b4.2
+@b4.2
+	jnz 0, @b5, @b6
+@b5
+	jmp @b7
+@b6
+@b7
+	jnz 0, @b8.1, @b4.1
+@b8.1
+	jnz 0, @b3, @b8.2
+@b8.2
+	jnz 0, @b9, @b10
+@b9
+	jmp @b1
+@b10
+	jmp @b7
+}
+

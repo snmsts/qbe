@@ -40,10 +40,17 @@ dom-tree children, `%10s:` name then the children (in dlink order)."
     (nreverse result)))
 
 (defun dn-dump (ssa-path)
-  (multiple-value-bind (out err)
-      (uiop:run-program (list *qbe-path* "-dN" "-o" "/dev/null" (namestring ssa-path))
-                        :output :string :error-output :string :ignore-error-status t)
-    (declare (ignore out)) err))
+  "The -dN dump for SSA-PATH: from the saved golden if present, else live qbe."
+  (let ((g (merge-pathnames
+            (make-pathname :name (pathname-name ssa-path) :type "dn")
+            (merge-pathnames "test/golden-dn/"
+                             (asdf:system-relative-pathname "qbe-cl" "")))))
+    (if (probe-file g)
+        (uiop:read-file-string g)
+        (multiple-value-bind (out err)
+            (uiop:run-program (list *qbe-path* "-dN" "-o" "/dev/null" (namestring ssa-path))
+                              :output :string :error-output :string :ignore-error-status t)
+          (declare (ignore out)) err))))
 
 (defun diff-dom (ssa-path &key (verbose t))
   (let* ((mod (qbe:parse-file ssa-path))

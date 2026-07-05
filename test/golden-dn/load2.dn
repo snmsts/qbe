@@ -1,0 +1,60 @@
+**** Function f ****
+> Dominators:
+
+> After SSA construction:
+function $f() {
+@start
+	%x =l alloc4 12
+	%y =l alloc4 12
+	%x1 =l add 1, %x
+	%x2 =l add 1, %x1
+	%x3 =l add 1, %x2
+	%x4 =l add 1, %x3
+	%x5 =l add 1, %x4
+	%x6 =l add 1, %x5
+	%x7 =l add 1, %x6
+	%x8 =l add 1, %x7
+	%x9 =l add 1, %x8
+	%xa =l add 1, %x9
+	%xb =l add 1, %xa
+	%y1 =l add 1, %y
+	%y4 =l add 4, %y
+	storew 287454020, %x4
+	storew 1432778632, %y
+	blit0 %y, %x5
+	blit1 1
+	%n.1 =w load %x4
+	argw %n.1
+	call $px
+	storew 287454020, %x4
+	storew 1432778632, %y
+	blit0 %y, %x5
+	blit1 2
+	%n.2 =w load %x4
+	argw %n.2
+	call $px
+	storew 287454020, %x4
+	storew 1432778632, %y
+	blit0 %y, %x5
+	blit1 4
+	%n.3 =w load %x4
+	argw %n.3
+	call $px
+	storew 287454020, %x4
+	storew 1432778632, %y
+	blit0 %y, %x2
+	blit1 4
+	%n.4 =w load %x4
+	argw %n.4
+	call $px
+	storew 287454020, %x4
+	storew 0, %y
+	storew 1432778632, %y4
+	blit0 %y1, %x2
+	blit1 7
+	%n.5 =w load %x4
+	argw %n.5
+	call $px
+	ret0
+}
+

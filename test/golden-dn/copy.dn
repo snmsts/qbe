@@ -1,0 +1,34 @@
+**** Function f ****
+> Dominators:
+
+> After SSA construction:
+function $f() {
+@start
+	%x0 =w loadsb $a
+	%x1 =l extsb %x0
+	%c =w ceql %x1, -1
+	retw %c
+}
+
+**** Function g ****
+> Dominators:
+     start: loop
+      loop: end
+
+> After SSA construction:
+function $g() {
+@start
+	%arg =w par
+	%a0 =w extuh %arg
+	%a1 =w or 65536, %a0
+@loop
+	%a2 =w phi @loop %a2, @start %a1
+	jnz %arg, @end, @loop
+@end
+	%a3 =w shr %a2, 1
+	%a4 =w or %a2, 1
+	%a5 =w or %a3, %a4
+	%ret =w extuh %a5
+	retw %ret
+}
+

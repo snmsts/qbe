@@ -1,0 +1,23 @@
+**** Function test ****
+> Dominators:
+     start: entry
+     entry: dead1 live
+     dead1: dead2
+
+> After SSA construction:
+function $test() {
+@start
+	%p1 =w par
+	%p2 =w par
+@entry
+	%t1.3 =w copy 1
+	jnz %t1.3, @live, @dead1
+@live
+	%t2.1 =w add %p1, %p2
+	retw %t2.1
+@dead1
+	%t2.2 =w add %p1, %p2
+@dead2
+	jnz %t1.3, @live, @dead1
+}
+

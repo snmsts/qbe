@@ -1,0 +1,12 @@
+**** Function test ****
+> Dominators:
+
+> After SSA construction:
+function $test() {
+@start
+	%x1 =l alloc8 8
+	%x2 =l alloc8 8
+	%r =w cnel %x1, %x2
+	retw %r
+}
+

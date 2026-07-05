@@ -1,0 +1,19 @@
+**** Function test ****
+> Dominators:
+     start: foo
+       foo: end bar baz
+
+> After SSA construction:
+function $test() {
+@start
+	jmp @foo
+@baz
+	jnz 1, @end, @foo
+@bar
+	jmp @end
+@foo
+	jnz 0, @bar, @baz
+@end
+	ret0
+}
+

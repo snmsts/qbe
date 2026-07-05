@@ -1,0 +1,55 @@
+**** Function blit ****
+> After slot promotion:
+function $blit() {
+@start
+	%l0 =l alloc4 12
+	%l1 =l alloc4 12
+	storew 287454020, %l0
+	%l04 =l add %l0, 4
+	storew 1432778632, %l04
+	%l08 =l add %l0, 8
+	storew 2578103244, %l08
+	%l11 =l add %l1, 1
+	blit0 %l0, %l11
+	blit1 11
+	storeb 221, %l1
+	retc %l1, :i3
+}
+
+> After load elimination:
+function $blit() {
+@start
+	%l0 =l alloc4 12
+	%l1 =l alloc4 12
+	storew 287454020, %l0
+	%l04 =l add %l0, 4
+	storew 1432778632, %l04
+	%l08 =l add %l0, 8
+	storew 2578103244, %l08
+	%l11 =l add %l1, 1
+	blit0 %l0, %l11
+	blit1 11
+	storeb 221, %l1
+	retc %l1, :i3
+}
+
+> Slot coalescing:
+	fuse ( 12b) [ %l0[1,4) %l1[4,6) ]
+	sums 0/12/24 (killed/fused/total)
+
+function $blit() {
+@start
+	%l0 =l alloc4 12
+	nop
+	storew 287454020, %l0
+	%l04 =l add %l0, 4
+	storew 1432778632, %l04
+	%l08 =l add %l0, 8
+	storew 2578103244, %l08
+	%l11 =l add %l0, 1
+	blit0 %l0, %l11
+	blit1 -11
+	storeb 221, %l0
+	retc %l0, :i3
+}
+

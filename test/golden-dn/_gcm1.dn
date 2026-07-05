@@ -1,0 +1,79 @@
+**** Function ifmv ****
+> Dominators:
+     start: entry
+     entry: exit false true
+
+> After SSA construction:
+function $ifmv() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%rt.1 =w add %p2, %p3
+	%rf.2 =w sub %p2, %p3
+	jnz %p1, @true, @false
+@true
+	%r.5 =w copy %rt.1
+	jmp @exit
+@false
+	%r.4 =w copy %rf.2
+@exit
+	%r.3 =w phi @false %r.4, @true %r.5
+	retw %r.3
+}
+
+**** Function hoist1 ****
+> Dominators:
+     start: entry
+     entry: loop
+      loop: exit
+
+> After SSA construction:
+function $hoist1() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%n.6 =w copy 0
+	%i.7 =w copy %p1
+@loop
+	%i.8 =w phi @entry %i.7, @loop %i.11
+	%n.9 =w phi @entry %n.6, @loop %n.12
+	%base.10 =w add %p2, %p3
+	%i.11 =w sub %i.8, 1
+	%n.12 =w add %n.9, 1
+	jnz %i.11, @loop, @exit
+@exit
+	%r =w add %base.10, %n.12
+	retw %r
+}
+
+**** Function hoist2 ****
+> Dominators:
+     start: entry
+     entry: loop
+      loop: exit
+
+> After SSA construction:
+function $hoist2() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%n.13 =w copy 0
+	%i.14 =w copy %p1
+@loop
+	%i.15 =w phi @entry %i.14, @loop %i.18
+	%n.16 =w phi @entry %n.13, @loop %n.19
+	%base.17 =w add %p2, %p3
+	%i.18 =w sub %i.15, 1
+	%n.19 =w add %n.16, %base.17
+	jnz %i.18, @loop, @exit
+@exit
+	%r =w add %base.17, %n.19
+	retw %r
+}
+

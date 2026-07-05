@@ -1,0 +1,29 @@
+**** Function f ****
+> Dominators:
+
+> After SSA construction:
+function $f() {
+@start
+	%x =l par
+	%vp =l alloc8 32
+	vastart %vp
+	%i =l vaarg %vp
+	%n =d vaarg %vp
+	retd %n
+}
+
+**** Function g ****
+> Dominators:
+
+> After SSA construction:
+function $g() {
+@start
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	retw %r
+}
+

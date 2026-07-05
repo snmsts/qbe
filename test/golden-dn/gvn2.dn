@@ -1,0 +1,33 @@
+**** Function test ****
+> Dominators:
+     start: end no yes
+       yes: yesno yesyes
+        no: nono noyes
+
+> After SSA construction:
+function $test() {
+@start
+	%c =w par
+	jnz %c, @yes, @no
+@yes
+	%c0 =w cnew %c, 0
+	jnz %c0, @yesyes, @yesno
+@yesyes
+	%rc.5 =w copy 1
+	jmp @end
+@yesno
+	%rc.4 =w copy 111
+	jmp @end
+@no
+	%c1 =w cnew %c, 0
+	jnz %c1, @noyes, @nono
+@noyes
+	%rc.3 =w copy 222
+	jmp @end
+@nono
+	%rc.2 =w copy 0
+@end
+	%rc.1 =w phi @nono %rc.2, @noyes %rc.3, @yesno %rc.4, @yesyes %rc.5
+	retw %rc.1
+}
+

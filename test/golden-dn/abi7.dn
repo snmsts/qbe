@@ -1,0 +1,9 @@
+**** Function test ****
+> Dominators:
+
+> After SSA construction:
+function $test() {
+@start
+	retc $s, :s2
+}
+

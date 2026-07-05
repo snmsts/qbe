@@ -1,0 +1,78 @@
+**** Function f0 ****
+> Dominators:
+
+> After SSA construction:
+function $f0() {
+@start
+	%a =l par
+	%b =l par
+	%c =l add %b, 2
+	%d =l mul %c, 4
+	%e =l add %a, %d
+	%q =l loadsw %e
+	retw %q
+}
+
+**** Function f1 ****
+> Dominators:
+
+> After SSA construction:
+function $f1() {
+@start
+	%a =l par
+	%b =l par
+	%c =l add 1, %b
+	%f =l add %c, 1
+	%d =l mul %f, 4
+	%e =l add %d, %a
+	%q =l loadsw %e
+	retw %q
+}
+
+**** Function f2 ****
+> Dominators:
+
+> After SSA construction:
+function $f2() {
+@start
+	%a =l par
+	%b =l par
+	%l =l mul %b, 4
+	%d =l add 8, %l
+	%e =l add %a, %d
+	%q =l loadsw %e
+	retw %q
+}
+
+**** Function f3 ****
+> Dominators:
+
+> After SSA construction:
+function $f3() {
+@start
+	%a =l par
+	%b =l par
+	%l =l mul %b, 4
+	%d =l add 4, %l
+	%f =l add 4, %d
+	%e =l add %a, %f
+	%q =l loadsw %e
+	retw %q
+}
+
+**** Function f4 ****
+> Dominators:
+
+> After SSA construction:
+function $f4() {
+@start
+	%a =l par
+	%b =l par
+	%c =l add 1, %b
+	%d =l mul %c, 4
+	%e =l add 4, %d
+	%f =l add %e, %a
+	%q =l loadsw %f
+	retw %q
+}
+

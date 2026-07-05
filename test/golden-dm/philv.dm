@@ -1,0 +1,78 @@
+**** Function t0 ****
+> After slot promotion:
+function $t0() {
+@start
+@loop
+	%x0 =w phi @start 256, @loop %y0
+	%y0 =w phi @start 128, @loop %y1
+	%y1 =w shr %x0, 1
+	jnz %y1, @loop, @end
+@end
+	retw %x0
+}
+
+> After load elimination:
+function $t0() {
+@start
+@loop
+	%x0 =w phi @start 256, @loop %y0
+	%y0 =w phi @start 128, @loop %y1
+	%y1 =w shr %x0, 1
+	jnz %y1, @loop, @end
+@end
+	retw %x0
+}
+
+> Slot coalescing:
+	sums 0/0/0 (killed/fused/total)
+
+function $t0() {
+@start
+@loop
+	%x0 =w phi @start 256, @loop %y0
+	%y0 =w phi @start 128, @loop %y1
+	%y1 =w shr %x0, 1
+	jnz %y1, @loop, @end
+@end
+	retw %x0
+}
+
+**** Function t1 ****
+> After slot promotion:
+function $t1() {
+@start
+@loop
+	%y0 =w phi @start 128, @loop %y1
+	%x0 =w phi @start 256, @loop %y0
+	%y1 =w shr %x0, 1
+	jnz %y1, @loop, @end
+@end
+	retw %x0
+}
+
+> After load elimination:
+function $t1() {
+@start
+@loop
+	%y0 =w phi @start 128, @loop %y1
+	%x0 =w phi @start 256, @loop %y0
+	%y1 =w shr %x0, 1
+	jnz %y1, @loop, @end
+@end
+	retw %x0
+}
+
+> Slot coalescing:
+	sums 0/0/0 (killed/fused/total)
+
+function $t1() {
+@start
+@loop
+	%y0 =w phi @start 128, @loop %y1
+	%x0 =w phi @start 256, @loop %y0
+	%y1 =w shr %x0, 1
+	jnz %y1, @loop, @end
+@end
+	retw %x0
+}
+

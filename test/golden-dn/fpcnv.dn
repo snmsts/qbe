@@ -1,0 +1,113 @@
+**** Function fneg ****
+> Dominators:
+
+> After SSA construction:
+function $fneg() {
+@fneg
+	%f =s par
+	%b0 =w cast %f
+	%b1 =w xor 2147483648, %b0
+	%rs =s cast %b1
+	rets %rs
+}
+
+**** Function ftrunc ****
+> Dominators:
+
+> After SSA construction:
+function $ftrunc() {
+@ftrunc
+	%f =d par
+	%l0 =w dtosi %f
+	%rt =d swtof %l0
+	retd %rt
+}
+
+**** Function wtos ****
+> Dominators:
+
+> After SSA construction:
+function $wtos() {
+@start
+	%w =w par
+	%rt =s uwtof %w
+	rets %rt
+}
+
+**** Function wtod ****
+> Dominators:
+
+> After SSA construction:
+function $wtod() {
+@start
+	%w =w par
+	%rt =d uwtof %w
+	retd %rt
+}
+
+**** Function ltos ****
+> Dominators:
+
+> After SSA construction:
+function $ltos() {
+@start
+	%l =l par
+	%rt =s ultof %l
+	rets %rt
+}
+
+**** Function ltod ****
+> Dominators:
+
+> After SSA construction:
+function $ltod() {
+@start
+	%l =l par
+	%rt =d ultof %l
+	retd %rt
+}
+
+**** Function stow ****
+> Dominators:
+
+> After SSA construction:
+function $stow() {
+@start
+	%f =s par
+	%rt =w stoui %f
+	retw %rt
+}
+
+**** Function dtow ****
+> Dominators:
+
+> After SSA construction:
+function $dtow() {
+@start
+	%f =d par
+	%rt =w dtoui %f
+	retw %rt
+}
+
+**** Function stol ****
+> Dominators:
+
+> After SSA construction:
+function $stol() {
+@start
+	%f =s par
+	%rt =l stoui %f
+	retl %rt
+}
+
+**** Function dtol ****
+> Dominators:
+
+> After SSA construction:
+function $dtol() {
+@start
+	%f =d par
+	%rt =l dtoui %f
+	retl %rt
+}
+

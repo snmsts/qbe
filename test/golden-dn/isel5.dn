@@ -1,0 +1,14 @@
+**** Function main ****
+> Dominators:
+
+> After SSA construction:
+function $main() {
+@start
+	%r =d copy d_1.200000
+	argl $fmt
+	argv
+	argd %r
+	%x =w call $printf
+	retw 0
+}
+

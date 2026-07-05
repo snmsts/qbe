@@ -1,0 +1,164 @@
+**** Function lt ****
+> Dominators:
+
+> After SSA construction:
+function $lt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cltd %x, %y
+	retw %r
+}
+
+**** Function le ****
+> Dominators:
+
+> After SSA construction:
+function $le() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cled %x, %y
+	retw %r
+}
+
+**** Function gt ****
+> Dominators:
+
+> After SSA construction:
+function $gt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cgtd %x, %y
+	retw %r
+}
+
+**** Function ge ****
+> Dominators:
+
+> After SSA construction:
+function $ge() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cged %x, %y
+	retw %r
+}
+
+**** Function eq1 ****
+> Dominators:
+
+> After SSA construction:
+function $eq1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	retw %r
+}
+
+**** Function eq2 ****
+> Dominators:
+     start: false true
+
+> After SSA construction:
+function $eq2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+**** Function eq3 ****
+> Dominators:
+     start: false true
+
+> After SSA construction:
+function $eq3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw %r
+@false
+	retw 0
+}
+
+**** Function ne1 ****
+> Dominators:
+
+> After SSA construction:
+function $ne1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	retw %r
+}
+
+**** Function ne2 ****
+> Dominators:
+     start: false true
+
+> After SSA construction:
+function $ne2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+**** Function ne3 ****
+> Dominators:
+     start: false true
+
+> After SSA construction:
+function $ne3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw %r
+@false
+	retw 0
+}
+
+**** Function o ****
+> Dominators:
+
+> After SSA construction:
+function $o() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cod %x, %y
+	retw %r
+}
+
+**** Function uo ****
+> Dominators:
+
+> After SSA construction:
+function $uo() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cuod %x, %y
+	retw %r
+}
+

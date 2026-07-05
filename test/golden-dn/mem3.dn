@@ -1,0 +1,50 @@
+**** Function func ****
+> Dominators:
+   start.0: body.4
+    body.4: next.14 matches.13
+
+> After SSA construction:
+function $func() {
+@start.0
+	%object.5 =l alloc8 24
+	%object.7 =l alloc4 8
+	%binding.21 =l alloc8 16
+	%object.23 =l alloc8 24
+@body.4
+	%.10 =l add %object.7, 4
+	jnz 1, @matches.13, @next.14
+@matches.13
+	storel 1, %binding.21
+	%value.22 =l add %binding.21, 8
+	storel 2, %value.22
+	%.24 =l add %object.23, 8
+	blit0 %binding.21, %.24
+	blit1 16
+	retc %object.23, :type.1
+@next.14
+	storew 2543892678, %object.5
+	retc %object.5, :type.1
+}
+
+**** Function main ****
+> Dominators:
+  start.27: body.28
+   body.28: passed.32 failed.31
+
+> After SSA construction:
+function $main() {
+@start.27
+	nop
+	nop
+@body.28
+	%returns.34 =l call $func, :type.1
+	%value.47 =l add %returns.34, 16
+	%load.48 =l load %value.47
+	%.33 =w ceql %load.48, 2
+	jnz %.33, @passed.32, @failed.31
+@failed.31
+	call $abort
+@passed.32
+	retw 0
+}
+

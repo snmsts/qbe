@@ -1,0 +1,17 @@
+**** Function test ****
+> Dominators:
+     start: loop
+      loop: end
+
+> After SSA construction:
+function $test() {
+@start
+@loop
+	%n0 =l phi @start -1988, @loop %n1
+	%n1 =l add 1, %n0
+	%cmp =w cslel 1991, %n1
+	jnz %cmp, @end, @loop
+@end
+	ret0
+}
+

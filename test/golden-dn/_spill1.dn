@@ -1,0 +1,16 @@
+**** Function test ****
+> Dominators:
+
+> After SSA construction:
+function $test() {
+@start
+	%f =w copy 0
+	%b =w copy 1
+	%c =w copy 2
+	%a =w sub %b, %c
+	%d =w copy %b
+	%e =w copy %f
+	%g =w copy %a
+	ret0
+}
+

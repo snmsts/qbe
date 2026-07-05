@@ -1,0 +1,120 @@
+**** Function slt ****
+> Dominators:
+
+> After SSA construction:
+function $slt() {
+@start
+	%x =w par
+	%y =w par
+	%r =w csltw %x, %y
+	retw %r
+}
+
+**** Function sle ****
+> Dominators:
+
+> After SSA construction:
+function $sle() {
+@start
+	%x =w par
+	%y =w par
+	%r =w cslew %x, %y
+	retw %r
+}
+
+**** Function sgt ****
+> Dominators:
+
+> After SSA construction:
+function $sgt() {
+@start
+	%x =w par
+	%y =w par
+	%r =w csgtw %x, %y
+	retw %r
+}
+
+**** Function sge ****
+> Dominators:
+
+> After SSA construction:
+function $sge() {
+@start
+	%x =w par
+	%y =w par
+	%r =w csgew %x, %y
+	retw %r
+}
+
+**** Function ult ****
+> Dominators:
+
+> After SSA construction:
+function $ult() {
+@start
+	%x =w par
+	%y =w par
+	%r =w cultw %x, %y
+	retw %r
+}
+
+**** Function ule ****
+> Dominators:
+
+> After SSA construction:
+function $ule() {
+@start
+	%x =w par
+	%y =w par
+	%r =w culew %x, %y
+	retw %r
+}
+
+**** Function ugt ****
+> Dominators:
+
+> After SSA construction:
+function $ugt() {
+@start
+	%x =w par
+	%y =w par
+	%r =w cugtw %x, %y
+	retw %r
+}
+
+**** Function uge ****
+> Dominators:
+
+> After SSA construction:
+function $uge() {
+@start
+	%x =w par
+	%y =w par
+	%r =w cugew %x, %y
+	retw %r
+}
+
+**** Function eq ****
+> Dominators:
+
+> After SSA construction:
+function $eq() {
+@start
+	%x =w par
+	%y =w par
+	%r =w ceqw %x, %y
+	retw %r
+}
+
+**** Function ne ****
+> Dominators:
+
+> After SSA construction:
+function $ne() {
+@start
+	%x =w par
+	%y =w par
+	%r =w cnew %x, %y
+	retw %r
+}
+
