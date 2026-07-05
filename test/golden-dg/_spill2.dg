@@ -1,0 +1,29 @@
+**** Function test ****
+> After GVN:
+function $test() {
+@start
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	ret0
+}
+
+> After GCM:
+function $test() {
+@start
+	ret0
+}
+

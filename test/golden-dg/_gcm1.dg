@@ -1,0 +1,124 @@
+**** Function ifmv ****
+> After GVN:
+function $ifmv() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%rt.1 =w add %p2, %p3
+	%rf.2 =w sub %p2, %p3
+	jnz %p1, @true, @false
+@true
+	nop
+	jmp @exit
+@false
+	nop
+@exit
+	%r.3 =w phi @false %rf.2, @true %rt.1
+	retw %r.3
+}
+
+> After GCM:
+function $ifmv() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	jnz %p1, @true, @false
+@true
+	%rt.1 =w add %p2, %p3
+	jmp @exit
+@false
+	%rf.2 =w sub %p2, %p3
+@exit
+	%r.3 =w phi @false %rf.2, @true %rt.1
+	retw %r.3
+}
+
+**** Function hoist1 ****
+> After GVN:
+function $hoist1() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	nop
+	nop
+	nop
+@entry
+	nop
+	nop
+@loop
+	%i.8 =w phi @entry %p1, @loop %i.11
+	%n.9 =w phi @entry 0, @loop %n.12
+	%base.10 =w add %p2, %p3
+	%i.11 =w sub %i.8, 1
+	%n.12 =w add %n.9, 1
+	jnz %i.11, @loop, @exit
+@exit
+	%r =w add %base.10, %n.12
+	retw %r
+}
+
+> After GCM:
+function $hoist1() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@loop
+	%i.8 =w phi @start %p1, @loop %i.11
+	%n.9 =w phi @start 0, @loop %n.12
+	%i.11 =w sub %i.8, 1
+	%n.12 =w add %n.9, 1
+	jnz %i.11, @loop, @exit
+@exit
+	%base.10 =w add %p2, %p3
+	%r =w add %base.10, %n.12
+	retw %r
+}
+
+**** Function hoist2 ****
+> After GVN:
+function $hoist2() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	nop
+	nop
+	nop
+@entry
+	nop
+	nop
+@loop
+	%i.15 =w phi @entry %p1, @loop %i.18
+	%n.16 =w phi @entry 0, @loop %n.19
+	%base.17 =w add %p2, %p3
+	%i.18 =w sub %i.15, 1
+	%n.19 =w add %n.16, %base.17
+	jnz %i.18, @loop, @exit
+@exit
+	%r =w add %base.17, %n.19
+	retw %r
+}
+
+> After GCM:
+function $hoist2() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	%base.17 =w add %p2, %p3
+@loop
+	%i.15 =w phi @start %p1, @loop %i.18
+	%n.16 =w phi @start 0, @loop %n.19
+	%i.18 =w sub %i.15, 1
+	%n.19 =w add %n.16, %base.17
+	jnz %i.18, @loop, @exit
+@exit
+	%r =w add %base.17, %n.19
+	retw %r
+}
+

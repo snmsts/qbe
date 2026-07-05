@@ -1,0 +1,48 @@
+**** Function f ****
+> After GVN:
+function $f() {
+@start
+	%x =l par
+	%vp =l alloc8 32
+	vastart %vp
+	%i =l vaarg %vp
+	%n =d vaarg %vp
+	retd %n
+}
+
+> After GCM:
+function $f() {
+@start
+	%x =l par
+	%vp =l alloc8 32
+	vastart %vp
+	%i =l vaarg %vp
+	%n =d vaarg %vp
+	retd %n
+}
+
+**** Function g ****
+> After GVN:
+function $g() {
+@start
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	retw %r
+}
+
+> After GCM:
+function $g() {
+@start
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	retw %r
+}
+

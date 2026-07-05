@@ -1,0 +1,111 @@
+**** Function f0 ****
+> After GVN:
+function $f0() {
+@start
+	%o =l par
+	%addr =l add %o, $a
+	%char =w loadub %addr
+	retw %char
+}
+
+> After GCM:
+function $f0() {
+@start
+	%o =l par
+	%addr =l add %o, $a
+	%char =w loadub %addr
+	retw %char
+}
+
+**** Function f1 ****
+> After GVN:
+function $f1() {
+@start
+	%o =l par
+	nop
+	%addr =l add %o, 10
+	%char =w loadub %addr
+	retw %char
+}
+
+> After GCM:
+function $f1() {
+@start
+	%o =l par
+	%addr =l add %o, 10
+	%char =w loadub %addr
+	retw %char
+}
+
+**** Function f2 ****
+> After GVN:
+function $f2() {
+@start
+	%o1 =l par
+	%o2 =l par
+	%o22 =l mul %o2, 2
+	%o =l add %o1, %o22
+	%addr =l add %o, $a
+	%char =w loadub %addr
+	retw %char
+}
+
+> After GCM:
+function $f2() {
+@start
+	%o1 =l par
+	%o2 =l par
+	%o22 =l mul %o2, 2
+	%o =l add %o1, %o22
+	%addr =l add %o, $a
+	%char =w loadub %addr
+	retw %char
+}
+
+**** Function f3 ****
+> After GVN:
+function $f3() {
+@start
+	%o =l par
+	%addr =l add %o, $a
+	retl %addr
+}
+
+> After GCM:
+function $f3() {
+@start
+	%o =l par
+	%addr =l add %o, $a
+	retl %addr
+}
+
+**** Function f4 ****
+> After GVN:
+function $f4() {
+@start
+	storel $p, $p
+	ret0
+}
+
+> After GCM:
+function $f4() {
+@start
+	storel $p, $p
+	ret0
+}
+
+**** Function writeto0 ****
+> After GVN:
+function $writeto0() {
+@start
+	storel 0, 0
+	ret0
+}
+
+> After GCM:
+function $writeto0() {
+@start
+	storel 0, 0
+	ret0
+}
+

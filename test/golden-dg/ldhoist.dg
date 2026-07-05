@@ -1,0 +1,40 @@
+**** Function f ****
+> After GVN:
+function $f() {
+@start
+	%n.1 =w par
+	%p =l par
+	nop
+	nop
+	nop
+@loop
+	%r.3 =w phi @start 0, @loop1 %r.6
+	%n.4 =w phi @start %n.1, @loop1 %n.5
+	%n.5 =w sub %n.4, 1
+	%c =w csgew %n.5, 0
+	jnz %c, @loop1, @end
+@loop1
+	%r.6 =w loadsw %p
+	jmp @loop
+@end
+	retw %r.3
+}
+
+> After GCM:
+function $f() {
+@start
+	%n.1 =w par
+	%p =l par
+@loop
+	%r.3 =w phi @start 0, @loop1 %r.6
+	%n.4 =w phi @start %n.1, @loop1 %n.5
+	%n.5 =w sub %n.4, 1
+	%c =w csgew %n.5, 0
+	jnz %c, @loop1, @end
+@loop1
+	%r.6 =w loadsw %p
+	jmp @loop
+@end
+	retw %r.3
+}
+

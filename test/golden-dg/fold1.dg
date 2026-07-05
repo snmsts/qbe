@@ -1,0 +1,88 @@
+**** Function f1 ****
+> After GVN:
+function $f1() {
+@start
+	nop
+	retw 4294967295
+}
+
+> After GCM:
+function $f1() {
+@start
+	retw 4294967295
+}
+
+**** Function f2 ****
+> After GVN:
+function $f2() {
+@start
+	%x =w div 4294967040, 8
+	retw %x
+}
+
+> After GCM:
+function $f2() {
+@start
+	%x =w div 4294967040, 8
+	retw %x
+}
+
+**** Function f3 ****
+> After GVN:
+function $f3() {
+@start
+	%x =w rem 4294967284, 7
+	retw %x
+}
+
+> After GCM:
+function $f3() {
+@start
+	%x =w rem 4294967284, 7
+	retw %x
+}
+
+**** Function f4 ****
+> After GVN:
+function $f4() {
+@start
+	nop
+	retw 0
+}
+
+> After GCM:
+function $f4() {
+@start
+	retw 0
+}
+
+**** Function f5 ****
+> After GVN:
+function $f5() {
+@start
+	%x =w udiv 1, 1
+	retw %x
+}
+
+> After GCM:
+function $f5() {
+@start
+	%x =w udiv 1, 1
+	retw %x
+}
+
+**** Function f6 ****
+> After GVN:
+function $f6() {
+@start
+	%x =w urem 0, 7
+	retw %x
+}
+
+> After GCM:
+function $f6() {
+@start
+	%x =w urem 0, 7
+	retw %x
+}
+

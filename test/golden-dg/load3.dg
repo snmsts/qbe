@@ -1,0 +1,79 @@
+**** Function rand ****
+> After GVN:
+function $rand() {
+@start
+	retw 0
+}
+
+> After GCM:
+function $rand() {
+@start
+	retw 0
+}
+
+**** Function chk ****
+> After GVN:
+function $chk() {
+@start
+	%a =w par
+	%b =w par
+	%ok =w ceqw %a, 1
+	%ok1 =w ceqw %b, 0
+	%ok2 =w and %ok, %ok1
+	%ret =w xor %ok2, 1
+	retw %ret
+}
+
+> After GCM:
+function $chk() {
+@start
+	%a =w par
+	%b =w par
+	%ok =w ceqw %a, 1
+	%ok1 =w ceqw %b, 0
+	%ok2 =w and %ok, %ok1
+	%ret =w xor %ok2, 1
+	retw %ret
+}
+
+**** Function main ****
+> After GVN:
+function $main() {
+@start
+	%s0 =l alloc4 8
+	nop
+	storew 1, %s0
+	%s04 =l add %s0, 4
+	storew 0, %s04
+	%rnd =w call $rand
+	jnz %rnd, @tt, @ff
+@tt
+	jmp @blit
+@ff
+@blit
+	nop
+	nop
+	nop
+	nop
+	nop
+	argw 1
+	argw 0
+	%ret =w call $chk
+	retw %ret
+}
+
+> After GCM:
+function $main() {
+@start
+	%s0 =l alloc4 8
+	storew 1, %s0
+	%s04 =l add %s0, 4
+	storew 0, %s04
+	%rnd =w call $rand
+@blit
+	argw 1
+	argw 0
+	%ret =w call $chk
+	retw %ret
+}
+

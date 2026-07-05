@@ -1,0 +1,19 @@
+**** Function test ****
+> After GVN:
+function $test() {
+@start
+	jmp @foo
+@baz
+	jmp @end
+@foo
+	jmp @baz
+@end
+	ret0
+}
+
+> After GCM:
+function $test() {
+@start
+	ret0
+}
+

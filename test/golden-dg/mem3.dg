@@ -1,0 +1,64 @@
+**** Function func ****
+> After GVN:
+function $func() {
+@start.0
+	%object.5 =l alloc8 24
+	nop
+	nop
+	nop
+@body.4
+	nop
+@matches.13
+	storel 1, %object.5
+	%value.22 =l add %object.5, 8
+	storel 2, %value.22
+	nop
+	blit0 %object.5, %value.22
+	blit1 -16
+	retc %object.5, :type.1
+}
+
+> After GCM:
+function $func() {
+@start.0
+	%object.5 =l alloc8 24
+	storel 1, %object.5
+	%value.22 =l add %object.5, 8
+	storel 2, %value.22
+	blit0 %object.5, %value.22
+	blit1 -16
+	retc %object.5, :type.1
+}
+
+**** Function main ****
+> After GVN:
+function $main() {
+@start.27
+	nop
+	nop
+@body.28
+	%returns.34 =l call $func, :type.1
+	%value.47 =l add %returns.34, 16
+	%load.48 =l load %value.47
+	%.33 =w ceql %load.48, 2
+	jnz %.33, @passed.32, @failed.31
+@failed.31
+	call $abort
+@passed.32
+	retw 0
+}
+
+> After GCM:
+function $main() {
+@start.27
+	%returns.34 =l call $func, :type.1
+	%value.47 =l add %returns.34, 16
+	%load.48 =l load %value.47
+	%.33 =w ceql %load.48, 2
+	jnz %.33, @passed.32, @failed.31
+@failed.31
+	call $abort
+@passed.32
+	retw 0
+}
+

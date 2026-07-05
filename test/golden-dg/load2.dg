@@ -1,0 +1,100 @@
+**** Function f ****
+> After GVN:
+function $f() {
+@start
+	nop
+	%y =l alloc4 12
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	%y1 =l add %y, 1
+	%y4 =l add %y, 4
+	nop
+	storew 1432778632, %y
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	argw 287475780
+	call $px
+	nop
+	storew 1432778632, %y
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	argw 293046340
+	call $px
+	nop
+	storew 1432778632, %y
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	argw 1719109700
+	call $px
+	nop
+	storew 1432778632, %y
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	argw 287462758
+	call $px
+	nop
+	storew 0, %y
+	storew 1432778632, %y4
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	argw 1719109632
+	call $px
+	ret0
+}
+
+> After GCM:
+function $f() {
+@start
+	%y =l alloc4 12
+	%y4 =l add %y, 4
+	storew 1432778632, %y
+	argw 287475780
+	call $px
+	storew 1432778632, %y
+	argw 293046340
+	call $px
+	storew 1432778632, %y
+	argw 1719109700
+	call $px
+	storew 1432778632, %y
+	argw 287462758
+	call $px
+	storew 0, %y
+	storew 1432778632, %y4
+	argw 1719109632
+	call $px
+	ret0
+}
+

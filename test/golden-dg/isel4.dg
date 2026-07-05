@@ -1,0 +1,129 @@
+**** Function f0 ****
+> After GVN:
+function $f0() {
+@start
+	%a =l par
+	%b =l par
+	%c =l add %b, 2
+	%d =l mul %c, 4
+	%e =l add %a, %d
+	%q =l loadsw %e
+	retw %q
+}
+
+> After GCM:
+function $f0() {
+@start
+	%a =l par
+	%b =l par
+	%c =l add %b, 2
+	%d =l mul %c, 4
+	%e =l add %a, %d
+	%q =l loadsw %e
+	retw %q
+}
+
+**** Function f1 ****
+> After GVN:
+function $f1() {
+@start
+	%a =l par
+	%b =l par
+	%c =l add %b, 1
+	%f =l add %b, 2
+	%d =l mul %f, 4
+	%e =l add %a, %d
+	%q =l loadsw %e
+	retw %q
+}
+
+> After GCM:
+function $f1() {
+@start
+	%a =l par
+	%b =l par
+	%f =l add %b, 2
+	%d =l mul %f, 4
+	%e =l add %a, %d
+	%q =l loadsw %e
+	retw %q
+}
+
+**** Function f2 ****
+> After GVN:
+function $f2() {
+@start
+	%a =l par
+	%b =l par
+	%l =l mul %b, 4
+	%d =l add %l, 8
+	%e =l add %a, %d
+	%q =l loadsw %e
+	retw %q
+}
+
+> After GCM:
+function $f2() {
+@start
+	%a =l par
+	%b =l par
+	%l =l mul %b, 4
+	%d =l add %l, 8
+	%e =l add %a, %d
+	%q =l loadsw %e
+	retw %q
+}
+
+**** Function f3 ****
+> After GVN:
+function $f3() {
+@start
+	%a =l par
+	%b =l par
+	%l =l mul %b, 4
+	%d =l add %l, 4
+	%f =l add %l, 8
+	%e =l add %a, %f
+	%q =l loadsw %e
+	retw %q
+}
+
+> After GCM:
+function $f3() {
+@start
+	%a =l par
+	%b =l par
+	%l =l mul %b, 4
+	%f =l add %l, 8
+	%e =l add %a, %f
+	%q =l loadsw %e
+	retw %q
+}
+
+**** Function f4 ****
+> After GVN:
+function $f4() {
+@start
+	%a =l par
+	%b =l par
+	%c =l add %b, 1
+	%d =l mul %c, 4
+	%e =l add %d, 4
+	%f =l add %a, %e
+	%q =l loadsw %f
+	retw %q
+}
+
+> After GCM:
+function $f4() {
+@start
+	%a =l par
+	%b =l par
+	%c =l add %b, 1
+	%d =l mul %c, 4
+	%e =l add %d, 4
+	%f =l add %a, %e
+	%q =l loadsw %f
+	retw %q
+}
+

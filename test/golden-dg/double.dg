@@ -1,0 +1,34 @@
+**** Function test ****
+> After GVN:
+function $test() {
+@start
+	nop
+	nop
+	nop
+@loop
+	%x4 =d phi @start d_0.000000, @loop %x5
+	%i1 =w phi @start 0, @loop %i2
+	%x5 =d add %x4, %x4
+	%i2 =w add %i1, 1
+	%c0 =w cled %x5, 4607182418800017408
+	jnz %c0, @loop, @end
+@end
+	storew %i2, $a
+	ret0
+}
+
+> After GCM:
+function $test() {
+@start
+@loop
+	%x4 =d phi @start d_0.000000, @loop %x5
+	%i1 =w phi @start 0, @loop %i2
+	%x5 =d add %x4, %x4
+	%i2 =w add %i1, 1
+	%c0 =w cled %x5, 4607182418800017408
+	jnz %c0, @loop, @end
+@end
+	storew %i2, $a
+	ret0
+}
+

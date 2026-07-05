@@ -1,0 +1,399 @@
+**** Function ifc1 ****
+> After GVN:
+function $ifc1() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%c =w par
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.1 =l phi @false %v0, @true %v1
+	retl %v.1
+}
+
+> After GCM:
+function $ifc1() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%c =w par
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.1 =l phi @false %v0, @true %v1
+	retl %v.1
+}
+
+**** Function ifc2 ****
+> After GVN:
+function $ifc2() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cnew %p, 42
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.4 =l phi @false %v0, @true %v1
+	retl %v.4
+}
+
+> After GCM:
+function $ifc2() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cnew %p, 42
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.4 =l phi @false %v0, @true %v1
+	retl %v.4
+}
+
+**** Function ifc3 ****
+> After GVN:
+function $ifc3() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cugtw %p, 42
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.7 =l phi @false %v0, @true %v1
+	retl %v.7
+}
+
+> After GCM:
+function $ifc3() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cugtw %p, 42
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.7 =l phi @false %v0, @true %v1
+	retl %v.7
+}
+
+**** Function ifclts ****
+> After GVN:
+function $ifclts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w clts %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.10 =l phi @false %v0, @true %v1
+	retl %v.10
+}
+
+> After GCM:
+function $ifclts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w clts %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.10 =l phi @false %v0, @true %v1
+	retl %v.10
+}
+
+**** Function ifcles ****
+> After GVN:
+function $ifcles() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cles %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.13 =l phi @false %v0, @true %v1
+	retl %v.13
+}
+
+> After GCM:
+function $ifcles() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cles %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.13 =l phi @false %v0, @true %v1
+	retl %v.13
+}
+
+**** Function ifcgts ****
+> After GVN:
+function $ifcgts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cgts %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.16 =l phi @false %v0, @true %v1
+	retl %v.16
+}
+
+> After GCM:
+function $ifcgts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cgts %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.16 =l phi @false %v0, @true %v1
+	retl %v.16
+}
+
+**** Function ifcges ****
+> After GVN:
+function $ifcges() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cges %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.19 =l phi @false %v0, @true %v1
+	retl %v.19
+}
+
+> After GCM:
+function $ifcges() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cges %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.19 =l phi @false %v0, @true %v1
+	retl %v.19
+}
+
+**** Function ifceqs ****
+> After GVN:
+function $ifceqs() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w ceqs %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.22 =l phi @false %v0, @true %v1
+	retl %v.22
+}
+
+> After GCM:
+function $ifceqs() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w ceqs %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.22 =l phi @false %v0, @true %v1
+	retl %v.22
+}
+
+**** Function ifcnes ****
+> After GVN:
+function $ifcnes() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cnes %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.27 =l phi @false %v0, @true %v1
+	retl %v.27
+}
+
+> After GCM:
+function $ifcnes() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cnes %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.27 =l phi @false %v0, @true %v1
+	retl %v.27
+}
+
+**** Function ifcos ****
+> After GVN:
+function $ifcos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cos %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.32 =l phi @false %v0, @true %v1
+	retl %v.32
+}
+
+> After GCM:
+function $ifcos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cos %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.32 =l phi @false %v0, @true %v1
+	retl %v.32
+}
+
+**** Function ifcuos ****
+> After GVN:
+function $ifcuos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cuos %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.35 =l phi @false %v0, @true %v1
+	retl %v.35
+}
+
+> After GCM:
+function $ifcuos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cuos %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.35 =l phi @false %v0, @true %v1
+	retl %v.35
+}
+

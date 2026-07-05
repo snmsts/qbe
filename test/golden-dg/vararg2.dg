@@ -1,0 +1,1137 @@
+**** Function qbeprint0 ****
+> After GVN:
+function $qbeprint0() {
+@start
+	%fmt =l par
+	nop
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.4 =w loadsb %p
+	%p1 =l add %p, 3
+	jnz %c.4, @loop1, @end
+@loop1
+	%isg =w ceqw %c.4, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.1 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.2 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.3 =w call $puts
+	ret0
+}
+
+> After GCM:
+function $qbeprint0() {
+@start
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.4 =w loadsb %p
+	jnz %c.4, @loop1, @end
+@loop1
+	%isg =w ceqw %c.4, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.1 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.2 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.3 =w call $puts
+	ret0
+}
+
+**** Function qbecall0 ****
+> After GVN:
+function $qbecall0() {
+@start
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After GCM:
+function $qbecall0() {
+@start
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+**** Function qbeprint1 ****
+> After GVN:
+function $qbeprint1() {
+@start
+	%vw.47 =w par
+	%fmt =l par
+	%argw0 =w extub %vw.47
+	nop
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.46 =w loadsb %p
+	%p1 =l add %p, 3
+	jnz %c.46, @loop1, @end
+@loop1
+	%isg =w ceqw %c.46, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.43 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.44 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.45 =w call $puts
+	ret0
+}
+
+> After GCM:
+function $qbeprint1() {
+@start
+	%vw.47 =w par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.46 =w loadsb %p
+	jnz %c.46, @loop1, @end
+@loop1
+	%isg =w ceqw %c.46, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.43 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.44 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.45 =w call $puts
+	ret0
+}
+
+**** Function qbecall1 ****
+> After GVN:
+function $qbecall1() {
+@start
+	%argw0 =w par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After GCM:
+function $qbecall1() {
+@start
+	%argw0 =w par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+**** Function qbeprint2 ****
+> After GVN:
+function $qbeprint2() {
+@start
+	%argd0 =d par
+	%fmt =l par
+	nop
+	nop
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.89 =w loadsb %p
+	%p1 =l add %p, 3
+	jnz %c.89, @loop1, @end
+@loop1
+	%isg =w ceqw %c.89, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.86 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.87 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.88 =w call $puts
+	ret0
+}
+
+> After GCM:
+function $qbeprint2() {
+@start
+	%argd0 =d par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.89 =w loadsb %p
+	jnz %c.89, @loop1, @end
+@loop1
+	%isg =w ceqw %c.89, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.86 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.87 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.88 =w call $puts
+	ret0
+}
+
+**** Function qbecall2 ****
+> After GVN:
+function $qbecall2() {
+@start
+	%argd0 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After GCM:
+function $qbecall2() {
+@start
+	%argd0 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+**** Function qbeprint3 ****
+> After GVN:
+function $qbeprint3() {
+@start
+	%vw.132 =w par
+	%vw.133 =w par
+	%vw.134 =w par
+	%vw.135 =w par
+	%fmt =l par
+	%argw0 =w extub %vw.132
+	%argw1 =w extub %vw.133
+	%argw2 =w extub %vw.134
+	%argw3 =w extub %vw.135
+	nop
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.131 =w loadsb %p
+	%p1 =l add %p, 3
+	jnz %c.131, @loop1, @end
+@loop1
+	%isg =w ceqw %c.131, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.128 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.129 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.130 =w call $puts
+	ret0
+}
+
+> After GCM:
+function $qbeprint3() {
+@start
+	%vw.132 =w par
+	%vw.133 =w par
+	%vw.134 =w par
+	%vw.135 =w par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.131 =w loadsb %p
+	jnz %c.131, @loop1, @end
+@loop1
+	%isg =w ceqw %c.131, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.128 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.129 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.130 =w call $puts
+	ret0
+}
+
+**** Function qbecall3 ****
+> After GVN:
+function $qbecall3() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After GCM:
+function $qbecall3() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+**** Function qbeprint4 ****
+> After GVN:
+function $qbeprint4() {
+@start
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%fmt =l par
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.177 =w loadsb %p
+	%p1 =l add %p, 3
+	jnz %c.177, @loop1, @end
+@loop1
+	%isg =w ceqw %c.177, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.174 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.175 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.176 =w call $puts
+	ret0
+}
+
+> After GCM:
+function $qbeprint4() {
+@start
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.177 =w loadsb %p
+	jnz %c.177, @loop1, @end
+@loop1
+	%isg =w ceqw %c.177, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.174 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.175 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.176 =w call $puts
+	ret0
+}
+
+**** Function qbecall4 ****
+> After GVN:
+function $qbecall4() {
+@start
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After GCM:
+function $qbecall4() {
+@start
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+**** Function qbeprint5 ****
+> After GVN:
+function $qbeprint5() {
+@start
+	%vw.220 =w par
+	%vw.221 =w par
+	%vw.222 =w par
+	%vw.223 =w par
+	%vw.224 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%fmt =l par
+	%argw0 =w extub %vw.220
+	%argw1 =w extub %vw.221
+	%argw2 =w extub %vw.222
+	%argw3 =w extub %vw.223
+	%argw4 =w extub %vw.224
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.219 =w loadsb %p
+	%p1 =l add %p, 3
+	jnz %c.219, @loop1, @end
+@loop1
+	%isg =w ceqw %c.219, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.216 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.217 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.218 =w call $puts
+	ret0
+}
+
+> After GCM:
+function $qbeprint5() {
+@start
+	%vw.220 =w par
+	%vw.221 =w par
+	%vw.222 =w par
+	%vw.223 =w par
+	%vw.224 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.219 =w loadsb %p
+	jnz %c.219, @loop1, @end
+@loop1
+	%isg =w ceqw %c.219, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.216 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.217 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.218 =w call $puts
+	ret0
+}
+
+**** Function qbecall5 ****
+> After GVN:
+function $qbecall5() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After GCM:
+function $qbecall5() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+**** Function qbeprint6 ****
+> After GVN:
+function $qbeprint6() {
+@start
+	%vw.267 =w par
+	%vw.268 =w par
+	%vw.269 =w par
+	%vw.270 =w par
+	%vw.271 =w par
+	%vw.272 =w par
+	%vw.273 =w par
+	%vw.274 =w par
+	%vw.275 =w par
+	%vw.276 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%argd7 =d par
+	%argd8 =d par
+	%argd9 =d par
+	%fmt =l par
+	%argw0 =w extub %vw.267
+	%argw1 =w extub %vw.268
+	%argw2 =w extub %vw.269
+	%argw3 =w extub %vw.270
+	%argw4 =w extub %vw.271
+	%argw5 =w extub %vw.272
+	%argw6 =w extub %vw.273
+	%argw7 =w extub %vw.274
+	%argw8 =w extub %vw.275
+	%argw9 =w extub %vw.276
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.266 =w loadsb %p
+	%p1 =l add %p, 3
+	jnz %c.266, @loop1, @end
+@loop1
+	%isg =w ceqw %c.266, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.263 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.264 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.265 =w call $puts
+	ret0
+}
+
+> After GCM:
+function $qbeprint6() {
+@start
+	%vw.267 =w par
+	%vw.268 =w par
+	%vw.269 =w par
+	%vw.270 =w par
+	%vw.271 =w par
+	%vw.272 =w par
+	%vw.273 =w par
+	%vw.274 =w par
+	%vw.275 =w par
+	%vw.276 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%argd7 =d par
+	%argd8 =d par
+	%argd9 =d par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.266 =w loadsb %p
+	jnz %c.266, @loop1, @end
+@loop1
+	%isg =w ceqw %c.266, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.263 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.264 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.265 =w call $puts
+	ret0
+}
+
+**** Function qbecall6 ****
+> After GVN:
+function $qbecall6() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argw5 =w par
+	%argw6 =w par
+	%argw7 =w par
+	%argw8 =w par
+	%argw9 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%argd7 =d par
+	%argd8 =d par
+	%argd9 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After GCM:
+function $qbecall6() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argw5 =w par
+	%argw6 =w par
+	%argw7 =w par
+	%argw8 =w par
+	%argw9 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%argd7 =d par
+	%argd8 =d par
+	%argd9 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+**** Function qbeprint7 ****
+> After GVN:
+function $qbeprint7() {
+@start
+	%vw.319 =w par
+	%vw.320 =w par
+	%vw.321 =w par
+	%vw.322 =w par
+	%vw.323 =w par
+	%vw.324 =w par
+	%vw.325 =w par
+	%vw.326 =w par
+	%vw.327 =w par
+	%fmt =l par
+	%argw0 =w extub %vw.319
+	%argw1 =w extub %vw.320
+	%argw2 =w extub %vw.321
+	%argw3 =w extub %vw.322
+	%argw4 =w extub %vw.323
+	%argw5 =w extub %vw.324
+	%argw6 =w extub %vw.325
+	%argw7 =w extub %vw.326
+	%argw8 =w extub %vw.327
+	nop
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.318 =w loadsb %p
+	%p1 =l add %p, 3
+	jnz %c.318, @loop1, @end
+@loop1
+	%isg =w ceqw %c.318, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.315 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.316 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.317 =w call $puts
+	ret0
+}
+
+> After GCM:
+function $qbeprint7() {
+@start
+	%vw.319 =w par
+	%vw.320 =w par
+	%vw.321 =w par
+	%vw.322 =w par
+	%vw.323 =w par
+	%vw.324 =w par
+	%vw.325 =w par
+	%vw.326 =w par
+	%vw.327 =w par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.318 =w loadsb %p
+	jnz %c.318, @loop1, @end
+@loop1
+	%isg =w ceqw %c.318, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r.315 =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r.316 =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r.317 =w call $puts
+	ret0
+}
+
+**** Function qbecall7 ****
+> After GVN:
+function $qbecall7() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argw5 =w par
+	%argw6 =w par
+	%argw7 =w par
+	%argw8 =w par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After GCM:
+function $qbecall7() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argw5 =w par
+	%argw6 =w par
+	%argw7 =w par
+	%argw8 =w par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+

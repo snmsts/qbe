@@ -1,0 +1,24 @@
+**** Function test ****
+> After GVN:
+function $test() {
+@start
+	%x =l alloc16 16
+	%y =l add %x, 8
+	%m =w rem %y, 16
+	storew %m, %y
+	nop
+	storew %m, $a
+	ret0
+}
+
+> After GCM:
+function $test() {
+@start
+	%x =l alloc16 16
+	%y =l add %x, 8
+	%m =w rem %y, 16
+	storew %m, %y
+	storew %m, $a
+	ret0
+}
+

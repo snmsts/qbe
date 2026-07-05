@@ -1,0 +1,31 @@
+**** Function test ****
+> After GVN:
+function $test() {
+@start
+	nop
+@loop
+	%x.2 =w phi @start 1, @isz 1
+	jnz %x.2, @noz, @isz
+@noz
+	nop
+	jmp @end
+@isz
+	nop
+	jmp @loop
+@end
+	nop
+	ret0
+}
+
+> After GCM:
+function $test() {
+@start
+@loop
+	%x.2 =w phi @start 1, @isz 1
+	jnz %x.2, @noz, @isz
+@noz
+	ret0
+@isz
+	jmp @loop
+}
+

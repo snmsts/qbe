@@ -1,0 +1,84 @@
+**** Function strcmp ****
+> After GVN:
+function $strcmp() {
+@.37
+	%s1.3.val =l par
+	%s2.5.val =l par
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	jmp @.5
+@.6
+	nop
+	%.10 =l add %s1.3.4, 1
+	nop
+	nop
+	%.12 =l add %s2.5.3, 1
+	nop
+@.5
+	%s2.5.3 =l phi @.37 %s2.5.val, @.6 %.12
+	%s1.3.4 =l phi @.37 %s1.3.val, @.6 %.10
+	nop
+	%.16 =w loadsb %s1.3.4
+	nop
+	%.18 =w cnew %.16, 0
+	jnz %.18, @.14, @.8
+@.14
+	nop
+	%.20 =w loadsb %s2.5.3
+	nop
+	%.22 =w cnew %.20, 0
+	jnz %.22, @.13, @.8
+@.13
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	%.29 =w ceqw %.16, %.20
+	jnz %.29, @.6, @.8
+@.8
+@.7
+	nop
+	nop
+	%.32 =w extub %.16
+	nop
+	%.34 =w loadub %s2.5.3
+	nop
+	%.36 =w sub %.32, %.34
+	retw %.36
+}
+
+> After GCM:
+function $strcmp() {
+@.37
+	%s1.3.val =l par
+	%s2.5.val =l par
+	jmp @.5
+@.6
+	%.10 =l add %s1.3.4, 1
+	%.12 =l add %s2.5.3, 1
+@.5
+	%s2.5.3 =l phi @.37 %s2.5.val, @.6 %.12
+	%s1.3.4 =l phi @.37 %s1.3.val, @.6 %.10
+	%.16 =w loadsb %s1.3.4
+	%.18 =w cnew %.16, 0
+	jnz %.18, @.14, @.8
+@.14
+	%.20 =w loadsb %s2.5.3
+	%.22 =w cnew %.20, 0
+	jnz %.22, @.13, @.8
+@.13
+	%.29 =w ceqw %.16, %.20
+	jnz %.29, @.6, @.8
+@.8
+	%.32 =w extub %.16
+	%.34 =w loadub %s2.5.3
+	%.36 =w sub %.32, %.34
+	retw %.36
+}
+

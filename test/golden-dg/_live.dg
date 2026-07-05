@@ -1,0 +1,23 @@
+**** Function test ****
+> After GVN:
+function $test() {
+@start
+	nop
+	nop
+@left
+	jmp @inloop
+@loop
+	nop
+@inloop
+	nop
+@endloop
+	jmp @loop
+}
+
+> After GCM:
+function $test() {
+@start
+@inloop
+	jmp @inloop
+}
+

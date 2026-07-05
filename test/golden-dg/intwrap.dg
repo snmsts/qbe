@@ -1,0 +1,19 @@
+**** Function intwrap ****
+> After GVN:
+function $intwrap() {
+@s
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	ret0
+}
+
+> After GCM:
+function $intwrap() {
+@s
+	ret0
+}
+

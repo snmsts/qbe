@@ -1,0 +1,262 @@
+**** Function lt ****
+> After GVN:
+function $lt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cltd %x, %y
+	retw %r
+}
+
+> After GCM:
+function $lt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cltd %x, %y
+	retw %r
+}
+
+**** Function le ****
+> After GVN:
+function $le() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cled %x, %y
+	retw %r
+}
+
+> After GCM:
+function $le() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cled %x, %y
+	retw %r
+}
+
+**** Function gt ****
+> After GVN:
+function $gt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cgtd %x, %y
+	retw %r
+}
+
+> After GCM:
+function $gt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cgtd %x, %y
+	retw %r
+}
+
+**** Function ge ****
+> After GVN:
+function $ge() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cged %x, %y
+	retw %r
+}
+
+> After GCM:
+function $ge() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cged %x, %y
+	retw %r
+}
+
+**** Function eq1 ****
+> After GVN:
+function $eq1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	retw %r
+}
+
+> After GCM:
+function $eq1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	retw %r
+}
+
+**** Function eq2 ****
+> After GVN:
+function $eq2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+> After GCM:
+function $eq2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+**** Function eq3 ****
+> After GVN:
+function $eq3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw %r
+@false
+	retw 0
+}
+
+> After GCM:
+function $eq3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	%snk.5 =w ceqd %x, %y
+	retw %snk.5
+@false
+	retw 0
+}
+
+**** Function ne1 ****
+> After GVN:
+function $ne1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	retw %r
+}
+
+> After GCM:
+function $ne1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	retw %r
+}
+
+**** Function ne2 ****
+> After GVN:
+function $ne2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+> After GCM:
+function $ne2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+**** Function ne3 ****
+> After GVN:
+function $ne3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw %r
+@false
+	retw 0
+}
+
+> After GCM:
+function $ne3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	%snk.14 =w cned %x, %y
+	retw %snk.14
+@false
+	retw 0
+}
+
+**** Function o ****
+> After GVN:
+function $o() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cod %x, %y
+	retw %r
+}
+
+> After GCM:
+function $o() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cod %x, %y
+	retw %r
+}
+
+**** Function uo ****
+> After GVN:
+function $uo() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cuod %x, %y
+	retw %r
+}
+
+> After GCM:
+function $uo() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cuod %x, %y
+	retw %r
+}
+

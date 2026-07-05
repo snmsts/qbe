@@ -1,0 +1,13 @@
+**** Function test ****
+> After GVN:
+function $test() {
+@start
+	retc $s, :s2
+}
+
+> After GCM:
+function $test() {
+@start
+	retc $s, :s2
+}
+

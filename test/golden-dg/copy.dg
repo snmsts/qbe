@@ -1,0 +1,53 @@
+**** Function f ****
+> After GVN:
+function $f() {
+@start
+	%x0 =w loadsb $a
+	%x1 =l extsb %x0
+	%c =w ceql %x1, -1
+	retw %c
+}
+
+> After GCM:
+function $f() {
+@start
+	%x0 =w loadsb $a
+	%x1 =l extsb %x0
+	%c =w ceql %x1, -1
+	retw %c
+}
+
+**** Function g ****
+> After GVN:
+function $g() {
+@start
+	%arg =w par
+	nop
+	%a0 =w extuh %arg
+	%a1 =w or %a0, 65536
+@loop
+	jnz %arg, @end, @loop
+@end
+	%a3 =w shr %a1, 1
+	%a4 =w or %a0, 65537
+	%a5 =w or %a3, %a4
+	%ret =w extuh %a5
+	retw %ret
+}
+
+> After GCM:
+function $g() {
+@start
+	%arg =w par
+@loop
+	jnz %arg, @end, @loop
+@end
+	%a0 =w extuh %arg
+	%a1 =w or %a0, 65536
+	%a3 =w shr %a1, 1
+	%a4 =w or %a0, 65537
+	%a5 =w or %a3, %a4
+	%ret =w extuh %a5
+	retw %ret
+}
+

@@ -1,0 +1,176 @@
+**** Function fneg ****
+> After GVN:
+function $fneg() {
+@fneg
+	%f =s par
+	%b0 =w cast %f
+	%b1 =w xor %b0, 2147483648
+	%rs =s cast %b1
+	rets %rs
+}
+
+> After GCM:
+function $fneg() {
+@fneg
+	%f =s par
+	%b0 =w cast %f
+	%b1 =w xor %b0, 2147483648
+	%rs =s cast %b1
+	rets %rs
+}
+
+**** Function ftrunc ****
+> After GVN:
+function $ftrunc() {
+@ftrunc
+	%f =d par
+	%l0 =w dtosi %f
+	%rt =d swtof %l0
+	retd %rt
+}
+
+> After GCM:
+function $ftrunc() {
+@ftrunc
+	%f =d par
+	%l0 =w dtosi %f
+	%rt =d swtof %l0
+	retd %rt
+}
+
+**** Function wtos ****
+> After GVN:
+function $wtos() {
+@start
+	%w =w par
+	%rt =s uwtof %w
+	rets %rt
+}
+
+> After GCM:
+function $wtos() {
+@start
+	%w =w par
+	%rt =s uwtof %w
+	rets %rt
+}
+
+**** Function wtod ****
+> After GVN:
+function $wtod() {
+@start
+	%w =w par
+	%rt =d uwtof %w
+	retd %rt
+}
+
+> After GCM:
+function $wtod() {
+@start
+	%w =w par
+	%rt =d uwtof %w
+	retd %rt
+}
+
+**** Function ltos ****
+> After GVN:
+function $ltos() {
+@start
+	%l =l par
+	%rt =s ultof %l
+	rets %rt
+}
+
+> After GCM:
+function $ltos() {
+@start
+	%l =l par
+	%rt =s ultof %l
+	rets %rt
+}
+
+**** Function ltod ****
+> After GVN:
+function $ltod() {
+@start
+	%l =l par
+	%rt =d ultof %l
+	retd %rt
+}
+
+> After GCM:
+function $ltod() {
+@start
+	%l =l par
+	%rt =d ultof %l
+	retd %rt
+}
+
+**** Function stow ****
+> After GVN:
+function $stow() {
+@start
+	%f =s par
+	%rt =w stoui %f
+	retw %rt
+}
+
+> After GCM:
+function $stow() {
+@start
+	%f =s par
+	%rt =w stoui %f
+	retw %rt
+}
+
+**** Function dtow ****
+> After GVN:
+function $dtow() {
+@start
+	%f =d par
+	%rt =w dtoui %f
+	retw %rt
+}
+
+> After GCM:
+function $dtow() {
+@start
+	%f =d par
+	%rt =w dtoui %f
+	retw %rt
+}
+
+**** Function stol ****
+> After GVN:
+function $stol() {
+@start
+	%f =s par
+	%rt =l stoui %f
+	retl %rt
+}
+
+> After GCM:
+function $stol() {
+@start
+	%f =s par
+	%rt =l stoui %f
+	retl %rt
+}
+
+**** Function dtol ****
+> After GVN:
+function $dtol() {
+@start
+	%f =d par
+	%rt =l dtoui %f
+	retl %rt
+}
+
+> After GCM:
+function $dtol() {
+@start
+	%f =d par
+	%rt =l dtoui %f
+	retl %rt
+}
+
