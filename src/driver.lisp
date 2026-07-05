@@ -5,8 +5,8 @@
 (defun emit-module (module &optional (stream *standard-output*))
   "Emit amd64 assembly for every function in MODULE."
   (format stream "~a.text~%" #\Tab)
-  (dolist (fn (module-funcs module))
-    (emit-fn fn stream))
+  (loop for fn in (module-funcs module) for id from 0
+        do (emit-fn fn stream id))
   (values))
 
 (defun module-asm-string (module)

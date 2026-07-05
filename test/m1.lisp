@@ -103,5 +103,75 @@
   "extern long m(long,long); int main(){return (int)m(6,7);}"
   42)
 
-(format t "~&=== M1: ~d passed, ~d failed ===~%" *pass* *fail*)
+;; --- milestone B: control flow, comparisons, loops (phi), memory ---
+
+(check "branch-max" "export function w $main() {
+@start
+	%a =w copy 17
+	%b =w copy 42
+	%c =w csgtw %a, %b
+	jnz %c, @ta, @tb
+@ta
+	ret %a
+@tb
+	ret %b
+}" 42)
+
+(check "loop-sum" "export function w $main() {
+@start
+	jmp @loop
+@loop
+	%i =w phi @start 1, @loop %i1
+	%s =w phi @start 0, @loop %s1
+	%s1 =w add %s, %i
+	%i1 =w add %i, 1
+	%done =w csgtw %i1, 10
+	jnz %done, @end, @loop
+@end
+	ret %s1
+}" 55)
+
+(check "loop-fact" "export function w $main() {
+@start
+	jmp @loop
+@loop
+	%i =w phi @start 1, @loop %i1
+	%f =w phi @start 1, @loop %f1
+	%f1 =w mul %f, %i
+	%i1 =w add %i, 1
+	%c =w csgtw %i1, 5
+	jnz %c, @end, @loop
+@end
+	ret %f1
+}" 120)
+
+(check "mem-alloc-load" "export function w $main() {
+@start
+	%p =l alloc4 8
+	storew 30, %p
+	%q =l add %p, 4
+	storew 12, %q
+	%a =w loadw %p
+	%b =w loadw %q
+	%r =w add %a, %b
+	ret %r
+}" 42)
+
+;; parallel phi swap hazard (a,b exchange each iteration)
+(check "phi-swap" "export function w $main() {
+@start
+	jmp @loop
+@loop
+	%a =w phi @start 10, @loop %b
+	%b =w phi @start 32, @loop %a
+	%n =w phi @start 0, @loop %n1
+	%n1 =w add %n, 1
+	%c =w csgtw %n1, 2
+	jnz %c, @end, @loop
+@end
+	%r =w add %a, %b
+	ret %r
+}" 42)
+
+(format t "~&=== M1/B: ~d passed, ~d failed ===~%" *pass* *fail*)
 (sb-ext:exit :code (if (zerop *fail*) 0 1))
