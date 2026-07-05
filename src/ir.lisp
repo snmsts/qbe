@@ -30,7 +30,10 @@
    (rettyp   :initarg :rettyp   :initform nil :accessor fn-rettyp) ; typ when retclass :c
    (vararg   :initarg :vararg   :initform nil :accessor fn-vararg)
    (blocks   :initform nil :accessor fn-blocks :documentation "Blocks in order.")
-   (start    :initform nil :accessor fn-start)))
+   (start    :initform nil :accessor fn-start)
+   ;; analysis (filled by cfg.lisp)
+   (rpo      :initform nil :accessor fn-rpo  :documentation "Vector: rpo-id -> blk.")
+   (nblk     :initform 0   :accessor fn-nblk)))
 
 (defclass blk ()
   ((name     :initarg :name :accessor blk-name)
@@ -41,7 +44,13 @@
    (jmp-arg  :initform nil :accessor blk-jmp-arg)
    (s1       :initform nil :accessor blk-s1)      ; successor blks
    (s2       :initform nil :accessor blk-s2)
-   (link     :initform nil :accessor blk-link)))  ; next block in layout order
+   (link     :initform nil :accessor blk-link)    ; next block in layout order
+   ;; analysis (filled by cfg.lisp)
+   (id       :initform -1  :accessor blk-id       :documentation "Reverse-postorder index.")
+   (preds    :initform nil :accessor blk-preds)
+   (idom     :initform nil :accessor blk-idom)
+   (doms     :initform nil :accessor blk-doms     :documentation "Immediate-dominated children.")
+   (fron     :initform nil :accessor blk-fron     :documentation "Dominance frontier.")))
 
 (defclass ins ()
   ((op   :initarg :op   :accessor ins-op)     ; opcode keyword

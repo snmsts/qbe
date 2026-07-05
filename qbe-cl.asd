@@ -15,6 +15,7 @@
                              (:file "ir")
                              (:file "parse")
                              (:file "print")
+                             (:file "cfg")
                              (:file "amd64")
                              (:file "driver")))))
 

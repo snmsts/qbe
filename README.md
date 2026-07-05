@@ -25,6 +25,7 @@ src/
   ir.lisp      ; module/fn/blk/phi/ins/typ = CLOS、tmp/con = struct、Ref = 実オブジェクト
   parse.lisp   ; IL text -> module（内部形の正規化を parse.c に忠実に再現）
   print.lisp   ; module -> IL text（printfn/printref と byte 一致）
+  cfg.lisp     ; M2/A1: rpo/preds/dominators/frontier（data->data 解析）
   amd64.lisp   ; M1: module -> amd64 asm（最ナイーブ codegen）
   driver.lisp  ; module -> asm -> cc -> 実行
 test/
@@ -33,6 +34,7 @@ test/
   harness.lisp ; M0 diff ハーネス（live / golden 両対応）
   run.lisp     ; M0 回帰ランナー
   m1.lisp      ; M1 e2e テスト（cc で実行し exit code 検証）
+  dom.lisp     ; A1: 支配木を qbe -dN の Dominators と diff（要 QBE_BIN）
 ```
 
 ## 実行
