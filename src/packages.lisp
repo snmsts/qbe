@@ -23,6 +23,8 @@
    ;; ssa construction (M2/A2+A3)
    #:fn-tmp #:fn-ntmp #:blk-in #:blk-out #:blk-gen
    #:fill-use #:fill-live #:phiins #:renblk #:ssa #:*tmp-counter*
+   ;; memory opt (M2/A4)
+   #:promote
    ;; amd64 codegen (M1) + driver
    #:emit-fn #:emit-module #:module-asm-string
    #:build-exe #:compile-and-run))

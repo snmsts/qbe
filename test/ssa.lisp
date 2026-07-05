@@ -1,13 +1,16 @@
-;;;; ssa.lisp --- A2+A3 oracle: our SSA construction vs `qbe -dN`'s
+;;;; ssa.lisp --- A2+A3+A4 oracle: our SSA construction vs `qbe -dN`'s
 ;;;; "> After SSA construction:" printfn dump.
 ;;;;
 ;;;; usage:  ros -Q run -- --script test/ssa.lisp
 ;;;;
-;;;; Note: QBE runs `promote` before ssa(); until A4 (promote) lands, only
-;;;; functions where promote is a no-op can match byte-exactly.  QBE's newtmp
-;;;; suffix counter is run-global (never reset between functions of a file),
-;;;; so a divergence in one function shifts every later function's `%x.N`
-;;;; names -- hence a per-function mismatch may be an upstream artifact.
+;;;; With A4 (promote) in the pipeline, SSA *structure* matches the whole
+;;;; corpus (norm 180/180).  The residual raw (byte) diffs are only `%x.N`
+;;;; suffix NUMBERS: QBE's newtmp counter is run-global and QBE runs each
+;;;; function through its WHOLE backend (isel/rega, which mint `%isel.N`
+;;;; temps) before parsing the next function -- so a function's temp numbers
+;;;; include every preceding function's backend temps, which don't exist
+;;;; until M3/isel.  Hence `norm` (suffixes canonicalized) is the true
+;;;; A2-A4 acceptance signal; `raw` closes as the backend lands.
 (require :asdf)
 (push (truename #p"/home/snmsts/work/qbe/") asdf:*central-registry*)
 (handler-bind ((warning #'muffle-warning))
@@ -51,9 +54,11 @@
     (nreverse result)))
 
 (defun our-ssa (fn)
-  "Run the A2+A3 pipeline on FN and return its printfn text."
+  "Run the A4+A2+A3 pipeline on FN and return its printfn text."
   (qbe:fill-cfg fn)
   (qbe:fill-use fn)
+  (qbe:promote fn)
+  (qbe:fill-use fn)        ; QBE re-fills use after promote (new defs)
   (qbe:ssa fn)
   (qbe:print-fn-to-string fn))
 
@@ -82,36 +87,38 @@ can't reproduce until A4/promote), isolating SSA *structure* from temp numbering
     (get-output-stream-string out)))
 
 (defun diff-ssa (ssa-path)
-  "Returns (values raw-ok norm-ok total norm-bad-names).  raw = byte-exact;
+  "Returns (values raw-ok norm-ok total norm-bad raw-bad).  raw = byte-exact;
 norm = equal after canonicalizing temp suffixes (SSA structure only)."
   (let* ((mod (qbe:parse-file ssa-path))
          (golden (qbe-ssa-sections (dn-dump ssa-path)))
-         (raw-ok 0) (norm-ok 0) (total 0) (norm-bad '()))
+         (raw-ok 0) (norm-ok 0) (total 0) (norm-bad '()) (raw-bad '()))
     (setf qbe::*tmp-counter* 0)          ; reset once per file, as qbe does
     (dolist (fn (qbe:module-funcs mod))
       (incf total)
       (let ((mine (our-ssa fn))
             (ref (or (cdr (assoc (qbe:fn-name fn) golden :test #'string=)) "")))
-        (when (string= mine ref) (incf raw-ok))
+        (if (string= mine ref) (incf raw-ok) (push (qbe:fn-name fn) raw-bad))
         (if (string= (normalize mine) (normalize ref))
             (incf norm-ok)
             (push (qbe:fn-name fn) norm-bad))))
-    (values raw-ok norm-ok total (nreverse norm-bad))))
+    (values raw-ok norm-ok total (nreverse norm-bad) (nreverse raw-bad))))
 
 (let ((tot 0) (raw 0) (norm 0) (files-raw 0) (files-norm 0) (nfiles 0))
   (dolist (p (corpus-files))
     (incf nfiles)
     (handler-case
-        (multiple-value-bind (r nm n bad) (diff-ssa p)
+        (multiple-value-bind (r nm n bad raw-bad) (diff-ssa p)
           (incf tot n) (incf raw r) (incf norm nm)
           (when (= r n) (incf files-raw))
           (when (null bad) (incf files-norm))
           (when bad
-            (format t "~&~a: raw ~d/~d  norm ~d/~d  STRUCT-DIFF ~{~a ~}~%"
-                    (file-namestring p) r n nm n bad)))
+            (format t "~&~a: STRUCT-DIFF ~{~a ~}~%" (file-namestring p) bad))
+          (when (and raw-bad (null bad))
+            (format t "~&~a: raw-only diff (suffix offset) ~{~a ~}~%"
+                    (file-namestring p) raw-bad)))
       (error (e) (format t "~&~a: ERROR ~a~%" (file-namestring p) e))))
-  (format t "~&=== ssa construction ===~%")
+  (format t "~&=== ssa construction (promote + SSA) ===~%")
   (format t "  raw  (byte-exact):        ~d/~d functions, ~d/~d files~%" raw tot files-raw nfiles)
   (format t "  norm (structure only):    ~d/~d functions, ~d/~d files~%" norm tot files-norm nfiles)
-  (format t "  (raw<norm gap = QBE promote/counter offset, awaits A4)~%")
+  (format t "  (raw<norm gap = preceding fns' backend %isel.N temps, awaits M3/isel)~%")
   (sb-ext:exit :code (if (= norm tot) 0 1)))

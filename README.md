@@ -26,15 +26,21 @@ src/
   parse.lisp   ; IL text -> module（内部形の正規化を parse.c に忠実に再現）
   print.lisp   ; module -> IL text（printfn/printref と byte 一致）
   cfg.lisp     ; M2/A1: rpo/preds/dominators/frontier（data->data 解析）
+  ssa.lisp     ; M2/A2+A3: bitset/newtmp/fill-use/fill-live/phiins/renblk/ssa
+  mem.lisp     ; M2/A4: promote（mem2reg: alloc->nop, store->copy, load->copy/ext）
   amd64.lisp   ; M1: module -> amd64 asm（最ナイーブ codegen）
   driver.lisp  ; module -> asm -> cc -> 実行
 test/
   corpus/      ; QBE の test/*.ssa をベンダリング(MIT)
   golden/      ; `qbe -dP` を保存した golden(qbe 無しで回帰可能)
+  golden-dn/   ; `qbe -dN`（Dominators + After SSA construction）
+  golden-dm/   ; `qbe -dM`（After slot promotion ほか）
   harness.lisp ; M0 diff ハーネス（live / golden 両対応）
   run.lisp     ; M0 回帰ランナー
   m1.lisp      ; M1 e2e テスト（cc で実行し exit code 検証）
-  dom.lisp     ; A1: 支配木を qbe -dN の Dominators と diff（要 QBE_BIN）
+  dom.lisp     ; A1: 支配木を qbe -dN の Dominators と diff
+  ssa.lisp     ; A2+A3+A4: SSA 構築を qbe -dN の After SSA construction と diff
+  promote.lisp ; A4: promote を qbe -dM の After slot promotion と diff
 ```
 
 ## 実行
@@ -62,11 +68,19 @@ git clone git://c9x.me/qbe.git && cd qbe && make
 export QBE_BIN=$PWD/qbe
 ```
 
-## 次(M2 以降)
+## M2 達成(SSA)
 
-`DESIGN.md` §6 のとおり縦貫通を維持しつつパスを本物に:
-M2 = Braun SSA + cfg/dom(phi/jnz/loop、`qbe -dN` と diff)、
-M3 = arm64 ABI/isel を `-dA`/`-dI` と diff、M4 = spill/rega を `-dS`/`-dR` と diff。
-各段は `qbe -d{N,A,I,S,R}` の中間ダンプを diff オラクルにする。
+cfg/dom(A1)+ filllive/phiins/renblk(A2+A3)+ promote(A4)。
+promote は `qbe -dM` の "After slot promotion" と **180/180 関数・77/77 ファイル
+byte 一致**。promote+SSA 構築は `qbe -dN` の "After SSA construction" と**構造が
+全 180/180 一致**(temp サフィックス正規化後)。生 byte 一致 168/180 の残差は、
+qbe が各関数をバックエンド(isel が `%isel.N` を生成)まで通してから次関数を
+パースするための newtmp カウンタ累積で、M3/isel で解消する既知差。
+
+## 次(M3 以降)
+
+`DESIGN.md` §6 のとおり:
+M3 = arm64/amd64 ABI/isel を `-dA`/`-dI` と diff、M4 = spill/rega を
+`-dS`/`-dR` と diff。各段は `qbe -d{A,I,S,R}` の中間ダンプを diff オラクルにする。
 
 ライセンス: MIT(QBE と同じ)。

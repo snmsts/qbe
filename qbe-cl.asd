@@ -17,6 +17,7 @@
                              (:file "print")
                              (:file "cfg")
                              (:file "ssa")
+                             (:file "mem")
                              (:file "amd64")
                              (:file "driver")))))
 
