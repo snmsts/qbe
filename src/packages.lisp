@@ -16,4 +16,7 @@
    #:*op-names* #:op-keyword #:classchar-op-p
    ;; parse / print
    #:parse-string #:parse-file
-   #:print-fn #:print-fn-to-string))
+   #:print-fn #:print-fn-to-string
+   ;; amd64 codegen (M1) + driver
+   #:emit-fn #:emit-module #:module-asm-string
+   #:build-exe #:compile-and-run))

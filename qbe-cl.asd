@@ -6,6 +6,7 @@
 (asdf:defsystem "qbe-cl"
   :description "QBE backend reimplemented in idiomatic Common Lisp (M0: parse+print)."
   :license "MIT"
+  :depends-on ("uiop")
   :serial t
   :components ((:module "src"
                 :serial t
@@ -13,7 +14,9 @@
                              (:file "ops")
                              (:file "ir")
                              (:file "parse")
-                             (:file "print")))))
+                             (:file "print")
+                             (:file "amd64")
+                             (:file "driver")))))
 
 (asdf:defsystem "qbe-cl/test"
   :description "M0 diff harness: parse->print vs real QBE -dP."
