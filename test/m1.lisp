@@ -173,5 +173,19 @@
 	ret %r
 }" 42)
 
+;; loaduw into an l temp must zero-extend (regression: used to emit the
+;; un-assemblable `movl (%rax),%rax`).  Store 0xffffffff (-1 as w), load
+;; unsigned word into l -> 4294967295, not -1.
+(check-drv "loaduw-l"
+  "export function l $g() {
+@start
+	%p =l alloc8 8
+	storew 4294967295, %p
+	%v =l loaduw %p
+	ret %v
+}"
+  "extern long g(void); int main(){return g()==4294967295L ? 42 : 1;}"
+  42)
+
 (format t "~&=== M1/B: ~d passed, ~d failed ===~%" *pass* *fail*)
 (sb-ext:exit :code (if (zerop *fail*) 0 1))

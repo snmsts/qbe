@@ -154,7 +154,12 @@
       ((assoc op *load-info*)
        (destructuring-bind (wm . lm) (cdr (assoc op *load-info*))
          (load-operand (ins-arg0 i) :l :a fr stream)   ; pointer
-         (format stream "~a~a (%rax), ~a~%" #\Tab (if (eq cls :l) lm wm) (reg-a cls))
+         ;; The destination register width follows the *mnemonic* (…q => 64-bit),
+         ;; not the result class: e.g. loaduw into an l temp is `movl (%rax),%eax`
+         ;; (movl zero-extends into rax), never `movl …,%rax` (which won't assemble).
+         (let* ((mn (if (eq cls :l) lm wm))
+                (dst (if (char= (char mn (1- (length mn))) #\q) "%rax" "%eax")))
+           (format stream "~a~a (%rax), ~a~%" #\Tab mn dst))
          (store-a (ins-to i) cls fr stream)))
       ((assoc op *store-info*)
        (destructuring-bind (mn . vreg) (cdr (assoc op *store-info*))
@@ -189,12 +194,12 @@ safe against parallel-copy hazards)."
   (let* ((fr (layout-frame fn))
          (name (fn-name fn))
          (blocks (fn-blocks fn))
-         (labels (let ((h (make-hash-table :test 'eq)))
-                   (loop for b in blocks for k from 0
-                         do (setf (gethash b h) (format nil ".LBB~d_~d" fnid k)))
-                   h))
+         (blk-labels (let ((h (make-hash-table :test 'eq)))
+                       (loop for b in blocks for k from 0
+                             do (setf (gethash b h) (format nil ".LBB~d_~d" fnid k)))
+                       h))
          (pc (list 0)))
-    (flet ((lbl (b) (gethash b labels)))
+    (flet ((lbl (b) (gethash b blk-labels)))
       (format stream "~a.globl ~a~%~a.type ~a, @function~%~a:~%"
               #\Tab name #\Tab name name)
       (format stream "~apushq %rbp~%~amovq %rsp, %rbp~%" #\Tab #\Tab)
