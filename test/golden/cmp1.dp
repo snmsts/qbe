@@ -1,0 +1,13 @@
+**** Function test ****
+> After parsing:
+function $test() {
+@start
+	%c =w par
+	%cmp =w cultw 1, %c
+	jnz %cmp, @yes, @no
+@yes
+	%cmp =w copy 1
+@no
+	retw %cmp
+}
+

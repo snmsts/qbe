@@ -1,0 +1,13 @@
+**** Function intwrap ****
+> After parsing:
+function $intwrap() {
+@s
+	%a =l copy -9223372036854775808
+	%b =l copy -1
+	%c =l copy -1
+	%d =l copy 4294967296
+	%e =w copy 4294967295
+	%f =l copy 9223372036854775807
+	ret0
+}
+

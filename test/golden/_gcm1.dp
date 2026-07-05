@@ -1,0 +1,60 @@
+**** Function ifmv ****
+> After parsing:
+function $ifmv() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%rt =w add %p2, %p3
+	%rf =w sub %p2, %p3
+	jnz %p1, @true, @false
+@true
+	%r =w copy %rt
+	jmp @exit
+@false
+	%r =w copy %rf
+@exit
+	retw %r
+}
+
+**** Function hoist1 ****
+> After parsing:
+function $hoist1() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%n =w copy 0
+	%i =w copy %p1
+@loop
+	%base =w add %p2, %p3
+	%i =w sub %i, 1
+	%n =w add %n, 1
+	jnz %i, @loop, @exit
+@exit
+	%r =w add %base, %n
+	retw %r
+}
+
+**** Function hoist2 ****
+> After parsing:
+function $hoist2() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%n =w copy 0
+	%i =w copy %p1
+@loop
+	%base =w add %p2, %p3
+	%i =w sub %i, 1
+	%n =w add %n, %base
+	jnz %i, @loop, @exit
+@exit
+	%r =w add %base, %n
+	retw %r
+}
+

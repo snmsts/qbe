@@ -1,0 +1,110 @@
+**** Function test ****
+> After parsing:
+function $test() {
+@start
+	%r1 =l call $t1, :st1
+	argl $fmt1
+	argv
+	argl %r1
+	%i1 =w call $printf
+	%r2 =l call $t2, :st2
+	%w2 =w loadsw %r2
+	argl $fmt2
+	argv
+	argw %w2
+	%i2 =w call $printf
+	%r3 =l call $t3, :st3
+	%s3 =s load %r3
+	%r34 =l add %r3, 4
+	%w3 =w loadsw %r34
+	%p3 =d exts %s3
+	argl $fmt3
+	argv
+	argd %p3
+	argw %w3
+	%i3 =w call $printf
+	%r4 =l call $t4, :st4
+	%w4 =w loadsw %r4
+	%r48 =l add 8, %r4
+	%d4 =d load %r48
+	argl $fmt4
+	argv
+	argw %w4
+	argd %d4
+	%i4 =w call $printf
+	%r5 =l call $t5, :st5
+	%s5 =s load %r5
+	%d5 =d exts %s5
+	%r58 =l add %r5, 8
+	%l5 =l load %r58
+	argl $fmt5
+	argv
+	argd %d5
+	argl %l5
+	%i5 =w call $printf
+	%r6 =l call $t6, :st6
+	argl $fmt6
+	argv
+	argl %r6
+	%i6 =w call $printf
+	%r7 =l call $t7, :st7
+	%s7 =s load %r7
+	%d71 =d exts %s7
+	%r78 =l add %r7, 8
+	%d72 =d load %r78
+	argl $fmt7
+	argv
+	argd %d71
+	argd %d72
+	%i7 =w call $printf
+	%r8 =l call $t8, :st8
+	%r84 =l add 4, %r8
+	%r88 =l add 4, %r84
+	%r812 =l add 4, %r88
+	%w81 =w loadsw %r8
+	%w82 =w loadsw %r84
+	%w83 =w loadsw %r88
+	%w84 =w loadsw %r812
+	argl $fmt8
+	argv
+	argw %w81
+	argw %w82
+	argw %w83
+	argw %w84
+	%i8 =w call $printf
+	%r9 =l call $t9, :st9
+	%r94 =l add 4, %r9
+	%w9 =w loadsw %r9
+	%s9 =s load %r94
+	%d9 =d exts %s9
+	argl $fmt9
+	argv
+	argw %w9
+	argd %d9
+	%i9 =w call $printf
+	%ra =l call $ta, :sta
+	%ra4 =l add 4, %ra
+	%wa =w loadsb %ra
+	%sa =s load %ra4
+	%da =d exts %sa
+	argl $fmta
+	argv
+	argw %wa
+	argd %da
+	%ia =w call $printf
+	%rb =l call $tb, :stb
+	%rb1 =l add 1, %rb
+	%rb4 =l add 4, %rb
+	%w0b =w loadsb %rb
+	%w1b =w loadsb %rb1
+	%sb =s load %rb4
+	%db =d exts %sb
+	argl $fmtb
+	argv
+	argw %w0b
+	argw %w1b
+	argd %db
+	%ib =w call $printf
+	ret0
+}
+

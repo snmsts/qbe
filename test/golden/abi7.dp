@@ -1,0 +1,7 @@
+**** Function test ****
+> After parsing:
+function $test() {
+@start
+	retc $s, :s2
+}
+

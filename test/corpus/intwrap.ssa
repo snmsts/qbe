@@ -1,0 +1,12 @@
+# regression: integer literals are reinterpreted as signed int64 (getint),
+# so 2^63 .. 2^64-1 print negative.  Guards the norm-i64-at-store fix.
+function $intwrap() {
+@s
+	%a =l copy 9223372036854775808
+	%b =l copy 18446744073709551615
+	%c =l copy -1
+	%d =l copy 4294967296
+	%e =w copy 4294967295
+	%f =l copy 9223372036854775807
+	ret
+}

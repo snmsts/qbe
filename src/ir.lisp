@@ -1,0 +1,71 @@
+;;;; ir.lisp --- IR data model
+;;;;
+;;;; DESIGN.md §4: structural graph nodes are CLOS classes (later passes
+;;;; dispatch / extend on them); leaf value objects (tmp, con) are structs.
+;;;;
+;;;; Operands ("Ref" in QBE) are represented directly as Lisp values, not as
+;;;; tagged array indices:
+;;;;   NIL      -> R (no operand)
+;;;;   tmp      -> RTmp
+;;;;   con      -> RCon
+;;;;   typ      -> RType
+;;;;   integer  -> RInt   (blit size, dbgloc line/col)
+
+(in-package #:qbe)
+
+(defclass module ()
+  ((funcs :initform nil :accessor module-funcs
+          :documentation "Functions, in source order.")
+   (types :initform (make-hash-table :test 'equal) :accessor module-types
+          :documentation "Aggregate type name -> typ.")))
+
+(defclass typ ()
+  ((name :initarg :name :accessor typ-name)))
+
+(defclass fn ()
+  ((name     :initarg :name     :accessor fn-name)
+   (export   :initarg :export   :initform nil :accessor fn-export)
+   ;; Return class: one of :w :l :s :d :sb :ub :sh :uh :c, or :0 for void.
+   (retclass :initarg :retclass :initform :0  :accessor fn-retclass)
+   (rettyp   :initarg :rettyp   :initform nil :accessor fn-rettyp) ; typ when retclass :c
+   (vararg   :initarg :vararg   :initform nil :accessor fn-vararg)
+   (blocks   :initform nil :accessor fn-blocks :documentation "Blocks in order.")
+   (start    :initform nil :accessor fn-start)))
+
+(defclass blk ()
+  ((name     :initarg :name :accessor blk-name)
+   (phis     :initform nil :accessor blk-phis)   ; list of phi, in order
+   (ins      :initform nil :accessor blk-ins)    ; list of ins, in order
+   ;; Terminator: jmp-type is a keyword (:jmp :jnz :hlt or a :ret* form).
+   (jmp-type :initform nil :accessor blk-jmp-type)
+   (jmp-arg  :initform nil :accessor blk-jmp-arg)
+   (s1       :initform nil :accessor blk-s1)      ; successor blks
+   (s2       :initform nil :accessor blk-s2)
+   (link     :initform nil :accessor blk-link)))  ; next block in layout order
+
+(defclass ins ()
+  ((op   :initarg :op   :accessor ins-op)     ; opcode keyword
+   (cls  :initarg :cls  :initform :w :accessor ins-cls)
+   (to   :initarg :to   :initform nil :accessor ins-to)
+   (arg0 :initarg :arg0 :initform nil :accessor ins-arg0)
+   (arg1 :initarg :arg1 :initform nil :accessor ins-arg1)))
+
+(defclass phi ()
+  ((to   :initarg :to   :accessor phi-to)
+   (cls  :initarg :cls  :accessor phi-cls)
+   (args :initarg :args :accessor phi-args)))  ; list of (blk . ref)
+
+(defstruct (tmp (:constructor make-tmp (name &optional id)))
+  name
+  (id 0))
+
+;;; kind: :bits | :addr | :undef
+;;;   :bits -> value is an integer (flt NIL) or float; flt is NIL/1/2 (s/d).
+;;;   :addr -> symname string, symtype a list of (:ext :thr), off integer.
+(defstruct (con (:constructor make-con))
+  kind
+  value
+  (flt nil)
+  symname
+  (symtype nil)
+  (off 0))

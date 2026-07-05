@@ -1,0 +1,205 @@
+**** Function ifc1 ****
+> After parsing:
+function $ifc1() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%c =w par
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+**** Function ifc2 ****
+> After parsing:
+function $ifc2() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cnew %p, 42
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+**** Function ifc3 ****
+> After parsing:
+function $ifc3() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cugtw %p, 42
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+**** Function ifclts ****
+> After parsing:
+function $ifclts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w clts %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+**** Function ifcles ****
+> After parsing:
+function $ifcles() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cles %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+**** Function ifcgts ****
+> After parsing:
+function $ifcgts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cgts %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+**** Function ifcges ****
+> After parsing:
+function $ifcges() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cges %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+**** Function ifceqs ****
+> After parsing:
+function $ifceqs() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w ceqs %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+**** Function ifcnes ****
+> After parsing:
+function $ifcnes() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cnes %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+**** Function ifcos ****
+> After parsing:
+function $ifcos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cos %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+**** Function ifcuos ****
+> After parsing:
+function $ifcuos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cuos %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+

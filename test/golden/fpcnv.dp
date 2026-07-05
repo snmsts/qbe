@@ -1,0 +1,93 @@
+**** Function fneg ****
+> After parsing:
+function $fneg() {
+@fneg
+	%f =s par
+	%b0 =w cast %f
+	%b1 =w xor 2147483648, %b0
+	%rs =s cast %b1
+	rets %rs
+}
+
+**** Function ftrunc ****
+> After parsing:
+function $ftrunc() {
+@ftrunc
+	%f =d par
+	%l0 =w dtosi %f
+	%rt =d swtof %l0
+	retd %rt
+}
+
+**** Function wtos ****
+> After parsing:
+function $wtos() {
+@start
+	%w =w par
+	%rt =s uwtof %w
+	rets %rt
+}
+
+**** Function wtod ****
+> After parsing:
+function $wtod() {
+@start
+	%w =w par
+	%rt =d uwtof %w
+	retd %rt
+}
+
+**** Function ltos ****
+> After parsing:
+function $ltos() {
+@start
+	%l =l par
+	%rt =s ultof %l
+	rets %rt
+}
+
+**** Function ltod ****
+> After parsing:
+function $ltod() {
+@start
+	%l =l par
+	%rt =d ultof %l
+	retd %rt
+}
+
+**** Function stow ****
+> After parsing:
+function $stow() {
+@start
+	%f =s par
+	%rt =w stoui %f
+	retw %rt
+}
+
+**** Function dtow ****
+> After parsing:
+function $dtow() {
+@start
+	%f =d par
+	%rt =w dtoui %f
+	retw %rt
+}
+
+**** Function stol ****
+> After parsing:
+function $stol() {
+@start
+	%f =s par
+	%rt =l stoui %f
+	retl %rt
+}
+
+**** Function dtol ****
+> After parsing:
+function $dtol() {
+@start
+	%f =d par
+	%rt =l dtoui %f
+	retl %rt
+}
+

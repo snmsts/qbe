@@ -1,0 +1,14 @@
+**** Function test ****
+> After parsing:
+function $test() {
+@start
+@loop
+	%a =w phi @start 380, @loop %r
+	%b =w phi @start 747, @loop %a
+	%r =w rem %b, %a
+	jnz %r, @loop, @end
+@end
+	storew %a, $a
+	ret0
+}
+

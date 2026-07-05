@@ -1,0 +1,30 @@
+**** Function func ****
+> After parsing:
+function $func() {
+@start.0
+	%temp =l alloc4 4
+	%ret =l alloc4 8
+	storew 1, %temp
+	%field =l add %ret, 4
+	storew 2, %ret
+	blit0 %temp, %field
+	blit1 4
+	storew 2, %ret
+	retc %ret, :t
+}
+
+**** Function main ****
+> After parsing:
+function $main() {
+@start
+	%ret =l call $func, :t
+	%fptr =l add %ret, 4
+	%field =w loaduw %fptr
+	%x =w ceqw %field, 1
+	jnz %x, @passed, @failed
+@failed
+	call $abort
+@passed
+	retw 0
+}
+

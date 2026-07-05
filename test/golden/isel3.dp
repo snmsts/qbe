@@ -1,0 +1,100 @@
+**** Function slt ****
+> After parsing:
+function $slt() {
+@start
+	%x =w par
+	%y =w par
+	%r =w csltw %x, %y
+	retw %r
+}
+
+**** Function sle ****
+> After parsing:
+function $sle() {
+@start
+	%x =w par
+	%y =w par
+	%r =w cslew %x, %y
+	retw %r
+}
+
+**** Function sgt ****
+> After parsing:
+function $sgt() {
+@start
+	%x =w par
+	%y =w par
+	%r =w csgtw %x, %y
+	retw %r
+}
+
+**** Function sge ****
+> After parsing:
+function $sge() {
+@start
+	%x =w par
+	%y =w par
+	%r =w csgew %x, %y
+	retw %r
+}
+
+**** Function ult ****
+> After parsing:
+function $ult() {
+@start
+	%x =w par
+	%y =w par
+	%r =w cultw %x, %y
+	retw %r
+}
+
+**** Function ule ****
+> After parsing:
+function $ule() {
+@start
+	%x =w par
+	%y =w par
+	%r =w culew %x, %y
+	retw %r
+}
+
+**** Function ugt ****
+> After parsing:
+function $ugt() {
+@start
+	%x =w par
+	%y =w par
+	%r =w cugtw %x, %y
+	retw %r
+}
+
+**** Function uge ****
+> After parsing:
+function $uge() {
+@start
+	%x =w par
+	%y =w par
+	%r =w cugew %x, %y
+	retw %r
+}
+
+**** Function eq ****
+> After parsing:
+function $eq() {
+@start
+	%x =w par
+	%y =w par
+	%r =w ceqw %x, %y
+	retw %r
+}
+
+**** Function ne ****
+> After parsing:
+function $ne() {
+@start
+	%x =w par
+	%y =w par
+	%r =w cnew %x, %y
+	retw %r
+}
+
