@@ -31,9 +31,13 @@
    (vararg   :initarg :vararg   :initform nil :accessor fn-vararg)
    (blocks   :initform nil :accessor fn-blocks :documentation "Blocks in order.")
    (start    :initform nil :accessor fn-start)
+   ;; temp registry: adjustable vector, id -> tmp (fill-pointer = ntmp).
+   (tmp      :initform nil :accessor fn-tmp)
    ;; analysis (filled by cfg.lisp)
    (rpo      :initform nil :accessor fn-rpo  :documentation "Vector: rpo-id -> blk.")
    (nblk     :initform 0   :accessor fn-nblk)))
+
+(defun fn-ntmp (fn) (fill-pointer (fn-tmp fn)))
 
 (defclass blk ()
   ((name     :initarg :name :accessor blk-name)
@@ -50,7 +54,13 @@
    (preds    :initform nil :accessor blk-preds)
    (idom     :initform nil :accessor blk-idom)
    (doms     :initform nil :accessor blk-doms     :documentation "Immediate-dominated children.")
-   (fron     :initform nil :accessor blk-fron     :documentation "Dominance frontier.")))
+   (fron     :initform nil :accessor blk-fron     :documentation "Dominance frontier.")
+   ;; liveness (filled by fill-live, ssa.lisp): temp-id bitsets + counts.
+   (in       :initform nil :accessor blk-in)
+   (out      :initform nil :accessor blk-out)
+   (gen      :initform nil :accessor blk-gen)
+   (nlive    :initform nil :accessor blk-nlive)
+   (visit    :initform 0   :accessor blk-visit    :documentation "Scratch for phiins.")))
 
 (defclass ins ()
   ((op   :initarg :op   :accessor ins-op)     ; opcode keyword
@@ -66,7 +76,22 @@
 
 (defstruct (tmp (:constructor make-tmp (name &optional id)))
   name
-  (id 0))
+  (id 0)
+  ;; usage/analysis info, filled by fill-use / phiins / renblk (ssa.lisp)
+  (cls   :w)
+  (def   nil)                ; defining ins, or NIL
+  (bid   -1)                 ; defining block id
+  (ndef  0)
+  (nuse  0)
+  (use   nil)               ; list of use-rec
+  (phi   nil)               ; phi-class union-find parent (temp id), or NIL
+  (width :full)
+  (visit nil))              ; SSA-rename tag: original temp id, or NIL
+
+(defstruct (use-rec (:constructor make-use-rec (type bid payload)))
+  type                       ; :phi :ins :jmp
+  bid
+  payload)                   ; the phi or ins, or NIL for :jmp
 
 ;;; kind: :bits | :addr | :undef
 ;;;   :bits -> value is an integer (flt NIL) or float; flt is NIL/1/2 (s/d).

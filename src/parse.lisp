@@ -445,6 +445,13 @@ next `{ ... }` group (handles nested braces, e.g. unions)."
                  (t (resultless-line tok)))))
             (t (error "qbe: label, instruction or jump expected, got ~s" tok)))))
       (setf (fn-blocks fn) (nreverse ordered))
+      ;; Materialize the temp registry: id -> tmp, as an extensible vector
+      ;; (newtmp appends versioned temps during SSA construction).
+      (let* ((n (hash-table-count tmps))
+             (vec (make-array n :adjustable t :fill-pointer n)))
+        (maphash (lambda (name tm) (declare (ignore name)) (setf (aref vec (tmp-id tm)) tm))
+                 tmps)
+        (setf (fn-tmp fn) vec))
       fn)))
 
 (defun parse-file (path)
