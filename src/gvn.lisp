@@ -171,11 +171,40 @@
                             (if r (progn (replaceuses fn (phi-to p) r) nil) p)))
                         (blk-phis b)))))
 
+;;; ---------------------------------------------------------- narrowpars
+;;; copy.c narrowpars: for functions with loops, insert early extub/extuh for
+;;; params used only narrowly (factoring extensions out of loops).  We stub the
+;;; width analysis (usewidthle) to NIL — the common case where a param is used
+;;; at full width — so each leading par gets a `nop` slot.  (Narrowing rename
+;;; for genuinely narrow params is a later refinement.)
+
+(defun par-op-p (op) (member op '(:par :parsb :parub :parsh :paruh :parc :pare)))
+
+(defun has-loop-p (fn)
+  "Does FN's CFG contain a back edge (natural loop)?"
+  (dolist (b (fn-blocks fn) nil)
+    (when (or (and (blk-s1 b) (dom (blk-s1 b) b))
+              (and (blk-s2 b) (dom (blk-s2 b) b)))
+      (return t))))
+
+(defun narrowpars (fn)
+  (when (has-loop-p fn)
+    (let ((start (fn-start fn)) (pars '()) (rest '()))
+      (dolist (i (blk-ins start))
+        (if (and (null rest) (par-op-p (ins-op i))) (push i pars) (push i rest)))
+      (setf pars (nreverse pars) rest (nreverse rest))
+      (when pars
+        (let ((slots (mapcar (lambda (i) (declare (ignore i))
+                               (make-instance 'ins :op :nop))
+                             pars)))
+          (setf (blk-ins start) (append pars slots rest)))))))
+
 (defun gvn (fn)
   "Global value numbering (C3): copy-prop + CSE + phi-dedup + canonicalization.
-Requires fill-cfg.  (foldref, dedupjmp, narrowpars, dead-block move: later.)"
+Requires fill-cfg.  (foldref, dedupjmp, dead-block move: later.)"
   (let ((*con01* (vector (getcon 0 fn) (getcon 1 fn)))
         (*gvntbl* (make-hash-table :test 'equal)))
+    (narrowpars fn)
     (fill-use fn)
     (loop for n below (fn-nblk fn)
           for b = (aref (fn-rpo fn) n) do
