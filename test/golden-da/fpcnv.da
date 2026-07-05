@@ -1,0 +1,103 @@
+**** Function fneg ****
+> After ABI lowering:
+function $fneg() {
+@fneg
+	%f =s copy R17
+	%b0 =w cast %f
+	%b1 =w xor %b0, 2147483648
+	%rs =s cast %b1
+	R17 =s copy %rs
+	ret0 0004
+}
+
+**** Function ftrunc ****
+> After ABI lowering:
+function $ftrunc() {
+@ftrunc
+	%f =d copy R17
+	%l0 =w dtosi %f
+	%rt =d swtof %l0
+	R17 =d copy %rt
+	ret0 0004
+}
+
+**** Function wtos ****
+> After ABI lowering:
+function $wtos() {
+@start
+	%w =w copy R5
+	%rt =s uwtof %w
+	R17 =s copy %rt
+	ret0 0004
+}
+
+**** Function wtod ****
+> After ABI lowering:
+function $wtod() {
+@start
+	%w =w copy R5
+	%rt =d uwtof %w
+	R17 =d copy %rt
+	ret0 0004
+}
+
+**** Function ltos ****
+> After ABI lowering:
+function $ltos() {
+@start
+	%l =l copy R5
+	%rt =s ultof %l
+	R17 =s copy %rt
+	ret0 0004
+}
+
+**** Function ltod ****
+> After ABI lowering:
+function $ltod() {
+@start
+	%l =l copy R5
+	%rt =d ultof %l
+	R17 =d copy %rt
+	ret0 0004
+}
+
+**** Function stow ****
+> After ABI lowering:
+function $stow() {
+@start
+	%f =s copy R17
+	%rt =w stoui %f
+	R1 =w copy %rt
+	ret0 0001
+}
+
+**** Function dtow ****
+> After ABI lowering:
+function $dtow() {
+@start
+	%f =d copy R17
+	%rt =w dtoui %f
+	R1 =w copy %rt
+	ret0 0001
+}
+
+**** Function stol ****
+> After ABI lowering:
+function $stol() {
+@start
+	%f =s copy R17
+	%rt =l stoui %f
+	R1 =l copy %rt
+	ret0 0001
+}
+
+**** Function dtol ****
+> After ABI lowering:
+function $dtol() {
+@start
+	%f =d copy R17
+	%rt =l dtoui %f
+	R1 =l copy %rt
+	ret0 0001
+}
+

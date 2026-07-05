@@ -1,0 +1,154 @@
+**** Function lt ****
+> After ABI lowering:
+function $lt() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w cltd %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function le ****
+> After ABI lowering:
+function $le() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w cled %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function gt ****
+> After ABI lowering:
+function $gt() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w cgtd %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function ge ****
+> After ABI lowering:
+function $ge() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w cged %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function eq1 ****
+> After ABI lowering:
+function $eq1() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w ceqd %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function eq2 ****
+> After ABI lowering:
+function $eq2() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	R1 =w copy 1
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function eq3 ****
+> After ABI lowering:
+function $eq3() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	%snk.5 =w ceqd %x, %y
+	R1 =w copy %snk.5
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function ne1 ****
+> After ABI lowering:
+function $ne1() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w cned %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function ne2 ****
+> After ABI lowering:
+function $ne2() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	R1 =w copy 1
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function ne3 ****
+> After ABI lowering:
+function $ne3() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	%snk.14 =w cned %x, %y
+	R1 =w copy %snk.14
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function o ****
+> After ABI lowering:
+function $o() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w cod %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function uo ****
+> After ABI lowering:
+function $uo() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	%r =w cuod %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+

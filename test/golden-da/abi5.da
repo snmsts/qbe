@@ -1,0 +1,169 @@
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@start
+	%rb =l alloc4 8
+	%ra =l alloc4 8
+	%r9 =l alloc4 8
+	%r8 =l alloc4 16
+	%r7 =l alloc8 16
+	%r6 =l alloc4 16
+	%r5 =l alloc8 16
+	%r4 =l alloc8 16
+	%r3 =l alloc4 8
+	%r2 =l alloc4 8
+	%abi.21 =l alloc4 24
+	R5 =l copy %abi.21
+	call $t1, 0011
+	%r1 =l copy R1
+	R4 =l copy %r1
+	R5 =l copy $fmt1
+	R1 =w copy 0
+	call $printf, 1021
+	%i1 =w copy R1
+	call $t2, 0001
+	%abi.20 =l copy R1
+	storel %abi.20, %r2
+	%w2 =w loadsw %r2
+	R4 =w copy %w2
+	R5 =l copy $fmt2
+	R1 =w copy 0
+	call $printf, 1021
+	%i2 =w copy R1
+	call $t3, 0001
+	%abi.19 =l copy R1
+	storel %abi.19, %r3
+	%s3 =s load %r3
+	%r34 =l add %r3, 4
+	%w3 =w loadsw %r34
+	%p3 =d exts %s3
+	R4 =w copy %w3
+	R17 =d copy %p3
+	R5 =l copy $fmt3
+	R1 =w copy 1
+	call $printf, 1121
+	%i3 =w copy R1
+	call $t4, 0005
+	%abi.18 =l copy R1
+	%abi.17 =d copy R17
+	storel %abi.18, %r4
+	%abi.16 =l add %r4, 8
+	storel %abi.17, %abi.16
+	%w4 =w loadsw %r4
+	%r48 =l add %r4, 8
+	%d4 =d load %r48
+	R17 =d copy %d4
+	R4 =w copy %w4
+	R5 =l copy $fmt4
+	R1 =w copy 1
+	call $printf, 1121
+	%i4 =w copy R1
+	call $t5, 0005
+	%abi.15 =d copy R17
+	%abi.14 =l copy R1
+	storel %abi.15, %r5
+	%abi.13 =l add %r5, 8
+	storel %abi.14, %abi.13
+	%s5 =s load %r5
+	%d5 =d exts %s5
+	%r58 =l add %r5, 8
+	%l5 =l load %r58
+	R4 =l copy %l5
+	R17 =d copy %d5
+	R5 =l copy $fmt5
+	R1 =w copy 1
+	call $printf, 1121
+	%i5 =w copy R1
+	call $t6, 0002
+	%abi.12 =l copy R1
+	%abi.11 =l copy R3
+	storel %abi.12, %r6
+	%abi.10 =l add %r6, 8
+	storel %abi.11, %abi.10
+	R4 =l copy %r6
+	R5 =l copy $fmt6
+	R1 =w copy 0
+	call $printf, 1021
+	%i6 =w copy R1
+	call $t7, 0008
+	%abi.9 =d copy R17
+	%abi.8 =d copy R18
+	storel %abi.9, %r7
+	%abi.7 =l add %r7, 8
+	storel %abi.8, %abi.7
+	%s7 =s load %r7
+	%d71 =d exts %s7
+	%r78 =l add %r7, 8
+	%d72 =d load %r78
+	R18 =d copy %d72
+	R17 =d copy %d71
+	R5 =l copy $fmt7
+	R1 =w copy 2
+	call $printf, 1211
+	%i7 =w copy R1
+	call $t8, 0002
+	%abi.6 =l copy R1
+	%abi.5 =l copy R3
+	storel %abi.6, %r8
+	%abi.4 =l add %r8, 8
+	storel %abi.5, %abi.4
+	%r84 =l add %r8, 4
+	%r88 =l add %r8, 8
+	%r812 =l add %r8, 12
+	%w81 =w loadsw %r8
+	%w82 =w loadsw %r84
+	%w83 =w loadsw %r88
+	%w84 =w loadsw %r812
+	R6 =w copy %w84
+	R2 =w copy %w83
+	R3 =w copy %w82
+	R4 =w copy %w81
+	R5 =l copy $fmt8
+	R1 =w copy 0
+	call $printf, 1051
+	%i8 =w copy R1
+	call $t9, 0001
+	%abi.3 =l copy R1
+	storel %abi.3, %r9
+	%r94 =l add %r9, 4
+	%w9 =w loadsw %r9
+	%s9 =s load %r94
+	%d9 =d exts %s9
+	R17 =d copy %d9
+	R4 =w copy %w9
+	R5 =l copy $fmt9
+	R1 =w copy 1
+	call $printf, 1121
+	%i9 =w copy R1
+	call $ta, 0001
+	%abi.2 =l copy R1
+	storel %abi.2, %ra
+	%ra4 =l add %ra, 4
+	%wa =w loadsb %ra
+	%sa =s load %ra4
+	%da =d exts %sa
+	R17 =d copy %da
+	R4 =w copy %wa
+	R5 =l copy $fmta
+	R1 =w copy 1
+	call $printf, 1121
+	%ia =w copy R1
+	call $tb, 0001
+	%abi.1 =l copy R1
+	storel %abi.1, %rb
+	%rb1 =l add %rb, 1
+	%rb4 =l add %rb, 4
+	%w0b =w loadsb %rb
+	%w1b =w loadsb %rb1
+	%sb =s load %rb4
+	%db =d exts %sb
+	R17 =d copy %db
+	R3 =w copy %w1b
+	R4 =w copy %w0b
+	R5 =l copy $fmtb
+	R1 =w copy 1
+	call $printf, 1131
+	%ib =w copy R1
+	ret0
+}
+

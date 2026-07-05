@@ -1,0 +1,72 @@
+**** Function mandel ****
+> After ABI lowering:
+function $mandel() {
+@mandel
+	%y =d copy R18
+	%x =d copy R17
+	%cr =d sub %y, d_0.500000
+@loop
+	%i =w phi @mandel 0, @loop1 %i1
+	%zr =d phi @mandel 0, @loop1 %zr1
+	%zi =d phi @mandel 0, @loop1 %zi1
+	%i1 =w add %i, 1
+	%zr2 =d mul %zr, %zr
+	%zi2 =d mul %zi, %zi
+	%sum =d add %zr2, %zi2
+	%cmp1 =w cgtd %sum, d_16.000000
+	jnz %cmp1, @reti, @loop1
+@loop1
+	%cmp2 =w csgtw %i1, 1000
+	%zrx =d sub %zr2, %zi2
+	%zr1 =d add %cr, %zrx
+	%tmp =d mul %zr, %zi
+	%zix =d add %tmp, %tmp
+	%zi1 =d add %x, %zix
+	jnz %cmp2, @ret0, @loop
+@reti
+	%snk.1 =w add %i, 1
+	R1 =w copy %snk.1
+	ret0 0001
+@ret0
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function main ****
+> After ABI lowering:
+function $main() {
+@main
+@loopy
+	%y =d phi @main d_-1.000000, @loopy1 %y1
+@loopx
+	%x =d phi @loopy d_-1.000000, @loopx1 %x1
+	R18 =d copy %y
+	R17 =d copy %x
+	call $mandel, 0201
+	%i =w copy R1
+	jnz %i, @out, @in
+@in
+	R5 =w copy 42
+	call $putchar, 0011
+	%r0 =w copy R1
+	jmp @loopx1
+@out
+	R5 =w copy 32
+	call $putchar, 0011
+	%r1 =w copy R1
+@loopx1
+	%x1 =d add %x, d_0.032000
+	%cmp1 =w cgtd %x1, d_1.000000
+	jnz %cmp1, @loopy1, @loopx
+@loopy1
+	R5 =w copy 10
+	call $putchar, 0011
+	%r2 =w copy R1
+	%y1 =d add %y, d_0.032000
+	%cmp2 =w cgtd %y1, d_1.000000
+	jnz %cmp2, @ret, @loopy
+@ret
+	R1 =w copy 0
+	ret0 0001
+}
+

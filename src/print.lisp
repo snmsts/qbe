@@ -34,6 +34,9 @@
     ((con-p r)        (print-con r stream))
     ((typep r 'typ)   (format stream ":~a" (typ-name r)))
     ((integerp r)     (format stream "~d" r))
+    ((reg-p r)        (format stream "R~d" (reg-id r)))
+    ((call-ref-p r)   (format stream "~4,'0x" (call-ref-val r)))
+    ((slot-ref-p r)   (format stream "S~d" (slot-ref-n r)))
     (t (error "qbe: cannot print ref ~s" r))))
 
 (defun print-phi (p stream)

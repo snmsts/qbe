@@ -1,0 +1,56 @@
+**** Function ifmv ****
+> After ABI lowering:
+function $ifmv() {
+@start
+	%p3 =w copy R3
+	%p2 =w copy R4
+	%p1 =w copy R5
+	%rt.1 =w add %p2, %p3
+	%rf.2 =w sub %p2, %p3
+	sel0 %p1
+	%r.3 =w sel1 %rt.1, %rf.2
+@exit
+	R1 =w copy %r.3
+	ret0 0001
+}
+
+**** Function hoist1 ****
+> After ABI lowering:
+function $hoist1() {
+@start
+	%p3 =w copy R3
+	%p2 =w copy R4
+	%p1 =w copy R5
+@loop
+	%i.8 =w phi @start %p1, @loop %i.11
+	%n.9 =w phi @start 0, @loop %n.12
+	%i.11 =w sub %i.8, 1
+	%n.12 =w add %n.9, 1
+	jnz %i.11, @loop, @exit
+@exit
+	%base.10 =w add %p2, %p3
+	%r =w add %base.10, %n.12
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function hoist2 ****
+> After ABI lowering:
+function $hoist2() {
+@start
+	%p3 =w copy R3
+	%p2 =w copy R4
+	%p1 =w copy R5
+	%base.17 =w add %p2, %p3
+@loop
+	%i.15 =w phi @start %p1, @loop %i.18
+	%n.16 =w phi @start 0, @loop %n.19
+	%i.18 =w sub %i.15, 1
+	%n.19 =w add %n.16, %base.17
+	jnz %i.18, @loop, @exit
+@exit
+	%r =w add %base.17, %n.19
+	R1 =w copy %r
+	ret0 0001
+}
+

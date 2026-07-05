@@ -1,0 +1,24 @@
+**** Function sum ****
+> After ABI lowering:
+function $sum() {
+@start
+	%num =w copy R4
+	%arr =l copy R5
+@loop
+	%n1 =w phi @start %num, @loop1 %n2
+	%s0 =w phi @start 0, @loop1 %s1
+	%c =w cslew %n1, 0
+	jnz %c, @end, @loop1
+@loop1
+	%n2 =w sub %n1, 1
+	%idx0 =l extsw %n2
+	%idx1 =l mul %idx0, 4
+	%idx2 =l add %arr, %idx1
+	%w =w loadsw %idx2
+	%s1 =w add %s0, %w
+	jmp @loop
+@end
+	R1 =w copy %s0
+	ret0 0001
+}
+

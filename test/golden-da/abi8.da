@@ -1,0 +1,442 @@
+**** Function qfn0 ****
+> After ABI lowering:
+function $qfn0() {
+@start
+	%p8 =s load S-4
+	%p7 =s copy R24
+	%p6 =s copy R23
+	%p5 =s copy R22
+	%p4 =s copy R21
+	%p3 =s copy R20
+	%p2 =s copy R19
+	%p1 =s copy R18
+	%p0 =s copy R17
+	R4 =w copy 0
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R17 =s copy %p8
+	call $ps, 0101
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn1 ****
+> After ABI lowering:
+function $qfn1() {
+@start
+	%abi.3 =l copy R4
+	%p1 =s copy R17
+	%p0 =w copy R5
+	%p2 =l alloc4 8
+	storel %abi.3, %p2
+	R4 =w copy 1
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =w copy %p0
+	call $pw, 0011
+	copy R1
+	R17 =s copy %p1
+	call $ps, 0101
+	copy R1
+	R5 =l copy %p2
+	call $pfi1, 0011
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn2 ****
+> After ABI lowering:
+function $qfn2() {
+@start
+	%p2 =s copy R17
+	%abi.7 =l copy R4
+	%p0 =w copy R5
+	%p1 =l alloc4 8
+	storel %abi.7, %p1
+	R4 =w copy 2
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =w copy %p0
+	call $pw, 0011
+	copy R1
+	R5 =l copy %p1
+	call $pfi2, 0011
+	copy R1
+	R17 =s copy %p2
+	call $ps, 0101
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn3 ****
+> After ABI lowering:
+function $qfn3() {
+@start
+	%abi.11 =l copy R4
+	%p1 =s copy R17
+	%p0 =w copy R5
+	%p2 =l alloc4 8
+	storel %abi.11, %p2
+	R4 =w copy 3
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =w copy %p0
+	call $pw, 0011
+	copy R1
+	R17 =s copy %p1
+	call $ps, 0101
+	copy R1
+	R5 =l copy %p2
+	call $pfi3, 0011
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn4 ****
+> After ABI lowering:
+function $qfn4() {
+@start
+	%abi.15 =d copy R17
+	%p0 =l alloc4 8
+	storel %abi.15, %p0
+	R4 =w copy 4
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =l copy %p0
+	call $pss, 0011
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn5 ****
+> After ABI lowering:
+function $qfn5() {
+@start
+	%p9 =l copy R5
+	%p8 =s load S-4
+	%abi.19 =d copy R24
+	%p6 =d copy R23
+	%p5 =d copy R22
+	%p4 =d copy R21
+	%p3 =d copy R20
+	%p2 =d copy R19
+	%p1 =d copy R18
+	%p0 =d copy R17
+	%p7 =l alloc4 8
+	storel %abi.19, %p7
+	R4 =w copy 5
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =l copy %p7
+	call $pss, 0011
+	copy R1
+	R17 =s copy %p8
+	call $ps, 0101
+	copy R1
+	R5 =l copy %p9
+	call $pl, 0011
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn6 ****
+> After ABI lowering:
+function $qfn6() {
+@start
+	%abi.24 =l copy R4
+	%abi.25 =l copy R5
+	%p0 =l alloc8 16
+	storel %abi.25, %p0
+	%abi.23 =l add %p0, 8
+	storel %abi.24, %abi.23
+	R4 =w copy 6
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =l copy %p0
+	call $plb, 0011
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn7 ****
+> After ABI lowering:
+function $qfn7() {
+@start
+	%p6 =w load S-4
+	%p5 =w copy R7
+	%p4 =w copy R6
+	%p3 =w copy R2
+	%p2 =w copy R3
+	%p1 =w copy R4
+	%p0 =w copy R5
+	R4 =w copy 7
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =l copy %p7
+	call $plb, 0011
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn8 ****
+> After ABI lowering:
+function $qfn8() {
+@start
+	%p7 =w load S-6
+	%p6 =w load S-4
+	%p5 =w copy R7
+	%p4 =w copy R6
+	%p3 =w copy R2
+	%p2 =w copy R3
+	%p1 =w copy R4
+	%p0 =w copy R5
+	R4 =w copy 8
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =l copy %p8
+	call $plb, 0011
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn9 ****
+> After ABI lowering:
+function $qfn9() {
+@start
+	R4 =w copy 9
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =l copy %p0
+	call $pbig, 0011
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn10 ****
+> After ABI lowering:
+function $qfn10() {
+@start
+	%p10 =l load S-14
+	%p9 =s copy R17
+	%p7 =w load S-6
+	%p6 =w load S-4
+	%p5 =w copy R7
+	%p4 =w copy R6
+	%p3 =w copy R2
+	%p2 =w copy R3
+	%p1 =w copy R4
+	%p0 =w copy R5
+	R4 =w copy 10
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =l copy %p8
+	call $pbig, 0011
+	copy R1
+	R17 =s copy %p9
+	call $ps, 0101
+	copy R1
+	R5 =l copy %p10
+	call $pl, 0011
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn11 ****
+> After ABI lowering:
+function $qfn11() {
+@start
+	R4 =w copy 11
+	R5 =l copy $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	%r0 =w copy R1
+	R5 =l copy %p0
+	call $pddd, 0011
+	copy R1
+	R5 =l copy $emptystr
+	call $puts, 0011
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function main ****
+> After ABI lowering:
+function $main() {
+@start
+	%abi.63 =l salloc 16
+	%abi.64 =l add %abi.63, 0
+	storel s_9.900000, %abi.64
+	R24 =s copy 0
+	R23 =s copy 0
+	R22 =s copy 0
+	R21 =s copy 0
+	R20 =s copy 0
+	R19 =s copy 0
+	R18 =s copy 0
+	R17 =s copy 0
+	call $cfn0, 0801
+	copy R1
+	salloc -16
+	R4 =l load $fi1
+	R17 =s copy s_2.200000
+	R5 =w copy 1
+	call $cfn1, 0121
+	copy R1
+	R17 =s copy s_3.300000
+	R4 =l load $fi2
+	R5 =w copy 1
+	call $cfn2, 0121
+	copy R1
+	R4 =l load $fi3
+	R17 =s copy s_2.200000
+	R5 =w copy 1
+	call $cfn3, 0121
+	copy R1
+	R17 =d load $ss
+	call $cfn4, 0101
+	copy R1
+	%abi.61 =l salloc 16
+	%abi.62 =l add %abi.61, 0
+	storel s_9.900000, %abi.62
+	R5 =l copy 10
+	R24 =d load $ss
+	R23 =d copy 0
+	R22 =d copy 0
+	R21 =d copy 0
+	R20 =d copy 0
+	R19 =d copy 0
+	R18 =d copy 0
+	R17 =d copy 0
+	call $cfn5, 0811
+	copy R1
+	salloc -16
+	R5 =l load $lb
+	%abi.60 =l add $lb, 8
+	R4 =l load %abi.60
+	call $cfn6, 0021
+	copy R1
+	%abi.57 =l salloc 32
+	%abi.59 =l add %abi.57, 8
+	blit0 $lb, %abi.59
+	blit1 16
+	%abi.58 =l add %abi.57, 0
+	storel 0, %abi.58
+	R7 =w copy 0
+	R6 =w copy 0
+	R2 =w copy 0
+	R3 =w copy 0
+	R4 =w copy 0
+	R5 =w copy 0
+	call $cfn7, 0061
+	copy R1
+	salloc -32
+	%abi.53 =l salloc 32
+	%abi.56 =l add %abi.53, 16
+	blit0 $lb, %abi.56
+	blit1 16
+	%abi.55 =l add %abi.53, 8
+	storel 0, %abi.55
+	%abi.54 =l add %abi.53, 0
+	storel 0, %abi.54
+	R7 =w copy 0
+	R6 =w copy 0
+	R2 =w copy 0
+	R3 =w copy 0
+	R4 =w copy 0
+	R5 =w copy 0
+	call $cfn8, 0061
+	copy R1
+	salloc -32
+	%abi.51 =l salloc 32
+	%abi.52 =l add %abi.51, 0
+	blit0 $big, %abi.52
+	blit1 17
+	call $cfn9, 0001
+	copy R1
+	salloc -32
+	%abi.46 =l salloc 48
+	%abi.50 =l add %abi.46, 40
+	storel 11, %abi.50
+	%abi.49 =l add %abi.46, 16
+	blit0 $big, %abi.49
+	blit1 17
+	%abi.48 =l add %abi.46, 8
+	storel 0, %abi.48
+	%abi.47 =l add %abi.46, 0
+	storel 0, %abi.47
+	R17 =s copy s_10.100000
+	R7 =w copy 0
+	R6 =w copy 0
+	R2 =w copy 0
+	R3 =w copy 0
+	R4 =w copy 0
+	R5 =w copy 0
+	call $cfn10, 0161
+	copy R1
+	salloc -48
+	%abi.44 =l salloc 32
+	%abi.45 =l add %abi.44, 0
+	blit0 $ddd, %abi.45
+	blit1 24
+	call $cfn11, 0001
+	copy R1
+	salloc -32
+	R1 =w copy 0
+	ret0 0001
+}
+

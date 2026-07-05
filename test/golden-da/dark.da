@@ -1,0 +1,20 @@
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@start
+	%av =w loadsw $a
+	%a1 =w add %av, 1
+	storew %a1, $a
+	%r1 =l load $ret
+	%p1 =l add %p, -8
+	%r2 =l load %p1
+	storel %r2, $ret
+	%c =w ceql %r1, %r2
+	jnz %c, @fin, @cal
+@cal
+	call $test, 0001
+	%i =w copy R1
+@fin
+	ret0
+}
+

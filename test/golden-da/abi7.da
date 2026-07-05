@@ -1,0 +1,10 @@
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@start
+	R1 =l load $s
+	%abi.1 =l add $s, 8
+	R3 =l load %abi.1
+	ret0 0002
+}
+

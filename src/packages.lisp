@@ -25,6 +25,8 @@
    #:fill-use #:fill-live #:phiins #:renblk #:ssa #:*tmp-counter*
    ;; memory opt (M2/A4)
    #:promote
+   ;; amd64 abi lowering (M3/B1)
+   #:amd64-abi #:reg #:reg-p #:reg-id #:call-ref #:call-ref-p #:slot-ref-p
    ;; amd64 codegen (M1) + driver
    #:emit-fn #:emit-module #:module-asm-string
    #:build-exe #:compile-and-run))

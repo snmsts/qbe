@@ -1,0 +1,82 @@
+**** Function f ****
+> After ABI lowering:
+function $f() {
+@start
+	%x =l copy R5
+	%vp =l alloc8 32
+	storew 8, %vp
+	%abi.29 =l add %vp, 4
+	storew 48, %abi.29
+	%abi.27 =l add %vp, 8
+	%abi.28 =l add R15, 16
+	storel %abi.28, %abi.27
+	%abi.25 =l add %vp, 16
+	%abi.26 =l add R15, -176
+	storel %abi.26, %abi.25
+	%abi.23 =l add %vp, 0
+	%abi.15 =l loadsw %abi.23
+	%abi.24 =w cultw %abi.15, 48
+	jnz %abi.24, @start.5, @start.6
+@start.6
+	%abi.21 =l add %vp, 8
+	%abi.20 =l load %abi.21
+	%abi.22 =l add %abi.20, 8
+	storel %abi.22, %abi.21
+	jmp @start.4
+@start.5
+	%abi.18 =l add %vp, 16
+	%abi.19 =l load %abi.18
+	%abi.14 =l add %abi.19, %abi.15
+	%abi.16 =w add %abi.15, 8
+	%abi.17 =l add %vp, 0
+	storew %abi.16, %abi.17
+@start.4
+	%abi.13 =l phi @start.6 %abi.20, @start.5 %abi.14
+	%i =l load %abi.13
+	%abi.11 =l add %vp, 4
+	%abi.3 =l loadsw %abi.11
+	%abi.12 =w cultw %abi.3, 176
+	jnz %abi.12, @start.2, @start.3
+@start.3
+	%abi.9 =l add %vp, 8
+	%abi.8 =l load %abi.9
+	%abi.10 =l add %abi.8, 8
+	storel %abi.10, %abi.9
+	jmp @start.1
+@start.2
+	%abi.6 =l add %vp, 16
+	%abi.7 =l load %abi.6
+	%abi.2 =l add %abi.7, %abi.3
+	%abi.4 =w add %abi.3, 16
+	%abi.5 =l add %vp, 4
+	storew %abi.4, %abi.5
+@start.1
+	%abi.1 =l phi @start.3 %abi.8, @start.2 %abi.2
+	%n =d load %abi.1
+	R17 =d copy %n
+	ret0 0004
+}
+
+**** Function g ****
+> After ABI lowering:
+function $g() {
+@start
+	%fmt =l copy R5
+	%vp =l alloc8 32
+	storew 8, %vp
+	%abi.34 =l add %vp, 4
+	storew 48, %abi.34
+	%abi.32 =l add %vp, 8
+	%abi.33 =l add R15, 16
+	storel %abi.33, %abi.32
+	%abi.30 =l add %vp, 16
+	%abi.31 =l add R15, -176
+	storel %abi.31, %abi.30
+	R4 =l copy %vp
+	R5 =l copy %fmt
+	call $print, 0021
+	%r =w copy R1
+	R1 =w copy %r
+	ret0 0001
+}
+

@@ -1,0 +1,14 @@
+**** Function f ****
+> After ABI lowering:
+function $f() {
+@_0
+	%self =l copy R4
+	%abi.1 =l copy R5
+	%_1 =l alloc8 16
+	storel 77, %_1
+	blit0 %_1, %abi.1
+	blit1 32
+	R1 =l copy %abi.1
+	ret0 0001
+}
+

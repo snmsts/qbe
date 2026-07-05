@@ -1,0 +1,30 @@
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@start
+	%a =w loadsw $z
+	%y =w add %a, %a
+	%yl =l extsw %y
+	%s =l alloc8 16
+	%s1 =l add %s, 12
+	storel 4, %s
+	storew 5, %s1
+	%f =l add %yl, $F
+	%abi.2 =l salloc 16
+	%abi.3 =l add %abi.2, 0
+	storel 6, %abi.3
+	R6 =l load %s
+	%abi.1 =l add %s, 8
+	R7 =l load %abi.1
+	R2 =w copy 3
+	R3 =w copy 2
+	R4 =w copy 1
+	R5 =w copy %y
+	call %f, 0061
+	%x =w copy R1
+	salloc -16
+	%x1 =w add %y, %x
+	storew %x1, $a
+	ret0
+}
+

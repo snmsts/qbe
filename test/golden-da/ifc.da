@@ -1,0 +1,172 @@
+**** Function ifc1 ****
+> After ABI lowering:
+function $ifc1() {
+@start
+	%c =w copy R3
+	%v1 =l copy R4
+	%v0 =l copy R5
+	sel0 %c
+	%v.1 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.1
+	ret0 0001
+}
+
+**** Function ifc2 ****
+> After ABI lowering:
+function $ifc2() {
+@start
+	%p =w copy R3
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%c =w cnew %p, 42
+	sel0 %c
+	%v.4 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.4
+	ret0 0001
+}
+
+**** Function ifc3 ****
+> After ABI lowering:
+function $ifc3() {
+@start
+	%p =w copy R3
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%c =w cugtw %p, 42
+	sel0 %c
+	%v.7 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.7
+	ret0 0001
+}
+
+**** Function ifclts ****
+> After ABI lowering:
+function $ifclts() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	%c =w clts %s0, %s1
+	sel0 %c
+	%v.10 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.10
+	ret0 0001
+}
+
+**** Function ifcles ****
+> After ABI lowering:
+function $ifcles() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	%c =w cles %s0, %s1
+	sel0 %c
+	%v.13 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.13
+	ret0 0001
+}
+
+**** Function ifcgts ****
+> After ABI lowering:
+function $ifcgts() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	%c =w cgts %s0, %s1
+	sel0 %c
+	%v.16 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.16
+	ret0 0001
+}
+
+**** Function ifcges ****
+> After ABI lowering:
+function $ifcges() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	%c =w cges %s0, %s1
+	sel0 %c
+	%v.19 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.19
+	ret0 0001
+}
+
+**** Function ifceqs ****
+> After ABI lowering:
+function $ifceqs() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	%c =w ceqs %s0, %s1
+	sel0 %c
+	%v.22 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.22
+	ret0 0001
+}
+
+**** Function ifcnes ****
+> After ABI lowering:
+function $ifcnes() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	%c =w cnes %s0, %s1
+	sel0 %c
+	%v.27 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.27
+	ret0 0001
+}
+
+**** Function ifcos ****
+> After ABI lowering:
+function $ifcos() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	%c =w cos %s0, %s1
+	sel0 %c
+	%v.32 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.32
+	ret0 0001
+}
+
+**** Function ifcuos ****
+> After ABI lowering:
+function $ifcuos() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	%c =w cuos %s0, %s1
+	sel0 %c
+	%v.35 =l sel1 %v1, %v0
+@end
+	R1 =l copy %v.35
+	ret0 0001
+}
+

@@ -1,0 +1,110 @@
+**** Function slt ****
+> After ABI lowering:
+function $slt() {
+@start
+	%y =w copy R4
+	%x =w copy R5
+	%r =w csltw %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function sle ****
+> After ABI lowering:
+function $sle() {
+@start
+	%y =w copy R4
+	%x =w copy R5
+	%r =w cslew %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function sgt ****
+> After ABI lowering:
+function $sgt() {
+@start
+	%y =w copy R4
+	%x =w copy R5
+	%r =w csgtw %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function sge ****
+> After ABI lowering:
+function $sge() {
+@start
+	%y =w copy R4
+	%x =w copy R5
+	%r =w csgew %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function ult ****
+> After ABI lowering:
+function $ult() {
+@start
+	%y =w copy R4
+	%x =w copy R5
+	%r =w cultw %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function ule ****
+> After ABI lowering:
+function $ule() {
+@start
+	%y =w copy R4
+	%x =w copy R5
+	%r =w culew %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function ugt ****
+> After ABI lowering:
+function $ugt() {
+@start
+	%y =w copy R4
+	%x =w copy R5
+	%r =w cugtw %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function uge ****
+> After ABI lowering:
+function $uge() {
+@start
+	%y =w copy R4
+	%x =w copy R5
+	%r =w cugew %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function eq ****
+> After ABI lowering:
+function $eq() {
+@start
+	%y =w copy R4
+	%x =w copy R5
+	%r =w ceqw %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function ne ****
+> After ABI lowering:
+function $ne() {
+@start
+	%y =w copy R4
+	%x =w copy R5
+	%r =w cnew %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+

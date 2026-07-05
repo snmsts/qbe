@@ -93,6 +93,16 @@
   bid
   payload)                   ; the phi or ins, or NIL for :jmp
 
+;;; Backend value refs introduced by ABI lowering / isel (mirrors QBE's
+;;; RTmp-with-id<Tmp0, RCall, RSlot).  printref renders reg as "R<id>",
+;;; call-ref as a 4-hex mask, slot-ref as "S<n>".
+(defstruct (reg (:constructor make-reg (id name &optional (cls :l))))
+  id                         ; QBE register id (RAX=1 .. XMM15=32)
+  name                       ; asm mnemonic (for emit)
+  cls)
+(defstruct (call-ref (:constructor make-call-ref (val))) val)  ; RCall bitmask
+(defstruct (slot-ref (:constructor make-slot-ref (n))) n)      ; RSlot
+
 ;;; kind: :bits | :addr | :undef
 ;;;   :bits -> value is an integer (flt NIL) or float; flt is NIL/1/2 (s/d).
 ;;;   :addr -> symname string, symtype a list of (:ext :thr), off integer.

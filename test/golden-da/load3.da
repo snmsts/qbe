@@ -1,0 +1,41 @@
+**** Function rand ****
+> After ABI lowering:
+function $rand() {
+@start
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function chk ****
+> After ABI lowering:
+function $chk() {
+@start
+	%b =w copy R4
+	%a =w copy R5
+	%ok =w ceqw %a, 1
+	%ok1 =w ceqw %b, 0
+	%ok2 =w and %ok, %ok1
+	%ret =w xor %ok2, 1
+	R1 =w copy %ret
+	ret0 0001
+}
+
+**** Function main ****
+> After ABI lowering:
+function $main() {
+@start
+	%s0 =l alloc4 8
+	storew 1, %s0
+	%s04 =l add %s0, 4
+	storew 0, %s04
+	call $rand, 0001
+	%rnd =w copy R1
+@blit
+	R4 =w copy 0
+	R5 =w copy 1
+	call $chk, 0021
+	%ret =w copy R1
+	R1 =w copy %ret
+	ret0 0001
+}
+

@@ -1,0 +1,7 @@
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@start
+	ret0
+}
+

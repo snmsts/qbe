@@ -1,0 +1,52 @@
+**** Function f ****
+> After ABI lowering:
+function $f() {
+@start
+	%d2 =d copy R24
+	%abi.8 =d copy R23
+	%abi.9 =d copy R22
+	%d1 =d copy R21
+	%abi.5 =d copy R20
+	%abi.6 =d copy R19
+	%abi.2 =d copy R18
+	%abi.3 =d copy R17
+	%h3 =l alloc4 16
+	storel %abi.9, %h3
+	%abi.7 =l add %h3, 8
+	storel %abi.8, %abi.7
+	%h2 =l alloc4 16
+	storel %abi.6, %h2
+	%abi.4 =l add %h2, 8
+	storel %abi.5, %abi.4
+	%h1 =l alloc4 16
+	storel %abi.3, %h1
+	%abi.1 =l add %h1, 8
+	storel %abi.2, %abi.1
+	R17 =d load %h1
+	%abi.12 =l add %h1, 8
+	R18 =d load %abi.12
+	call $phfa3, 0201
+	copy R1
+	R17 =d load %h2
+	%abi.11 =l add %h2, 8
+	R18 =d load %abi.11
+	call $phfa3, 0201
+	copy R1
+	R17 =d load %h3
+	%abi.10 =l add %h3, 8
+	R18 =d load %abi.10
+	call $phfa3, 0201
+	copy R1
+	R17 =d copy %d1
+	R5 =l copy $dfmt
+	R1 =w copy 1
+	call $printf, 1111
+	copy R1
+	R17 =d copy %d2
+	R5 =l copy $dfmt
+	R1 =w copy 1
+	call $printf, 1111
+	copy R1
+	ret0
+}
+

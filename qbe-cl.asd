@@ -19,6 +19,7 @@
                              (:file "ssa")
                              (:file "mem")
                              (:file "amd64")
+                             (:file "amd64-abi")
                              (:file "driver")))))
 
 (asdf:defsystem "qbe-cl/test"

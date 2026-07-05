@@ -1,0 +1,15 @@
+**** Function f ****
+> After ABI lowering:
+function $f() {
+@start
+	%j =l copy R4
+	%i =l copy R5
+	%off1 =l mul %i, 8
+	%a_i =l add %off1, $a
+	%off2 =l mul %j, 4
+	%a_ij =l add %a_i, %off2
+	%x =w loadsw %a_ij
+	R1 =w copy %x
+	ret0 0001
+}
+

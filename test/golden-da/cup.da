@@ -1,0 +1,13 @@
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@start
+@loop
+	%n0 =l phi @start -1988, @loop %n1
+	%n1 =l add %n0, 1
+	%cmp =w cslel 1991, %n1
+	jnz %cmp, @end, @loop
+@end
+	ret0
+}
+

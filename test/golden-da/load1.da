@@ -1,0 +1,17 @@
+**** Function f ****
+> After ABI lowering:
+function $f() {
+@start
+	%cond =w copy R5
+	%x =l alloc4 4
+	%y =l alloc4 4
+	storew 0, %x
+	sel0 %cond
+	%ptr =l sel1 %x, %y
+@end
+	storew 1, %ptr
+	%result =w loadsw %x
+	R1 =w copy %result
+	ret0 0001
+}
+

@@ -1,0 +1,36 @@
+**** Function g ****
+> After ABI lowering:
+function $g() {
+@start
+	ret0
+}
+
+**** Function f ****
+> After ABI lowering:
+function $f() {
+@start
+	%arg =w copy R5
+	call $g, 0001
+	copy R1
+	%r =l alloc8 16
+	storel 180388626474, %r
+	%r8 =l add %r, 8
+	storel 180388626474, %r8
+	R1 =w copy %arg
+	ret0 0001
+}
+
+**** Function main ****
+> After ABI lowering:
+function $main() {
+@start
+	R5 =w copy 0
+	call $f, 0011
+	%a =w copy R1
+	R5 =w copy 0
+	call $f, 0011
+	%b =w copy R1
+	R1 =w copy %a
+	ret0 0001
+}
+
