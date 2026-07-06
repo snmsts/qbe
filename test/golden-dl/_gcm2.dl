@@ -1,0 +1,38 @@
+**** Function gcm_test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ b ]
+	          gen:  [ a b ]
+	          live: 3 0
+	loop      in:   [ i.1 b ]
+	          out:  [ i.2 b ]
+	          gen:  [ i.1 i.2 b ]
+	          live: 4 0
+	end       in:   [ i.2 ]
+	          out:  [ ]
+	          gen:  [ i.2 c.1 ]
+	          live: 1 0
+
+**** Function gcm_test2 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ a ]
+	          gen:  [ a ]
+	          live: 3 0
+	loop      in:   [ a s.1 x.4 f.5 ]
+	          out:  [ a s.1 x.4 f.5 ]
+	          gen:  [ a ]
+	          live: 6 0
+	if        in:   [ a s.1 x.4 f.5 ]
+	          out:  [ a s.1 x.6 f.7 ]
+	          gen:  [ x.4 f.5 x.6 f.7 x.9 isel.10 ]
+	          live: 7 0
+	if_false  in:   [ a s.1 x.6 f.7 ]
+	          out:  [ a s.2 x.6 f.7 ]
+	          gen:  [ s.1 s.2 x.6 f.7 ]
+	          live: 6 0
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+

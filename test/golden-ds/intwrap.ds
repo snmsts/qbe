@@ -1,0 +1,21 @@
+**** Function intwrap ****
+> Loop information:
+
+> Spill costs:
+	a          0
+	b          0
+	c          0
+	d          0
+	e          0
+	f          0
+
+
+> Block information:
+	s          (    1) [ ]
+
+> After spilling:
+function $intwrap() {
+@s
+	ret0
+}
+

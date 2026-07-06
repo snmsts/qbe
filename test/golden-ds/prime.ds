@@ -1,0 +1,56 @@
+**** Function test ****
+> Loop information:
+	loop       (  8   0) [ n n1 p p1 t t1 r tsq ]
+	tloop      (  8   0) [ n p p1 t t1 r tsq ]
+
+> Spill costs:
+	n          221
+	n1         30
+	p          322
+	p1         120
+	t          310
+	t1         400
+	r          200
+	tsq        200
+	c0         0
+	c1         0
+
+
+> Block information:
+	start      (    1) [ ]
+	loop       (   10) [ n p p1 ]
+	tloop      (  100) [ n p p1 t ]
+	next       (  100) [ n p p1 t1 ]
+	yes        (   10) [ n1 p p1 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $test() {
+@start
+@loop
+	%n =w phi @start 5, @tloop %n, @yes %n1
+	%p =w phi @start 13, @tloop %p1, @yes %p1
+	%p1 =w add %p, 2
+@tloop
+	%t =w phi @loop 3, @next %t1
+	R1 =w copy %p
+	R3 =w sign R1
+	xidivw %t
+	copy R1
+	%r =w copy R3
+	xcmpw 0, %r
+	jfine @next, @loop
+@next
+	%t1 =w add %t, 2
+	%tsq =w mul %t1, %t1
+	xcmpw %p, %tsq
+	jfisgt @yes, @tloop
+@yes
+	%n1 =w add %n, 1
+	xcmpw 10001, %n1
+	jfieq @end, @loop
+@end
+	storew %p, $a
+	ret0
+}
+

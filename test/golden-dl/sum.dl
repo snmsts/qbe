@@ -1,0 +1,19 @@
+**** Function sum ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ arr num ]
+	          gen:  [ arr num ]
+	          live: 4 0
+	loop      in:   [ arr n1 s0 ]
+	          out:  [ arr n1 s0 ]
+	          gen:  [ n1 ]
+	          live: 5 0
+	loop1     in:   [ arr n1 s0 ]
+	          out:  [ arr n2 s1 ]
+	          gen:  [ arr n1 n2 s0 s1 idx0 w ]
+	          live: 6 0
+	end       in:   [ s0 ]
+	          out:  [ ]
+	          gen:  [ s0 ]
+	          live: 1 0
+

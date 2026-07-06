@@ -1,0 +1,27 @@
+**** Function test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ isel.1 ]
+	          gen:  [ isel.1 ]
+	          live: 3 0
+	loop      in:   [ max loc ]
+	          out:  [ max byt loc ]
+	          gen:  [ byt loc ]
+	          live: 5 0
+	iter      in:   [ max byt loc ]
+	          out:  [ max byt loc1 ]
+	          gen:  [ max byt loc loc1 cmp ]
+	          live: 6 0
+	new       in:   [ byt loc1 ]
+	          out:  [ byt loc1 ]
+	          gen:  [ byt loc1 ]
+	          live: 4 0
+	old       in:   [ max loc1 ]
+	          out:  [ max loc1 ]
+	          gen:  [ max loc1 ]
+	          live: 4 0
+	end       in:   [ max ]
+	          out:  [ ]
+	          gen:  [ max ]
+	          live: 3 0
+

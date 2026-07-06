@@ -1,0 +1,27 @@
+**** Function strcmp ****
+> Liveness analysis:
+	.37       in:   [ ]
+	          out:  [ s1.3.val s2.5.val ]
+	          gen:  [ s1.3.val s2.5.val ]
+	          live: 4 0
+	.6        in:   [ s2.5.3 s1.3.4 ]
+	          out:  [ .10 .12 ]
+	          gen:  [ .10 .12 s2.5.3 s1.3.4 ]
+	          live: 4 0
+	.5        in:   [ s2.5.3 s1.3.4 ]
+	          out:  [ .16 s2.5.3 s1.3.4 ]
+	          gen:  [ .16 s1.3.4 ]
+	          live: 5 0
+	.14       in:   [ .16 s2.5.3 s1.3.4 ]
+	          out:  [ .16 .20 s2.5.3 s1.3.4 ]
+	          gen:  [ .20 s2.5.3 ]
+	          live: 6 0
+	.13       in:   [ .16 .20 s2.5.3 s1.3.4 ]
+	          out:  [ .16 s2.5.3 s1.3.4 ]
+	          gen:  [ .16 .20 ]
+	          live: 6 0
+	.8        in:   [ .16 s2.5.3 ]
+	          out:  [ ]
+	          gen:  [ .16 .32 .34 .36 s2.5.3 ]
+	          live: 2 0
+

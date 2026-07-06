@@ -1,0 +1,15 @@
+**** Function main ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	loop      in:   [ n ]
+	          out:  [ n1 ]
+	          gen:  [ n n1 c r isel.1 ]
+	          live: 12 15
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+

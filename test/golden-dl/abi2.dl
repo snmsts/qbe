@@ -1,0 +1,7 @@
+**** Function sum ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ f1 f2 s abi.2 abi.3 ]
+	          live: 1 2
+

@@ -1,0 +1,45 @@
+**** Function sum ****
+> Loop information:
+	loop       (  6   0) [ arr n1 n2 s0 s1 idx0 w ]
+
+> Spill costs:
+	arr        11
+	num        2
+	n1         31
+	n2         30
+	s0         22
+	s1         20
+	c          0
+	idx0       20
+	idx1       0
+	idx2       0
+	w          20
+
+
+> Block information:
+	start      (    1) [ arr num ]
+	loop       (   10) [ arr n1 s0 ]
+	loop1      (   10) [ arr n2 s1 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $sum() {
+@start
+	%num =w copy R4
+	%arr =l copy R5
+@loop
+	%n1 =w phi @start %num, @loop1 %n2
+	%s0 =w phi @start 0, @loop1 %s1
+	xcmpw 0, %n1
+	jfisle @end, @loop1
+@loop1
+	%n2 =w sub %n1, 1
+	%idx0 =l extsw %n2
+	%w =w loadsw [%arr + 4 * %idx0]
+	%s1 =w add %s0, %w
+	jmp @loop
+@end
+	R1 =w copy %s0
+	ret0 0001
+}
+

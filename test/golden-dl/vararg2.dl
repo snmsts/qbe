@@ -1,0 +1,464 @@
+**** Function qbeprint0 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ fmt1 ]
+	          gen:  [ fmt fmt1 abi.30 abi.32 ]
+	          live: 4 0
+	loop      in:   [ p ]
+	          out:  [ p c.4 ]
+	          gen:  [ p c.4 ]
+	          live: 4 0
+	loop1     in:   [ p c.4 ]
+	          out:  [ p1 ]
+	          gen:  [ p p1 isg c.4 ]
+	          live: 4 0
+	casef     in:   [ p1 ]
+	          out:  [ p1 abi.7 ]
+	          gen:  [ abi.7 ]
+	          live: 4 0
+	casef.3   in:   [ p1 ]
+	          out:  [ p1 abi.12 ]
+	          gen:  [ abi.12 abi.14 ]
+	          live: 5 0
+	casef.2   in:   [ p1 abi.7 ]
+	          out:  [ p1 abi.6 ]
+	          gen:  [ abi.6 abi.7 abi.8 abi.11 ]
+	          live: 5 0
+	casef.1   in:   [ p1 abi.5 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 dbl r.1 abi.5 isel.34 ]
+	          live: 12 15
+	cased     in:   [ p1 ]
+	          out:  [ p1 abi.19 ]
+	          gen:  [ abi.19 ]
+	          live: 4 0
+	cased.3   in:   [ p1 ]
+	          out:  [ p1 abi.24 ]
+	          gen:  [ abi.24 abi.26 ]
+	          live: 5 0
+	cased.2   in:   [ p1 abi.19 ]
+	          out:  [ p1 abi.18 ]
+	          gen:  [ abi.18 abi.19 abi.20 abi.23 ]
+	          live: 5 0
+	cased.1   in:   [ p1 abi.17 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 int r.2 abi.17 isel.35 ]
+	          live: 12 15
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ r.3 isel.36 ]
+	          live: 11 15
+
+**** Function qbecall0 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ fmt r abi.38 abi.40 isel.42 ]
+	          live: 11 15
+
+**** Function qbeprint1 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ fmt1 ]
+	          gen:  [ fmt fmt1 vw.47 abi.73 abi.75 ]
+	          live: 4 0
+	loop      in:   [ p ]
+	          out:  [ p c.46 ]
+	          gen:  [ p c.46 ]
+	          live: 4 0
+	loop1     in:   [ p c.46 ]
+	          out:  [ p1 ]
+	          gen:  [ p p1 isg c.46 ]
+	          live: 4 0
+	casef     in:   [ p1 ]
+	          out:  [ p1 abi.50 ]
+	          gen:  [ abi.50 ]
+	          live: 4 0
+	casef.3   in:   [ p1 ]
+	          out:  [ p1 abi.55 ]
+	          gen:  [ abi.55 abi.57 ]
+	          live: 5 0
+	casef.2   in:   [ p1 abi.50 ]
+	          out:  [ p1 abi.49 ]
+	          gen:  [ abi.49 abi.50 abi.51 abi.54 ]
+	          live: 5 0
+	casef.1   in:   [ p1 abi.48 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 dbl r.43 abi.48 isel.77 ]
+	          live: 12 15
+	cased     in:   [ p1 ]
+	          out:  [ p1 abi.62 ]
+	          gen:  [ abi.62 ]
+	          live: 4 0
+	cased.3   in:   [ p1 ]
+	          out:  [ p1 abi.67 ]
+	          gen:  [ abi.67 abi.69 ]
+	          live: 5 0
+	cased.2   in:   [ p1 abi.62 ]
+	          out:  [ p1 abi.61 ]
+	          gen:  [ abi.61 abi.62 abi.63 abi.66 ]
+	          live: 5 0
+	cased.1   in:   [ p1 abi.60 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 int r.44 abi.60 isel.78 ]
+	          live: 12 15
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ r.45 isel.79 ]
+	          live: 11 15
+
+**** Function qbecall1 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ argw0 fmt r abi.81 abi.83 isel.85 ]
+	          live: 11 15
+
+**** Function qbeprint2 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ fmt1 ]
+	          gen:  [ argd0 fmt fmt1 abi.115 abi.117 ]
+	          live: 4 1
+	loop      in:   [ p ]
+	          out:  [ p c.89 ]
+	          gen:  [ p c.89 ]
+	          live: 4 0
+	loop1     in:   [ p c.89 ]
+	          out:  [ p1 ]
+	          gen:  [ p p1 isg c.89 ]
+	          live: 4 0
+	casef     in:   [ p1 ]
+	          out:  [ p1 abi.92 ]
+	          gen:  [ abi.92 ]
+	          live: 4 0
+	casef.3   in:   [ p1 ]
+	          out:  [ p1 abi.97 ]
+	          gen:  [ abi.97 abi.99 ]
+	          live: 5 0
+	casef.2   in:   [ p1 abi.92 ]
+	          out:  [ p1 abi.91 ]
+	          gen:  [ abi.91 abi.92 abi.93 abi.96 ]
+	          live: 5 0
+	casef.1   in:   [ p1 abi.90 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 dbl r.86 abi.90 isel.119 ]
+	          live: 12 15
+	cased     in:   [ p1 ]
+	          out:  [ p1 abi.104 ]
+	          gen:  [ abi.104 ]
+	          live: 4 0
+	cased.3   in:   [ p1 ]
+	          out:  [ p1 abi.109 ]
+	          gen:  [ abi.109 abi.111 ]
+	          live: 5 0
+	cased.2   in:   [ p1 abi.104 ]
+	          out:  [ p1 abi.103 ]
+	          gen:  [ abi.103 abi.104 abi.105 abi.108 ]
+	          live: 5 0
+	cased.1   in:   [ p1 abi.102 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 int r.87 abi.102 isel.120 ]
+	          live: 12 15
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ r.88 isel.121 ]
+	          live: 11 15
+
+**** Function qbecall2 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ argd0 fmt r abi.123 abi.125 isel.127 ]
+	          live: 11 15
+
+**** Function qbeprint3 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ fmt1 ]
+	          gen:  [ fmt fmt1 vw.132 vw.133 vw.134 vw.135 abi.161 abi.163 ]
+	          live: 7 0
+	loop      in:   [ p ]
+	          out:  [ p c.131 ]
+	          gen:  [ p c.131 ]
+	          live: 4 0
+	loop1     in:   [ p c.131 ]
+	          out:  [ p1 ]
+	          gen:  [ p p1 isg c.131 ]
+	          live: 4 0
+	casef     in:   [ p1 ]
+	          out:  [ p1 abi.138 ]
+	          gen:  [ abi.138 ]
+	          live: 4 0
+	casef.3   in:   [ p1 ]
+	          out:  [ p1 abi.143 ]
+	          gen:  [ abi.143 abi.145 ]
+	          live: 5 0
+	casef.2   in:   [ p1 abi.138 ]
+	          out:  [ p1 abi.137 ]
+	          gen:  [ abi.137 abi.138 abi.139 abi.142 ]
+	          live: 5 0
+	casef.1   in:   [ p1 abi.136 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 dbl r.128 abi.136 isel.165 ]
+	          live: 12 15
+	cased     in:   [ p1 ]
+	          out:  [ p1 abi.150 ]
+	          gen:  [ abi.150 ]
+	          live: 4 0
+	cased.3   in:   [ p1 ]
+	          out:  [ p1 abi.155 ]
+	          gen:  [ abi.155 abi.157 ]
+	          live: 5 0
+	cased.2   in:   [ p1 abi.150 ]
+	          out:  [ p1 abi.149 ]
+	          gen:  [ abi.149 abi.150 abi.151 abi.154 ]
+	          live: 5 0
+	cased.1   in:   [ p1 abi.148 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 int r.129 abi.148 isel.166 ]
+	          live: 12 15
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ r.130 isel.167 ]
+	          live: 11 15
+
+**** Function qbecall3 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ argw0 argw1 argw2 argw3 fmt r abi.169 abi.171 isel.173 ]
+	          live: 11 15
+
+**** Function qbeprint4 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ fmt1 ]
+	          gen:  [ argd0 argd1 argd2 argd3 argd4 argd5 fmt fmt1 abi.203 abi.205 ]
+	          live: 4 6
+	loop      in:   [ p ]
+	          out:  [ p c.177 ]
+	          gen:  [ p c.177 ]
+	          live: 4 0
+	loop1     in:   [ p c.177 ]
+	          out:  [ p1 ]
+	          gen:  [ p p1 isg c.177 ]
+	          live: 4 0
+	casef     in:   [ p1 ]
+	          out:  [ p1 abi.180 ]
+	          gen:  [ abi.180 ]
+	          live: 4 0
+	casef.3   in:   [ p1 ]
+	          out:  [ p1 abi.185 ]
+	          gen:  [ abi.185 abi.187 ]
+	          live: 5 0
+	casef.2   in:   [ p1 abi.180 ]
+	          out:  [ p1 abi.179 ]
+	          gen:  [ abi.179 abi.180 abi.181 abi.184 ]
+	          live: 5 0
+	casef.1   in:   [ p1 abi.178 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 dbl r.174 abi.178 isel.207 ]
+	          live: 12 15
+	cased     in:   [ p1 ]
+	          out:  [ p1 abi.192 ]
+	          gen:  [ abi.192 ]
+	          live: 4 0
+	cased.3   in:   [ p1 ]
+	          out:  [ p1 abi.197 ]
+	          gen:  [ abi.197 abi.199 ]
+	          live: 5 0
+	cased.2   in:   [ p1 abi.192 ]
+	          out:  [ p1 abi.191 ]
+	          gen:  [ abi.191 abi.192 abi.193 abi.196 ]
+	          live: 5 0
+	cased.1   in:   [ p1 abi.190 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 int r.175 abi.190 isel.208 ]
+	          live: 12 15
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ r.176 isel.209 ]
+	          live: 11 15
+
+**** Function qbecall4 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ argd0 argd1 argd2 argd3 argd4 argd5 fmt r abi.211 abi.213 isel.215 ]
+	          live: 11 15
+
+**** Function qbeprint5 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ fmt1 ]
+	          gen:  [ argd0 argd1 argd2 argd3 argd4 argd5 argd6 fmt fmt1 vw.220 vw.221 vw.222 vw.223 vw.224 abi.250 abi.252 ]
+	          live: 8 7
+	loop      in:   [ p ]
+	          out:  [ p c.219 ]
+	          gen:  [ p c.219 ]
+	          live: 4 0
+	loop1     in:   [ p c.219 ]
+	          out:  [ p1 ]
+	          gen:  [ p p1 isg c.219 ]
+	          live: 4 0
+	casef     in:   [ p1 ]
+	          out:  [ p1 abi.227 ]
+	          gen:  [ abi.227 ]
+	          live: 4 0
+	casef.3   in:   [ p1 ]
+	          out:  [ p1 abi.232 ]
+	          gen:  [ abi.232 abi.234 ]
+	          live: 5 0
+	casef.2   in:   [ p1 abi.227 ]
+	          out:  [ p1 abi.226 ]
+	          gen:  [ abi.226 abi.227 abi.228 abi.231 ]
+	          live: 5 0
+	casef.1   in:   [ p1 abi.225 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 dbl r.216 abi.225 isel.254 ]
+	          live: 12 15
+	cased     in:   [ p1 ]
+	          out:  [ p1 abi.239 ]
+	          gen:  [ abi.239 ]
+	          live: 4 0
+	cased.3   in:   [ p1 ]
+	          out:  [ p1 abi.244 ]
+	          gen:  [ abi.244 abi.246 ]
+	          live: 5 0
+	cased.2   in:   [ p1 abi.239 ]
+	          out:  [ p1 abi.238 ]
+	          gen:  [ abi.238 abi.239 abi.240 abi.243 ]
+	          live: 5 0
+	cased.1   in:   [ p1 abi.237 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 int r.217 abi.237 isel.255 ]
+	          live: 12 15
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ r.218 isel.256 ]
+	          live: 11 15
+
+**** Function qbecall5 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ argw0 argw1 argw2 argw3 argw4 argd0 argd1 argd2 argd3 argd4 argd5 argd6 fmt r abi.258 abi.260 isel.262 ]
+	          live: 11 15
+
+**** Function qbeprint6 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ fmt1 ]
+	          gen:  [ argd0 argd1 argd2 argd3 argd4 argd5 argd6 argd7 fmt fmt1 vw.267 vw.268 vw.269 vw.270 vw.271 vw.272 abi.302 abi.304 ]
+	          live: 9 8
+	loop      in:   [ p ]
+	          out:  [ p c.266 ]
+	          gen:  [ p c.266 ]
+	          live: 4 0
+	loop1     in:   [ p c.266 ]
+	          out:  [ p1 ]
+	          gen:  [ p p1 isg c.266 ]
+	          live: 4 0
+	casef     in:   [ p1 ]
+	          out:  [ p1 abi.279 ]
+	          gen:  [ abi.279 ]
+	          live: 4 0
+	casef.3   in:   [ p1 ]
+	          out:  [ p1 abi.284 ]
+	          gen:  [ abi.284 abi.286 ]
+	          live: 5 0
+	casef.2   in:   [ p1 abi.279 ]
+	          out:  [ p1 abi.278 ]
+	          gen:  [ abi.278 abi.279 abi.280 abi.283 ]
+	          live: 5 0
+	casef.1   in:   [ p1 abi.277 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 dbl r.263 abi.277 isel.306 ]
+	          live: 12 15
+	cased     in:   [ p1 ]
+	          out:  [ p1 abi.291 ]
+	          gen:  [ abi.291 ]
+	          live: 4 0
+	cased.3   in:   [ p1 ]
+	          out:  [ p1 abi.296 ]
+	          gen:  [ abi.296 abi.298 ]
+	          live: 5 0
+	cased.2   in:   [ p1 abi.291 ]
+	          out:  [ p1 abi.290 ]
+	          gen:  [ abi.290 abi.291 abi.292 abi.295 ]
+	          live: 5 0
+	cased.1   in:   [ p1 abi.289 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 int r.264 abi.289 isel.307 ]
+	          live: 12 15
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ r.265 isel.308 ]
+	          live: 11 15
+
+**** Function qbecall6 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ argw0 argw1 argw2 argw3 argw4 argw5 argd0 argd1 argd2 argd3 argd4 argd5 argd6 argd7 fmt r abi.310 abi.312 isel.314 ]
+	          live: 11 15
+
+**** Function qbeprint7 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ fmt1 ]
+	          gen:  [ fmt fmt1 vw.319 vw.320 vw.321 vw.322 vw.323 vw.324 abi.353 abi.355 ]
+	          live: 9 0
+	loop      in:   [ p ]
+	          out:  [ p c.318 ]
+	          gen:  [ p c.318 ]
+	          live: 4 0
+	loop1     in:   [ p c.318 ]
+	          out:  [ p1 ]
+	          gen:  [ p p1 isg c.318 ]
+	          live: 4 0
+	casef     in:   [ p1 ]
+	          out:  [ p1 abi.330 ]
+	          gen:  [ abi.330 ]
+	          live: 4 0
+	casef.3   in:   [ p1 ]
+	          out:  [ p1 abi.335 ]
+	          gen:  [ abi.335 abi.337 ]
+	          live: 5 0
+	casef.2   in:   [ p1 abi.330 ]
+	          out:  [ p1 abi.329 ]
+	          gen:  [ abi.329 abi.330 abi.331 abi.334 ]
+	          live: 5 0
+	casef.1   in:   [ p1 abi.328 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 dbl r.315 abi.328 isel.357 ]
+	          live: 12 15
+	cased     in:   [ p1 ]
+	          out:  [ p1 abi.342 ]
+	          gen:  [ abi.342 ]
+	          live: 4 0
+	cased.3   in:   [ p1 ]
+	          out:  [ p1 abi.347 ]
+	          gen:  [ abi.347 abi.349 ]
+	          live: 5 0
+	cased.2   in:   [ p1 abi.342 ]
+	          out:  [ p1 abi.341 ]
+	          gen:  [ abi.341 abi.342 abi.343 abi.346 ]
+	          live: 5 0
+	cased.1   in:   [ p1 abi.340 ]
+	          out:  [ p1 ]
+	          gen:  [ p1 int r.316 abi.340 isel.358 ]
+	          live: 12 15
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ r.317 isel.359 ]
+	          live: 11 15
+
+**** Function qbecall7 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ argw0 argw1 argw2 argw3 argw4 argw5 fmt r abi.361 abi.363 isel.365 ]
+	          live: 11 15
+

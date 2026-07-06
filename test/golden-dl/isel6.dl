@@ -1,0 +1,7 @@
+**** Function main ****
+> Liveness analysis:
+	_0        in:   [ ]
+	          out:  [ ]
+	          gen:  [ _1 abi.1 isel.5 ]
+	          live: 9 15
+

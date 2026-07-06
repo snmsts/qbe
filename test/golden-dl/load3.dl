@@ -1,0 +1,25 @@
+**** Function rand ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+
+**** Function chk ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ a b ok ok1 ok2 ret ]
+	          live: 2 0
+
+**** Function main ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ rnd ]
+	          live: 11 15
+	blit      in:   [ ]
+	          out:  [ ]
+	          gen:  [ ret ]
+	          live: 9 15
+

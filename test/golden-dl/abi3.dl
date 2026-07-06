@@ -1,0 +1,7 @@
+**** Function test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ a y yl f x x1 abi.2 isel.4 ]
+	          live: 12 15
+

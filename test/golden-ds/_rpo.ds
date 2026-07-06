@@ -1,0 +1,15 @@
+**** Function test ****
+> Loop information:
+
+> Spill costs:
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $test() {
+@start
+	ret0
+}
+

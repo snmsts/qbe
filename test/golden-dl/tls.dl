@@ -1,0 +1,42 @@
+**** Function main ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ t i0 i1 a0 x0 a4 x4 a8 x8 xc isel.1 isel.2 isel.3 isel.4 isel.5 isel.6 isel.7 isel.8 isel.9 ]
+	          live: 9 15
+
+**** Function thread ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ arg ret ]
+	          live: 1 0
+
+**** Function xaddr ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ isel.11 ]
+	          live: 1 0
+
+**** Function xaddroff4 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ isel.12 ]
+	          live: 1 0
+
+**** Function xaddroff ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ off a isel.13 ]
+	          live: 2 0
+
+**** Function xvalcnt ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ cnt x isel.14 ]
+	          live: 2 0
+

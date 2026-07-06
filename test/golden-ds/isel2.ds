@@ -1,0 +1,346 @@
+**** Function lt ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	y          2
+	r          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $lt() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %x, %y
+	%r =w flagfgt
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function le ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	y          2
+	r          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $le() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %x, %y
+	%r =w flagfge
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function gt ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	y          2
+	r          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $gt() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %y, %x
+	%r =w flagfgt
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function ge ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	y          2
+	r          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $ge() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %y, %x
+	%r =w flagfge
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function eq1 ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	y          2
+	r          2
+	isel.1     2
+	isel.2     2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $eq1() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %y, %x
+	%isel.1 =w flagfeq
+	%isel.2 =w flagfo
+	%r =w and %isel.1, %isel.2
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function eq2 ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	y          2
+	r          2
+	isel.3     2
+	isel.4     2
+
+
+> Block information:
+	start      (    1) [ ]
+	true       (    1) [ ]
+	false      (    1) [ ]
+
+> After spilling:
+function $eq2() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %y, %x
+	%isel.3 =w flagfeq
+	%isel.4 =w flagfo
+	%r =w and %isel.3, %isel.4
+	copy %r
+	jfine @true, @false
+@true
+	R1 =w copy 1
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function eq3 ****
+> Loop information:
+
+> Spill costs:
+	x          3
+	y          3
+	r          2
+	snk.5      2
+	isel.6     2
+	isel.7     2
+	isel.8     2
+	isel.9     2
+
+
+> Block information:
+	start      (    1) [ x y ]
+	true       (    1) [ ]
+	false      (    1) [ ]
+
+> After spilling:
+function $eq3() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %y, %x
+	%isel.6 =w flagfeq
+	%isel.7 =w flagfo
+	%r =w and %isel.6, %isel.7
+	copy %r
+	jfine @true, @false
+@true
+	xcmpd %y, %x
+	%isel.8 =w flagfeq
+	%isel.9 =w flagfo
+	%snk.5 =w and %isel.8, %isel.9
+	R1 =w copy %snk.5
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function ne1 ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	y          2
+	r          2
+	isel.10    2
+	isel.11    2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $ne1() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %y, %x
+	%isel.10 =w flagfne
+	%isel.11 =w flagfuo
+	%r =w or %isel.10, %isel.11
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function ne2 ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	y          2
+	r          2
+	isel.12    2
+	isel.13    2
+
+
+> Block information:
+	start      (    1) [ ]
+	true       (    1) [ ]
+	false      (    1) [ ]
+
+> After spilling:
+function $ne2() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %y, %x
+	%isel.12 =w flagfne
+	%isel.13 =w flagfuo
+	%r =w or %isel.12, %isel.13
+	copy %r
+	jfine @true, @false
+@true
+	R1 =w copy 1
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function ne3 ****
+> Loop information:
+
+> Spill costs:
+	x          3
+	y          3
+	r          2
+	snk.14     2
+	isel.15    2
+	isel.16    2
+	isel.17    2
+	isel.18    2
+
+
+> Block information:
+	start      (    1) [ x y ]
+	true       (    1) [ ]
+	false      (    1) [ ]
+
+> After spilling:
+function $ne3() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %y, %x
+	%isel.15 =w flagfne
+	%isel.16 =w flagfuo
+	%r =w or %isel.15, %isel.16
+	copy %r
+	jfine @true, @false
+@true
+	xcmpd %y, %x
+	%isel.17 =w flagfne
+	%isel.18 =w flagfuo
+	%snk.14 =w or %isel.17, %isel.18
+	R1 =w copy %snk.14
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function o ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	y          2
+	r          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $o() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %y, %x
+	%r =w flagfo
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function uo ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	y          2
+	r          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $uo() {
+@start
+	%y =d copy R18
+	%x =d copy R17
+	xcmpd %y, %x
+	%r =w flagfuo
+	R1 =w copy %r
+	ret0 0001
+}
+

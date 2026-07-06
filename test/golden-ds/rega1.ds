@@ -1,0 +1,43 @@
+**** Function f ****
+> Loop information:
+	loop       (  5   0) [ b a1 a0 snk.1 snk.2 ]
+
+> Spill costs:
+	a          2
+	b          32
+	a1         50
+	a0         51
+	snk.1      20
+	snk.2      20
+
+
+> Block information:
+	start      (    1) [ a ]
+	loop       (   10) [ b a1 a0 ]
+	loop0      (   10) [ b a1 ]
+	loop1      (   10) [ b a1 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $f() {
+@start
+	%a =l copy R5
+@loop
+	%b =l phi @start 42, @loop0 %a1, @loop1 %a1
+	%a0 =l phi @start %a, @loop0 %a1, @loop1 %a1
+	%a1 =l sub %a0, 1
+	xcmpw 0, %b
+	jfine @loop0, @loop1
+@loop0
+	%snk.1 =l sub %a0, 1
+	copy %snk.1
+	jfine @loop, @end
+@loop1
+	%snk.2 =l sub %a0, 1
+	copy %snk.2
+	jfine @loop, @end
+@end
+	R1 =l copy %b
+	ret0 0001
+}
+

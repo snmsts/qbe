@@ -1,0 +1,136 @@
+**** Function f ****
+> Loop information:
+	loop       ( 19   0) [ n1 n2 p0 p01 p1 p11 p2 p21 p3 p31 p4 p41 p5 p51 p6 p61 p7 p71 p8 p81 p9 p91 pa pa1 pb pb1 pc pc1 pd pd1 pe pe1 pf pf1 ]
+
+> Spill costs:
+	n0         2
+	n1         21
+	n2         20
+	p0         21
+	p01        21
+	p1         21
+	p11        21
+	p2         21
+	p21        21
+	p3         21
+	p31        21
+	p4         21
+	p41        21
+	p5         21
+	p51        21
+	p6         21
+	p61        21
+	p7         21
+	p71        21
+	p8         21
+	p81        21
+	p9         21
+	p91        21
+	pa         21
+	pa1        21
+	pb         21
+	pb1        21
+	pc         21
+	pc1        21
+	pd         21
+	pd1        21
+	pe         21
+	pe1        21
+	pf         21
+	pf1        21
+	a          0
+	a.1        0
+	a.2        0
+	a.3        2
+	a.4        2
+	a.5        2
+	a.6        2
+	a.7        2
+	a.8        2
+	a.9        2
+	a.10       2
+	a.11       2
+	a.12       2
+	a.13       2
+	a.14       2
+	a.15       2
+	a.16       2
+	a.17       2
+
+
+> Block information:
+	start      (    1) [ n0 ]
+	loop       (   10) [ p01 p11 p21 p31 p41 p51 p61 p71 p81 p91 pa1 pb1 pc1 pd1 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $f() {
+@start
+	%n0 =w copy R5
+@loop
+	%n1 =w phi @start %n0, @loop %n2
+	%p0 =w phi @start 0, @loop %p01
+	%p1 =w phi @start 0, @loop %p11
+	%p2 =w phi @start 0, @loop %p21
+	%p3 =w phi @start 0, @loop %p31
+	%p4 =w phi @start 0, @loop %p41
+	%p5 =w phi @start 0, @loop %p51
+	%p6 =w phi @start 0, @loop %p61
+	%p7 =w phi @start 0, @loop %p71
+	%p8 =w phi @start 0, @loop %p81
+	%p9 =w phi @start 0, @loop %p91
+	%pa =w phi @start 0, @loop %pa1
+	%pb =w phi @start 0, @loop %pb1
+	S9 =w phi @start 0, @loop %pc1
+	S8 =w phi @start 0, @loop %pd1
+	S7 =w phi @start 0, @loop %pe1
+	S6 =w phi @start 0, @loop %pf1
+	%p01 =w add %p0, 1
+	%p11 =w add %p1, 2
+	%p21 =w add %p2, 3
+	%p31 =w add %p3, 4
+	%p41 =w add %p4, 5
+	%p51 =w add %p5, 6
+	%p61 =w add %p6, 7
+	%p71 =w add %p7, 8
+	%p81 =w add %p8, 9
+	%p91 =w add %p9, 10
+	%pa1 =w add %pa, 11
+	%pb1 =w add %pb, 12
+	%pc1 =w add S9, 13
+	storew %pc1, S5
+	%pd1 =w add S8, 14
+	storew %pd1, S1
+	%pe1 =w add S7, 15
+	storew %pe1, S2
+	%pf1 =w add S6, 16
+	storew %pf1, S3
+	%n2 =w sub %n1, 1
+	storew %n2, S4
+	%pd1 =w load S1
+	%pc1 =w load S5
+	jfine @loop, @end
+@end
+	%a.3 =w add %p01, %p11
+	storew %a.3, S0
+	%pf1 =w load S3
+	%pe1 =w load S2
+	%pd1 =w load S1
+	%a.4 =w add %p21, S0
+	%a.5 =w add %p31, %a.4
+	%a.6 =w add %p41, %a.5
+	%a.7 =w add %p51, %a.6
+	%a.8 =w add %p61, %a.7
+	%a.9 =w add %p71, %a.8
+	%a.10 =w add %p81, %a.9
+	%a.11 =w add %p91, %a.10
+	%a.12 =w add %pa1, %a.11
+	%a.13 =w add %pb1, %a.12
+	%a.14 =w add %pc1, %a.13
+	%a.15 =w add %pd1, %a.14
+	%a.16 =w add %pe1, %a.15
+	%a.17 =w add %pf1, %a.16
+	R1 =w copy %a.17
+	ret0 0001
+}
+

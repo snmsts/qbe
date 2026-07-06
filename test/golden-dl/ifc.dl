@@ -1,0 +1,121 @@
+**** Function ifc1 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.1 ]
+	          gen:  [ v0 v1 c v.1 ]
+	          live: 5 0
+	end       in:   [ v.1 ]
+	          out:  [ ]
+	          gen:  [ v.1 ]
+	          live: 1 0
+
+**** Function ifc2 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.4 ]
+	          gen:  [ v0 v1 p v.4 ]
+	          live: 5 0
+	end       in:   [ v.4 ]
+	          out:  [ ]
+	          gen:  [ v.4 ]
+	          live: 1 0
+
+**** Function ifc3 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.7 ]
+	          gen:  [ v0 v1 p v.7 ]
+	          live: 5 0
+	end       in:   [ v.7 ]
+	          out:  [ ]
+	          gen:  [ v.7 ]
+	          live: 1 0
+
+**** Function ifclts ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.10 ]
+	          gen:  [ s0 s1 v0 v1 v.10 ]
+	          live: 4 2
+	end       in:   [ v.10 ]
+	          out:  [ ]
+	          gen:  [ v.10 ]
+	          live: 1 0
+
+**** Function ifcles ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.13 ]
+	          gen:  [ s0 s1 v0 v1 v.13 ]
+	          live: 4 2
+	end       in:   [ v.13 ]
+	          out:  [ ]
+	          gen:  [ v.13 ]
+	          live: 1 0
+
+**** Function ifcgts ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.16 ]
+	          gen:  [ s0 s1 v0 v1 v.16 ]
+	          live: 4 2
+	end       in:   [ v.16 ]
+	          out:  [ ]
+	          gen:  [ v.16 ]
+	          live: 1 0
+
+**** Function ifcges ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.19 ]
+	          gen:  [ s0 s1 v0 v1 v.19 ]
+	          live: 4 2
+	end       in:   [ v.19 ]
+	          out:  [ ]
+	          gen:  [ v.19 ]
+	          live: 1 0
+
+**** Function ifceqs ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.22 ]
+	          gen:  [ s0 s1 v0 v1 c v.22 isel.25 isel.26 ]
+	          live: 6 2
+	end       in:   [ v.22 ]
+	          out:  [ ]
+	          gen:  [ v.22 ]
+	          live: 1 0
+
+**** Function ifcnes ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.27 ]
+	          gen:  [ s0 s1 v0 v1 c v.27 isel.30 isel.31 ]
+	          live: 6 2
+	end       in:   [ v.27 ]
+	          out:  [ ]
+	          gen:  [ v.27 ]
+	          live: 1 0
+
+**** Function ifcos ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.32 ]
+	          gen:  [ s0 s1 v0 v1 v.32 ]
+	          live: 4 2
+	end       in:   [ v.32 ]
+	          out:  [ ]
+	          gen:  [ v.32 ]
+	          live: 1 0
+
+**** Function ifcuos ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ v.35 ]
+	          gen:  [ s0 s1 v0 v1 v.35 ]
+	          live: 4 2
+	end       in:   [ v.35 ]
+	          out:  [ ]
+	          gen:  [ v.35 ]
+	          live: 1 0
+

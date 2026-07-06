@@ -1,0 +1,88 @@
+**** Function gcm_test ****
+> Loop information:
+	loop       (  4   0) [ i.1 i.2 b ]
+
+> Spill costs:
+	a          2
+	i.0        0
+	i.1        21
+	i.2        31
+	b          11
+	c          0
+	x          0
+	c.1        2
+
+
+> Block information:
+	start      (    1) [ b ]
+	loop       (   10) [ i.2 b ]
+	end        (    1) [ ]
+
+> After spilling:
+function $gcm_test() {
+@start
+	%a =w copy R5
+	%b =w add %a, 1
+@loop
+	%i.1 =w phi @start 0, @loop %i.2
+	%i.2 =w add %i.1, %b
+	xcmpw 10, %i.2
+	jfislt @loop, @end
+@end
+	%c.1 =w mul %i.2, 2
+	R1 =w copy %c.1
+	ret0 0001
+}
+
+**** Function gcm_test2 ****
+> Loop information:
+	loop       (  7   0) [ a s.1 s.2 x.4 f.5 x.6 f.7 x.9 isel.10 ]
+
+> Spill costs:
+	a          11
+	f          0
+	x          0
+	s.0        0
+	s.1        21
+	s.2        20
+	f.2        0
+	x.3        0
+	x.4        31
+	f.5        31
+	x.6        30
+	f.7        20
+	f.8        0
+	x.9        20
+	isel.10    20
+
+
+> Block information:
+	start      (    1) [ a ]
+	loop       (   10) [ a s.1 x.4 f.5 ]
+	if         (   10) [ a s.1 x.6 f.7 ]
+	if_false   (   10) [ a s.2 x.6 f.7 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $gcm_test2() {
+@start
+	%a =w copy R5
+@loop
+	%x.4 =w phi @start 0, @if_false %x.6
+	%f.5 =w phi @start 1, @if_false %f.7
+	%s.1 =w phi @start 0, @if_false %s.2
+	xcmpw 0, %a
+	jfine @if, @end
+@if
+	%x.9 =w add %x.4, 1
+	xcmpw 0, %f.5
+	%x.6 =w xseline %x.9, %x.4
+	%isel.10 =w copy 0
+	%f.7 =w xseline %isel.10, %f.5
+@if_false
+	%s.2 =w add %s.1, %x.6
+	jmp @loop
+@end
+	ret0
+}
+

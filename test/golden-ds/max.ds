@@ -1,0 +1,46 @@
+**** Function test ****
+> Loop information:
+	loop       (  6   0) [ max byt loc loc1 cmp ]
+
+> Spill costs:
+	max        42
+	byt        40
+	loc        41
+	loc1       30
+	cmp        20
+	isel.1     2
+
+
+> Block information:
+	start      (    1) [ isel.1 ]
+	loop       (   10) [ max byt loc ]
+	iter       (   10) [ max byt loc1 ]
+	new        (   10) [ byt loc1 ]
+	old        (   10) [ max loc1 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $test() {
+@start
+	%isel.1 =l addr $arr
+@loop
+	%max =w phi @start -1, @new %byt, @old %max
+	%loc =l phi @start %isel.1, @new %loc1, @old %loc1
+	%byt =w loadub [%loc]
+	xcmpw 0, %byt
+	jfine @iter, @end
+@iter
+	xcmpw %byt, %max
+	%cmp =w flagisle
+	%loc1 =l add %loc, 1
+	xcmpw 0, %cmp
+	jfine @new, @old
+@new
+	jmp @loop
+@old
+	jmp @loop
+@end
+	storew %max, $a
+	ret0
+}
+

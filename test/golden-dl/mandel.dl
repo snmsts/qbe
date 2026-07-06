@@ -1,0 +1,58 @@
+**** Function mandel ****
+> Liveness analysis:
+	mandel    in:   [ ]
+	          out:  [ x cr ]
+	          gen:  [ x y cr ]
+	          live: 2 2
+	loop      in:   [ x cr i zr zi ]
+	          out:  [ x cr i i1 zr zi zr2 zi2 ]
+	          gen:  [ i i1 zr zi zr2 zi2 sum ]
+	          live: 4 7
+	loop1     in:   [ x cr i1 zr zi zr2 zi2 ]
+	          out:  [ x cr i1 zr1 zi1 ]
+	          gen:  [ x cr i1 zr zr1 zi zi1 tmp zr2 zi2 zrx zix cmp2 ]
+	          live: 4 6
+	reti      in:   [ i ]
+	          out:  [ ]
+	          gen:  [ i snk.1 ]
+	          live: 1 0
+	ret0      in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+
+**** Function main ****
+> Liveness analysis:
+	main      in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	loopy     in:   [ y ]
+	          out:  [ y ]
+	          gen:  [ ]
+	          live: 2 1
+	loopx     in:   [ y x ]
+	          out:  [ y x ]
+	          gen:  [ y x i ]
+	          live: 11 17
+	in        in:   [ y x ]
+	          out:  [ y x ]
+	          gen:  [ r0 ]
+	          live: 11 17
+	out       in:   [ y x ]
+	          out:  [ y x ]
+	          gen:  [ r1 ]
+	          live: 11 17
+	loopx1    in:   [ y x ]
+	          out:  [ y x1 ]
+	          gen:  [ x x1 ]
+	          live: 2 2
+	loopy1    in:   [ y ]
+	          out:  [ y1 ]
+	          gen:  [ y y1 r2 ]
+	          live: 11 16
+	ret       in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+

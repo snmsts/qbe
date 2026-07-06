@@ -1,0 +1,82 @@
+**** Function rand ****
+> Loop information:
+
+> Spill costs:
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $rand() {
+@start
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function chk ****
+> Loop information:
+
+> Spill costs:
+	a          2
+	b          2
+	ok         2
+	ok1        2
+	ok2        2
+	ret        2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $chk() {
+@start
+	%b =w copy R4
+	%a =w copy R5
+	xcmpw 1, %a
+	%ok =w flagieq
+	xcmpw 0, %b
+	%ok1 =w flagieq
+	%ok2 =w and %ok, %ok1
+	%ret =w xor %ok2, 1
+	R1 =w copy %ret
+	ret0 0001
+}
+
+**** Function main ****
+> Loop information:
+
+> Spill costs:
+	s0         0
+	s1         0
+	s04        0
+	rnd        1
+	w0         0
+	s14        0
+	w1         0
+	ret        2
+	ld.1       0
+	ld.2       0
+
+
+> Block information:
+	start      (    1) [ ]
+	blit       (    1) [ ]
+
+> After spilling:
+function $main() {
+@start
+	storew 1, [S0]
+	storew 0, [4 + S0]
+	call $rand, 0001
+	%rnd =w copy R1
+@blit
+	R4 =w copy 0
+	R5 =w copy 1
+	call $chk, 0021
+	%ret =w copy R1
+	R1 =w copy %ret
+	ret0 0001
+}
+

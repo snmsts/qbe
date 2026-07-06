@@ -1,0 +1,22 @@
+**** Function f ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x0 x1 c ]
+	          live: 1 0
+
+**** Function g ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ arg ]
+	          gen:  [ arg ]
+	          live: 3 0
+	loop      in:   [ arg ]
+	          out:  [ arg ]
+	          gen:  [ arg ]
+	          live: 3 0
+	end       in:   [ arg ]
+	          out:  [ ]
+	          gen:  [ arg a0 a1 a3 a4 a5 ret ]
+	          live: 2 0
+

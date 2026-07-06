@@ -1,0 +1,21 @@
+**** Function g ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+
+**** Function f ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ arg isel.1 isel.2 ]
+	          live: 10 15
+
+**** Function main ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ a b ]
+	          live: 10 15
+

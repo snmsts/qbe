@@ -1,0 +1,30 @@
+**** Function t0 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	loop      in:   [ x0 y0 ]
+	          out:  [ x0 y0 y1 ]
+	          gen:  [ x0 y0 y1 ]
+	          live: 5 0
+	end       in:   [ x0 ]
+	          out:  [ ]
+	          gen:  [ x0 ]
+	          live: 1 0
+
+**** Function t1 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	loop      in:   [ y0 x0 ]
+	          out:  [ y0 y1 x0 ]
+	          gen:  [ y0 y1 x0 ]
+	          live: 5 0
+	end       in:   [ x0 ]
+	          out:  [ ]
+	          gen:  [ x0 ]
+	          live: 1 0
+

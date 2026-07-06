@@ -1,0 +1,45 @@
+**** Function test ****
+> Loop information:
+	loop       (  6   0) [ alt alt1 cnt cnt1 x x1 ]
+	left       (  6   0) [ alt1 cnt x x1 ]
+
+> Spill costs:
+	ten        0
+	dum        0
+	alt        121
+	alt1       120
+	cnt        221
+	cnt1       20
+	x          310
+	x1         200
+	z          0
+	ret        0
+
+
+> Block information:
+	start      (    1) [ ]
+	loop       (   10) [ alt1 cnt ]
+	left       (  100) [ alt1 cnt x1 ]
+	right      (   10) [ alt1 cnt1 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $test() {
+@start
+@loop
+	%alt =w phi @start 0, @left %alt1, @right %alt1
+	%cnt =w phi @start 100, @left %cnt, @right %cnt1
+	%alt1 =w sub 1, %alt
+	jfine @right, @left
+@left
+	%x =w phi @loop 10, @left %x1
+	%x1 =w sub %x, 1
+	xcmpw 0, %x
+	jfine @left, @loop
+@right
+	%cnt1 =w sub %cnt, 10
+	jfine @loop, @end
+@end
+	ret0
+}
+

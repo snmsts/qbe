@@ -1,0 +1,15 @@
+**** Function main ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ isel.1 ]
+	          gen:  [ isel.1 ]
+	          live: 3 0
+	loop      in:   [ mem ]
+	          out:  [ isel.2 ]
+	          gen:  [ mem w isel.2 ]
+	          live: 3 0
+	exit      in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+

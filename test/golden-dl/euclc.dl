@@ -1,0 +1,19 @@
+**** Function test ****
+> Liveness analysis:
+	l0        in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	l1        in:   [ b.3 a.4 ]
+	          out:  [ b.3 a.4 ]
+	          gen:  [ b.3 ]
+	          live: 4 0
+	l2        in:   [ b.3 a.4 ]
+	          out:  [ t6 b.3 ]
+	          gen:  [ t6 b.3 a.4 ]
+	          live: 5 0
+	l3        in:   [ a.4 ]
+	          out:  [ ]
+	          gen:  [ a.4 ]
+	          live: 1 0
+

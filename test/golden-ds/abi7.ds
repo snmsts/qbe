@@ -1,0 +1,21 @@
+**** Function test ****
+> Loop information:
+
+> Spill costs:
+	abi.1      2
+	isel.2     2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $test() {
+@start
+	R1 =l load $s
+	%isel.2 =l addr $s
+	%abi.1 =l add %isel.2, 8
+	R3 =l load [%abi.1]
+	ret0 0002
+}
+

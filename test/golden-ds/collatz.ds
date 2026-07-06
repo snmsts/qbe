@@ -1,0 +1,93 @@
+**** Function test ****
+> Loop information:
+	loop       (  6   0) [ n n9 cmax c n0 n2 n3 c0 c1 n1 n0l cn0 c2 nl ]
+	cloop      (  6   0) [ n n0 n2 n3 c0 c1 n1 ]
+
+> Spill costs:
+	mem        0
+	n          161
+	n9         30
+	cmax       42
+	c          140
+	fin        0
+	n0         720
+	n2         200
+	n3         200
+	c0         420
+	c1         300
+	no1        0
+	ism        0
+	p          0
+	n1         200
+	n0l        20
+	idx0       0
+	loc0       0
+	cn0        20
+	c2         20
+	nl         20
+	idx1       0
+	loc1       0
+	big        0
+
+
+> Block information:
+	start      (    1) [ ]
+	loop       (   10) [ n cmax ]
+	cloop      (  100) [ n cmax n0 c0 ]
+	iter0      (  100) [ n cmax n0 c0 ]
+	iter1      (  100) [ n cmax n0 c1 ]
+	odd        (  100) [ n cmax n2 c1 ]
+	even       (  100) [ n cmax n3 c1 ]
+	getmemo    (   10) [ n cmax c2 ]
+	endcl      (   10) [ n9 cmax c ]
+	newm       (   10) [ n9 c ]
+	oldm       (   10) [ n9 cmax ]
+	end        (    1) [ ]
+
+> After spilling:
+function $test() {
+@start
+@loop
+	%n =w phi @start 1, @newm %n9, @oldm %n9
+	%cmax =w phi @start 0, @newm %c, @oldm %cmax
+	xcmpw 1000, %n
+	jfislt @cloop, @end
+@cloop
+	%n0 =w phi @loop %n, @odd %n2, @even %n3
+	%c0 =w phi @loop 0, @odd %c1, @even %c1
+	xcmpw 1, %n0
+	jfine @iter0, @endcl
+@iter0
+	xcmpw %n, %n0
+	jfislt @getmemo, @iter1
+@iter1
+	%c1 =w add %c0, 1
+	xtestw 1, %n0
+	jfine @odd, @even
+@odd
+	%n1 =w mul %n0, 3
+	%n2 =w add %n1, 1
+	jmp @cloop
+@even
+	%n3 =w shr %n0, 1
+	jmp @cloop
+@getmemo
+	%n0l =l extsw %n0
+	%cn0 =w loadsw [S0 + 4 * %n0l]
+	%c2 =w add %c0, %cn0
+@endcl
+	%c =w phi @getmemo %c2, @cloop %c0
+	%nl =l extsw %n
+	storew %c, [S0 + 4 * %nl]
+	%n9 =w add %n, 1
+	xcmpw %c, %cmax
+	jfisle @newm, @oldm
+@newm
+	jmp @loop
+@oldm
+	jmp @loop
+@end
+	storew %cmax, $a
+	ret0
+}
+

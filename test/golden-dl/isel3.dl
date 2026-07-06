@@ -1,0 +1,70 @@
+**** Function slt ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 2 0
+
+**** Function sle ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 2 0
+
+**** Function sgt ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 2 0
+
+**** Function sge ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 2 0
+
+**** Function ult ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 2 0
+
+**** Function ule ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 2 0
+
+**** Function ugt ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 2 0
+
+**** Function uge ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 2 0
+
+**** Function eq ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 2 0
+
+**** Function ne ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 2 0
+

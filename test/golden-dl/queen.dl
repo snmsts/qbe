@@ -1,0 +1,105 @@
+**** Function chk ****
+> Liveness analysis:
+	l0        in:   [ ]
+	          out:  [ t0 t1 t18 t35 ]
+	          gen:  [ t0 t1 t17 t18 t34 t35 ]
+	          live: 6 0
+	l1        in:   [ t0 t1 t18 t35 r.3 i.4 ]
+	          out:  [ t0 t1 t7 t18 t35 r.3 i.4 ]
+	          gen:  [ t7 i.4 ]
+	          live: 9 0
+	l2        in:   [ t0 t1 t7 t18 t35 r.3 i.4 ]
+	          out:  [ t0 t1 t15 t18 t35 t23 t37 t42 t59 t64 i.4 ]
+	          gen:  [ t0 t1 t7 t15 t18 t13 t20 t11 t9 t27 t35 t25 t23 t38 t37 t43 t42 t36 t58 t59 t63 t64 r.3 i.4 ]
+	          live: 14 0
+	l4        in:   [ t0 t1 t15 t18 t35 t23 t37 t42 t59 t64 i.4 ]
+	          out:  [ t0 t1 t15 t18 t35 t37 t42 t59 t64 t48 i.4 ]
+	          gen:  [ t15 t23 t59 t52 t64 t50 t48 ]
+	          live: 14 0
+	l5        in:   [ t0 t1 t15 t18 t35 t37 t42 t59 t64 i.4 r.7 ]
+	          out:  [ t0 t1 t15 t18 t35 t42 t59 t64 t71 t93 i.4 r.7 ]
+	          gen:  [ t1 t37 t73 t71 t65 t92 t93 i.4 r.7 ]
+	          live: 15 0
+	l7        in:   [ t0 t1 t15 t18 t35 t42 t59 t64 t71 t93 i.4 r.7 ]
+	          out:  [ t0 t1 t15 t18 t35 t42 t64 t71 t93 t77 i.4 ]
+	          gen:  [ t15 t59 t81 t93 t79 t77 r.7 ]
+	          live: 14 0
+	l8        in:   [ t0 t1 t15 t18 t35 t42 t64 t71 t93 i.4 r.8 ]
+	          out:  [ t0 t1 t15 t18 t35 t64 t71 t93 t95 t117 i.4 r.8 ]
+	          gen:  [ t0 t42 t97 t95 t94 t116 t117 i.4 r.8 ]
+	          live: 15 0
+	l10       in:   [ t0 t1 t15 t18 t35 t64 t71 t93 t95 t117 i.4 r.8 ]
+	          out:  [ t0 t1 t15 t18 t35 t71 t93 t95 t117 t106 i.4 ]
+	          gen:  [ t15 t64 t117 t110 t108 t106 r.8 ]
+	          live: 15 0
+	l11       in:   [ t0 t1 t15 t18 t35 t71 t93 t95 t117 i.4 r.9 ]
+	          out:  [ t0 t1 t15 t18 t35 t93 t117 i.4 r.9 ]
+	          gen:  [ t71 t95 r.9 ]
+	          live: 13 0
+	l13       in:   [ t0 t1 t15 t18 t35 t93 t117 i.4 r.9 ]
+	          out:  [ t0 t1 t18 t35 t135 i.4 ]
+	          gen:  [ t15 t93 t117 t139 t137 t135 r.9 ]
+	          live: 11 0
+	l14       in:   [ t0 t1 t18 t35 i.4 r.10 ]
+	          out:  [ t0 t1 t18 t35 t152 r.10 ]
+	          gen:  [ t152 i.4 r.10 ]
+	          live: 8 0
+	l3        in:   [ r.3 ]
+	          out:  [ ]
+	          gen:  [ r.3 ]
+	          live: 1 0
+
+**** Function go ****
+> Liveness analysis:
+	l16       in:   [ ]
+	          out:  [ t0 ]
+	          gen:  [ t0 t3 ]
+	          live: 4 0
+	l17       in:   [ ]
+	          out:  [ ]
+	          gen:  [ t5 t4 ]
+	          live: 1 0
+	l18       in:   [ t0 ]
+	          out:  [ t0 t27 t30 ]
+	          gen:  [ t0 t26 t27 t30 ]
+	          live: 5 0
+	l20       in:   [ t0 t27 t30 x.32 ]
+	          out:  [ t0 t27 t30 x.32 ]
+	          gen:  [ t11 x.32 ]
+	          live: 7 0
+	l21       in:   [ t0 t27 t30 x.32 ]
+	          out:  [ t0 t27 t30 x.32 ]
+	          gen:  [ t0 t13 x.32 ]
+	          live: 15 15
+	l23       in:   [ t0 t27 t30 x.32 ]
+	          out:  [ t0 t27 t30 x.32 ]
+	          gen:  [ t21 t23 t19 t27 t28 t17 t30 t29 t37 t35 t44 t33 x.32 ]
+	          live: 16 15
+	l24       in:   [ t0 t27 t30 x.32 ]
+	          out:  [ t0 t27 t30 t45 ]
+	          gen:  [ t45 x.32 ]
+	          live: 6 0
+	l22       in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+
+**** Function main ****
+> Liveness analysis:
+	l26       in:   [ ]
+	          out:  [ ]
+	          gen:  [ t3 ]
+	          live: 11 15
+	l27       in:   [ i.37 ]
+	          out:  [ t10 i.37 ]
+	          gen:  [ t10 i.37 ]
+	          live: 4 0
+	l28       in:   [ t10 i.37 ]
+	          out:  [ t20 ]
+	          gen:  [ t10 t12 t16 t18 t20 i.37 ]
+	          live: 12 15
+	l29       in:   [ ]
+	          out:  [ ]
+	          gen:  [ t22 t25 t24 ]
+	          live: 9 15
+

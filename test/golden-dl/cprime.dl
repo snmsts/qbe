@@ -1,0 +1,55 @@
+**** Function main ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	L0        in:   [ v3.4 v2.5 v1.6 ]
+	          out:  [ v3.4 v2.5 v1.6 ]
+	          gen:  [ v1.6 ]
+	          live: 5 0
+	L8        in:   [ v3.4 v2.5 v1.6 ]
+	          out:  [ v3.4 v2.5 v1.6 v4.8 ]
+	          gen:  [ v8 v3.4 v4.8 isel.20 isel.21 isel.22 ]
+	          live: 8 0
+	L5        in:   [ v3.4 v2.5 v1.6 v4.8 ]
+	          out:  [ v3.4 v2.5 v1.6 v4.8 ]
+	          gen:  [ ]
+	          live: 6 0
+	L2        in:   [ v3.4 v2.5 v1.6 v4.8 v0.10 ]
+	          out:  [ v3.4 v2.5 v1.6 v4.8 v0.10 ]
+	          gen:  [ v3.4 v4.8 v0.10 ]
+	          live: 7 0
+	L10       in:   [ v3.4 v2.5 v1.6 v4.8 v0.10 ]
+	          out:  [ v3.4 v2.5 v1.6 v4.8 v0.10 ]
+	          gen:  [ v15 v3.4 v0.10 ]
+	          live: 9 0
+	L11       in:   [ v3.4 v2.5 v1.6 ]
+	          out:  [ v3.4 v2.5 v1.6 ]
+	          gen:  [ ]
+	          live: 5 0
+	L4        in:   [ v3.4 v2.5 v1.6 v4.8 v0.10 ]
+	          out:  [ v18 v3.4 v2.5 v1.6 v4.8 ]
+	          gen:  [ v18 v0.10 ]
+	          live: 7 0
+	L3        in:   [ v3.4 v2.5 v1.6 v4.11 ]
+	          out:  [ v3.4 v2.12 v1.13 ]
+	          gen:  [ v22 v3.4 v2.5 v1.6 v4.11 v2.12 v1.13 ]
+	          live: 7 0
+	L6        in:   [ v3.4 v2.12 v1.13 ]
+	          out:  [ v24 v2.12 v1.13 ]
+	          gen:  [ v24 v3.4 v2.12 v1.13 ]
+	          live: 5 0
+	L1        in:   [ v2.5 ]
+	          out:  [ ]
+	          gen:  [ v2.5 ]
+	          live: 3 0
+	L13       in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+	L7        in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+

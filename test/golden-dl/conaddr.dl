@@ -1,0 +1,42 @@
+**** Function f0 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ o char isel.1 ]
+	          live: 2 0
+
+**** Function f1 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ o char ]
+	          live: 1 0
+
+**** Function f2 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ o1 o2 o22 o addr char isel.2 ]
+	          live: 2 0
+
+**** Function f3 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ o addr isel.3 ]
+	          live: 2 0
+
+**** Function f4 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ isel.4 ]
+	          live: 3 0
+
+**** Function writeto0 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+

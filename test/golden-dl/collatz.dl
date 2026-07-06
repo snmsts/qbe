@@ -1,0 +1,51 @@
+**** Function test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	loop      in:   [ n cmax ]
+	          out:  [ n cmax ]
+	          gen:  [ n ]
+	          live: 4 0
+	cloop     in:   [ n cmax n0 c0 ]
+	          out:  [ n cmax n0 c0 ]
+	          gen:  [ n0 c0 ]
+	          live: 6 0
+	iter0     in:   [ n cmax n0 c0 ]
+	          out:  [ n cmax n0 c0 ]
+	          gen:  [ n n0 ]
+	          live: 6 0
+	iter1     in:   [ n cmax n0 c0 ]
+	          out:  [ n cmax n0 c1 ]
+	          gen:  [ n0 c0 c1 ]
+	          live: 6 0
+	odd       in:   [ n cmax n0 c1 ]
+	          out:  [ n cmax n2 c1 ]
+	          gen:  [ n0 n2 c1 n1 ]
+	          live: 6 0
+	even      in:   [ n cmax n0 c1 ]
+	          out:  [ n cmax n3 c1 ]
+	          gen:  [ n0 n3 c1 ]
+	          live: 6 0
+	getmemo   in:   [ n cmax n0 c0 ]
+	          out:  [ n cmax c2 ]
+	          gen:  [ n0 c0 n0l cn0 c2 ]
+	          live: 6 0
+	endcl     in:   [ n cmax c ]
+	          out:  [ n9 cmax c ]
+	          gen:  [ n n9 cmax c nl ]
+	          live: 6 0
+	newm      in:   [ n9 c ]
+	          out:  [ n9 c ]
+	          gen:  [ n9 c ]
+	          live: 4 0
+	oldm      in:   [ n9 cmax ]
+	          out:  [ n9 cmax ]
+	          gen:  [ n9 cmax ]
+	          live: 4 0
+	end       in:   [ cmax ]
+	          out:  [ ]
+	          gen:  [ cmax ]
+	          live: 3 0
+

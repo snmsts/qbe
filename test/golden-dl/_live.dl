@@ -1,0 +1,11 @@
+**** Function test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	inloop    in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+

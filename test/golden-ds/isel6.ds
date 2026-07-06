@@ -1,0 +1,36 @@
+**** Function main ****
+> Loop information:
+
+> Spill costs:
+	_1         1
+	abi.1      4
+	abi.2      0
+	abi.3      0
+	abi.4      0
+	isel.5     2
+
+
+> Block information:
+	_0         (    1) [ ]
+
+> After spilling:
+function $main() {
+@_0
+	%abi.1 =l salloc 32
+	%isel.5 =l copy 9223372036854775807
+	storel %isel.5, [16 + %abi.1]
+	storel 8, [8 + %abi.1]
+	storel 7, [0 + %abi.1]
+	R7 =l copy 6
+	R6 =l copy 5
+	R2 =l copy 4
+	R3 =l copy 3
+	R4 =l copy 2
+	R5 =l copy 1
+	call $myfunc, 0061
+	%_1 =w copy R1
+	salloc -32
+	R1 =w copy 0
+	ret0 0001
+}
+

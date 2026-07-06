@@ -1,0 +1,128 @@
+**** Function ifmv ****
+> Loop information:
+
+> Spill costs:
+	p1         2
+	p2         3
+	p3         3
+	rt         0
+	rf         0
+	r          0
+	rt.1       2
+	rf.2       2
+	r.3        2
+	r.4        0
+	r.5        0
+
+
+> Block information:
+	start      (    1) [ r.3 ]
+	exit       (    1) [ ]
+
+> After spilling:
+function $ifmv() {
+@start
+	%p3 =w copy R3
+	%p2 =w copy R4
+	%p1 =w copy R5
+	%rt.1 =w add %p2, %p3
+	%rf.2 =w sub %p2, %p3
+	xcmpw 0, %p1
+	%r.3 =w xseline %rt.1, %rf.2
+@exit
+	R1 =w copy %r.3
+	ret0 0001
+}
+
+**** Function hoist1 ****
+> Loop information:
+	loop       (  6   0) [ i.8 n.9 i.11 n.12 ]
+
+> Spill costs:
+	p1         2
+	p2         2
+	p3         2
+	n          0
+	i          0
+	base       0
+	r          2
+	n.6        0
+	i.7        0
+	i.8        21
+	n.9        21
+	base.10    2
+	i.11       30
+	n.12       21
+
+
+> Block information:
+	start      (    1) [ p1 p2 p3 ]
+	loop       (   10) [ p2 p3 i.11 n.12 ]
+	exit       (    1) [ ]
+
+> After spilling:
+function $hoist1() {
+@start
+	%p3 =w copy R3
+	%p2 =w copy R4
+	%p1 =w copy R5
+@loop
+	%i.8 =w phi @start %p1, @loop %i.11
+	%n.9 =w phi @start 0, @loop %n.12
+	%i.11 =w sub %i.8, 1
+	%n.12 =w add %n.9, 1
+	xcmpw 0, %i.11
+	jfine @loop, @exit
+@exit
+	%base.10 =w add %p2, %p3
+	%r =w add %base.10, %n.12
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function hoist2 ****
+> Loop information:
+	loop       (  5   0) [ i.15 n.16 base.17 i.18 n.19 ]
+
+> Spill costs:
+	p1         2
+	p2         2
+	p3         2
+	n          0
+	i          0
+	base       0
+	r          2
+	n.13       0
+	i.14       0
+	i.15       21
+	n.16       21
+	base.17    12
+	i.18       30
+	n.19       21
+
+
+> Block information:
+	start      (    1) [ p1 base.17 ]
+	loop       (   10) [ base.17 i.18 n.19 ]
+	exit       (    1) [ ]
+
+> After spilling:
+function $hoist2() {
+@start
+	%p3 =w copy R3
+	%p2 =w copy R4
+	%p1 =w copy R5
+	%base.17 =w add %p2, %p3
+@loop
+	%i.15 =w phi @start %p1, @loop %i.18
+	%n.16 =w phi @start 0, @loop %n.19
+	%i.18 =w sub %i.15, 1
+	%n.19 =w add %n.16, %base.17
+	xcmpw 0, %i.18
+	jfine @loop, @exit
+@exit
+	%r =w add %base.17, %n.19
+	R1 =w copy %r
+	ret0 0001
+}
+

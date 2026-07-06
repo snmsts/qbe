@@ -1,0 +1,116 @@
+**** Function lt ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 1 2
+
+**** Function le ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 1 2
+
+**** Function gt ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 1 2
+
+**** Function ge ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 1 2
+
+**** Function eq1 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r isel.1 isel.2 ]
+	          live: 2 2
+
+**** Function eq2 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r isel.3 isel.4 ]
+	          live: 4 2
+	true      in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+	false     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+
+**** Function eq3 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ x y ]
+	          gen:  [ x y r isel.6 isel.7 ]
+	          live: 4 2
+	true      in:   [ x y ]
+	          out:  [ ]
+	          gen:  [ x y snk.5 isel.8 isel.9 ]
+	          live: 2 2
+	false     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+
+**** Function ne1 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r isel.10 isel.11 ]
+	          live: 2 2
+
+**** Function ne2 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r isel.12 isel.13 ]
+	          live: 4 2
+	true      in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+	false     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+
+**** Function ne3 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ x y ]
+	          gen:  [ x y r isel.15 isel.16 ]
+	          live: 4 2
+	true      in:   [ x y ]
+	          out:  [ ]
+	          gen:  [ x y snk.14 isel.17 isel.18 ]
+	          live: 2 2
+	false     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+
+**** Function o ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 1 2
+
+**** Function uo ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ x y r ]
+	          live: 1 2
+

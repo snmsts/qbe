@@ -1,0 +1,11 @@
+**** Function dragon ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	b4.1      in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+

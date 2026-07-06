@@ -1,0 +1,124 @@
+**** Function f1 ****
+> Loop information:
+
+> Spill costs:
+	x          0
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f1() {
+@start
+	R1 =w copy 4294967295
+	ret0 0001
+}
+
+**** Function f2 ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	isel.1     2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f2() {
+@start
+	%isel.1 =w copy 8
+	R1 =w copy 4294967040
+	R3 =w sign R1
+	xidivw %isel.1
+	copy R3
+	%x =w copy R1
+	R1 =w copy %x
+	ret0 0001
+}
+
+**** Function f3 ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	isel.2     2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f3() {
+@start
+	%isel.2 =w copy 7
+	R1 =w copy 4294967284
+	R3 =w sign R1
+	xidivw %isel.2
+	copy R1
+	%x =w copy R3
+	R1 =w copy %x
+	ret0 0001
+}
+
+**** Function f4 ****
+> Loop information:
+
+> Spill costs:
+	x          0
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f4() {
+@start
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function f5 ****
+> Loop information:
+
+> Spill costs:
+	x          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f5() {
+@start
+	%x =w shr 1, 0
+	R1 =w copy %x
+	ret0 0001
+}
+
+**** Function f6 ****
+> Loop information:
+
+> Spill costs:
+	x          2
+	isel.3     2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f6() {
+@start
+	%isel.3 =w copy 7
+	R1 =w copy 0
+	R3 =w copy 0
+	xdivw %isel.3
+	copy R1
+	%x =w copy R3
+	R1 =w copy %x
+	ret0 0001
+}
+

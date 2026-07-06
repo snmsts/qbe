@@ -1,0 +1,22 @@
+**** Function test ****
+> Loop information:
+	inloop     (  2   0) [ ]
+
+> Spill costs:
+	b          0
+	x          0
+	x1         0
+	b1         0
+
+
+> Block information:
+	start      (    1) [ ]
+	inloop     (   10) [ ]
+
+> After spilling:
+function $test() {
+@start
+@inloop
+	jmp @inloop
+}
+

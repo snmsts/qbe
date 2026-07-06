@@ -1,0 +1,23 @@
+**** Function test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	loop      in:   [ alt cnt ]
+	          out:  [ alt1 cnt ]
+	          gen:  [ alt alt1 ]
+	          live: 4 0
+	left      in:   [ alt1 cnt x ]
+	          out:  [ alt1 cnt x1 ]
+	          gen:  [ alt1 cnt x x1 ]
+	          live: 6 0
+	right     in:   [ alt1 cnt ]
+	          out:  [ alt1 cnt1 ]
+	          gen:  [ alt1 cnt cnt1 ]
+	          live: 4 0
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+

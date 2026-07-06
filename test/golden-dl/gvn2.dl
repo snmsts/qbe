@@ -1,0 +1,11 @@
+**** Function test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ rc.1 ]
+	          gen:  [ c rc.1 isel.6 isel.7 ]
+	          live: 4 0
+	end       in:   [ rc.1 ]
+	          out:  [ ]
+	          gen:  [ rc.1 ]
+	          live: 1 0
+

@@ -1,0 +1,35 @@
+**** Function f0 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ a b q ]
+	          live: 2 0
+
+**** Function f1 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ a b q ]
+	          live: 2 0
+
+**** Function f2 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ a b q ]
+	          live: 2 0
+
+**** Function f3 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ a b q ]
+	          live: 2 0
+
+**** Function f4 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ a b q ]
+	          live: 2 0
+

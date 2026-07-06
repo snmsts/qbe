@@ -1,0 +1,38 @@
+**** Function f ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ abi.15 ]
+	          gen:  [ x abi.15 abi.26 abi.28 ]
+	          live: 3 0
+	start.6   in:   [ ]
+	          out:  [ abi.20 ]
+	          gen:  [ abi.20 abi.22 ]
+	          live: 4 0
+	start.5   in:   [ abi.15 ]
+	          out:  [ abi.14 ]
+	          gen:  [ abi.14 abi.15 abi.16 abi.19 ]
+	          live: 4 0
+	start.4   in:   [ ]
+	          out:  [ abi.3 ]
+	          gen:  [ abi.3 ]
+	          live: 3 0
+	start.3   in:   [ ]
+	          out:  [ abi.8 ]
+	          gen:  [ abi.8 abi.10 ]
+	          live: 4 0
+	start.2   in:   [ abi.3 ]
+	          out:  [ abi.2 ]
+	          gen:  [ abi.2 abi.3 abi.4 abi.7 ]
+	          live: 4 0
+	start.1   in:   [ abi.1 ]
+	          out:  [ ]
+	          gen:  [ n abi.1 ]
+	          live: 1 1
+
+**** Function g ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ fmt r abi.31 abi.33 isel.35 ]
+	          live: 9 15
+

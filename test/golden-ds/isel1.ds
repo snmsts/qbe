@@ -1,0 +1,32 @@
+**** Function f ****
+> Loop information:
+
+> Spill costs:
+	i          2
+	j          2
+	off1       2
+	a_i        2
+	off2       2
+	a_ij       2
+	x          2
+	isel.1     2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f() {
+@start
+	%j =l copy R4
+	%i =l copy R5
+	%off1 =l mul %i, 8
+	%isel.1 =l addr $a
+	%a_i =l add %off1, %isel.1
+	%off2 =l mul %j, 4
+	%a_ij =l add %a_i, %off2
+	%x =w loadsw %a_ij
+	R1 =w copy %x
+	ret0 0001
+}
+

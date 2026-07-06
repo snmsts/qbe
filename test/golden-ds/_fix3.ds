@@ -1,0 +1,48 @@
+**** Function test ****
+> Loop information:
+	l          (  7   0) [ c s.3 x.4 s.5 x.6 x.7 s.8 s.9 x.10 ]
+
+> Spill costs:
+	x          0
+	s          0
+	c          20
+	x.1        0
+	s.2        0
+	s.3        31
+	x.4        61
+	s.5        21
+	x.6        20
+	x.7        20
+	s.8        20
+	s.9        20
+	x.10       20
+
+
+> Block information:
+	start      (    1) [ ]
+	l          (   10) [ s.5 x.6 ]
+	c          (   10) [ s.5 x.7 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $test() {
+@start
+@l
+	%s.3 =w phi @start 0, @c %s.5
+	%x.4 =w phi @start 100, @c %x.7
+	xcmpw 10, %x.4
+	%c =w flagisle
+	%s.9 =w add %s.3, %x.4
+	%x.10 =w sub %x.4, 1
+	%s.8 =w sub %s.3, %x.4
+	xcmpw 0, %c
+	%s.5 =w xseline %s.9, %s.8
+	%x.6 =w xseline %x.10, %x.4
+@c
+	%x.7 =w sub %x.6, 1
+	jfine @l, @end
+@end
+	R1 =w copy %s.5
+	ret0 0001
+}
+

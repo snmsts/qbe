@@ -1,0 +1,15 @@
+**** Function f ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ n0 ]
+	          gen:  [ n0 ]
+	          live: 3 0
+	loop      in:   [ n1 p0 p1 p2 p3 p4 p5 p6 p7 p8 p9 pa pb pc pd pe pf ]
+	          out:  [ n2 p01 p11 p21 p31 p41 p51 p61 p71 p81 p91 pa1 pb1 pc1 pd1 pe1 pf1 ]
+	          gen:  [ n1 n2 p0 p01 p1 p11 p2 p21 p3 p31 p4 p41 p5 p51 p6 p61 p7 p71 p8 p81 p9 p91 pa pa1 pb pb1 pc pc1 pd pd1 pe pe1 pf pf1 ]
+	          live: 19 0
+	end       in:   [ p01 p11 p21 p31 p41 p51 p61 p71 p81 p91 pa1 pb1 pc1 pd1 pe1 pf1 ]
+	          out:  [ ]
+	          gen:  [ p01 p11 p21 p31 p41 p51 p61 p71 p81 p91 pa1 pb1 pc1 pd1 pe1 pf1 a.3 a.4 a.5 a.6 a.7 a.8 a.9 a.10 a.11 a.12 a.13 a.14 a.15 a.16 a.17 ]
+	          live: 16 0
+

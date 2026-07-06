@@ -1,0 +1,11 @@
+**** Function test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ cmp.2 ]
+	          gen:  [ c cmp.1 cmp.2 isel.4 ]
+	          live: 4 0
+	no        in:   [ cmp.2 ]
+	          out:  [ ]
+	          gen:  [ cmp.2 ]
+	          live: 1 0
+

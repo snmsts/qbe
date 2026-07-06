@@ -38,7 +38,12 @@
    (ncon     :initform 0   :accessor fn-ncon)
    ;; analysis (filled by cfg.lisp)
    (rpo      :initform nil :accessor fn-rpo  :documentation "Vector: rpo-id -> blk.")
-   (nblk     :initform 0   :accessor fn-nblk)))
+   (nblk     :initform 0   :accessor fn-nblk)
+   ;; backend (spill/rega): stack-slot bytes, used-register mask, RMem table
+   (slot     :initform 0   :accessor fn-slot)
+   (reg      :initform 0   :accessor fn-reg)
+   (mem      :initform nil :accessor fn-mem)
+   (regs?    :initform nil :accessor fn-regs? :documentation "materialize-regs done?")))
 
 (defun fn-ntmp (fn) (fill-pointer (fn-tmp fn)))
 
@@ -93,7 +98,13 @@
   (phi   nil)               ; phi-class union-find parent (temp id), or NIL
   (width :full)
   (gcmbid -1)               ; GCM target block rpo id (-1 = NOBID)
-  (visit nil))              ; SSA-rename tag / GCM visited flag
+  (visit nil)               ; SSA-rename tag / GCM visited flag; rega: reg or -1
+  ;; backend (spill/rega): spill cost, stack slot, and register hint
+  (cost 0)                  ; spill cost (fillcost); UINT_MAX-ish for regs
+  (slot -1)                 ; assigned stack slot, -1 = unset
+  (hint-r -1)               ; preferred register, -1 = none
+  (hint-w 0)                ; hint weight (loop level of last set)
+  (hint-m 0))               ; bitmask of registers to avoid
 
 (defstruct (use-rec (:constructor make-use-rec (type bid payload)))
   type                       ; :phi :ins :jmp

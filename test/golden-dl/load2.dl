@@ -1,0 +1,7 @@
+**** Function f ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 11 15
+

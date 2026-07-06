@@ -1,0 +1,67 @@
+**** Function g ****
+> Loop information:
+
+> Spill costs:
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $g() {
+@start
+	ret0
+}
+
+**** Function f ****
+> Loop information:
+
+> Spill costs:
+	arg        2
+	r          0
+	r8         0
+	isel.1     2
+	isel.2     2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f() {
+@start
+	%arg =w copy R5
+	call $g, 0001
+	copy R1
+	%isel.2 =l copy 180388626474
+	storel %isel.2, [S0]
+	%isel.1 =l copy 180388626474
+	storel %isel.1, [8 + S0]
+	R1 =w copy %arg
+	ret0 0001
+}
+
+**** Function main ****
+> Loop information:
+
+> Spill costs:
+	a          2
+	b          1
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $main() {
+@start
+	R5 =w copy 0
+	call $f, 0011
+	%a =w copy R1
+	R5 =w copy 0
+	call $f, 0011
+	%b =w copy R1
+	R1 =w copy %a
+	ret0 0001
+}
+

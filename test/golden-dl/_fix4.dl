@@ -1,0 +1,35 @@
+**** Function test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+	loop      in:   [ n.5 x.6 ]
+	          out:  [ n.5 x.6 ]
+	          gen:  [ n.5 ]
+	          live: 4 0
+	next      in:   [ n.5 x.6 ]
+	          out:  [ n.5 x.8 ]
+	          gen:  [ x.6 x.8 ]
+	          live: 4 0
+	tloop     in:   [ n.5 x.8 t.9 ]
+	          out:  [ n.5 x.8 t.9 ]
+	          gen:  [ s x.8 t.9 ]
+	          live: 6 0
+	test      in:   [ n.5 x.8 t.9 ]
+	          out:  [ n.5 x.8 t.9 ]
+	          gen:  [ r n.5 x.8 t.9 ]
+	          live: 7 0
+	tnext     in:   [ n.5 x.8 t.9 ]
+	          out:  [ n.5 x.8 t.11 ]
+	          gen:  [ t.9 t.11 ]
+	          live: 5 0
+	prime     in:   [ n.5 x.8 ]
+	          out:  [ x.8 n.10 ]
+	          gen:  [ n.5 x.8 n.10 ]
+	          live: 4 0
+	end       in:   [ x.6 ]
+	          out:  [ ]
+	          gen:  [ x.6 ]
+	          live: 3 0
+

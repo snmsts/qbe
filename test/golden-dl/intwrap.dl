@@ -1,0 +1,7 @@
+**** Function intwrap ****
+> Liveness analysis:
+	s         in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+

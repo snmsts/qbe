@@ -1,0 +1,22 @@
+**** Function alpha ****
+> Liveness analysis:
+	ini       in:   [ ]
+	          out:  [ p l n pe ]
+	          gen:  [ p l n pe ]
+	          live: 6 0
+	lop       in:   [ p n pe p1 l1 ]
+	          out:  [ p n pe p2 l2 ]
+	          gen:  [ pe p1 p2 l1 l2 ]
+	          live: 8 0
+	end       in:   [ p n ]
+	          out:  [ ]
+	          gen:  [ p n ]
+	          live: 4 0
+
+**** Function test ****
+> Liveness analysis:
+	ini       in:   [ ]
+	          out:  [ ]
+	          gen:  [ r0 abi.2 blt.3 blt.6 blt.9 isel.12 ]
+	          live: 10 15
+

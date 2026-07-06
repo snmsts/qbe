@@ -1,0 +1,70 @@
+**** Function fneg ****
+> Liveness analysis:
+	fneg      in:   [ ]
+	          out:  [ ]
+	          gen:  [ f b0 b1 rs ]
+	          live: 1 1
+
+**** Function ftrunc ****
+> Liveness analysis:
+	ftrunc    in:   [ ]
+	          out:  [ ]
+	          gen:  [ f l0 rt ]
+	          live: 1 1
+
+**** Function wtos ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ w rt utof.1 ]
+	          live: 1 1
+
+**** Function wtod ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ w rt utof.2 ]
+	          live: 1 1
+
+**** Function ltos ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ l rt utof.3 utof.4 utof.5 utof.6 utof.7 utof.8 utof.9 utof.10 ]
+	          live: 4 1
+
+**** Function ltod ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ l rt utof.11 utof.12 utof.13 utof.14 utof.15 utof.16 utof.17 utof.18 ]
+	          live: 4 1
+
+**** Function stow ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ f rt ftou.19 ]
+	          live: 1 1
+
+**** Function dtow ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ f rt ftou.20 ]
+	          live: 1 1
+
+**** Function stol ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ f rt ftou.21 ftou.22 ftou.23 ftou.24 ftou.25 ]
+	          live: 3 1
+
+**** Function dtol ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ f rt ftou.26 ftou.27 ftou.28 ftou.29 ftou.30 ]
+	          live: 3 1
+

@@ -1,0 +1,11 @@
+**** Function f ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ptr ]
+	          gen:  [ cond ptr isel.1 isel.2 ]
+	          live: 4 0
+	end       in:   [ ptr ]
+	          out:  [ ]
+	          gen:  [ ptr result ]
+	          live: 1 0
+

@@ -1,0 +1,7 @@
+**** Function f ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ i j off1 a_i off2 a_ij x isel.1 ]
+	          live: 3 0
+

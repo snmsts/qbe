@@ -1,0 +1,22 @@
+**** Function func ****
+> Liveness analysis:
+	start.0   in:   [ ]
+	          out:  [ ]
+	          gen:  [ blt.1 ]
+	          live: 1 0
+
+**** Function main ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ field abi.4 ]
+	          live: 11 15
+	failed    in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 11 15
+	passed    in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+

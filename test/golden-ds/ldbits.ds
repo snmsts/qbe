@@ -1,0 +1,45 @@
+**** Function tests ****
+> Loop information:
+
+> Spill costs:
+	p          0
+	p3         0
+	p4         0
+	p6         0
+	p8         0
+	x1         0
+	c1         0
+	x2         0
+	c2         0
+	x3         0
+	c3         0
+	ld.1       0
+	ld.2       0
+	ld.3       0
+	ld.4       0
+	ld.5       0
+	ld.6       0
+	ld.7       0
+	ld.8       0
+	ld.9       0
+	ld.10      0
+	ld.11      0
+	ld.12      0
+	ld.13      0
+	ld.14      0
+	ld.15      0
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $tests() {
+@start
+	storew 1, $a
+	storew 2, $a
+	storew 3, $a
+	storew 0, $a
+	ret0
+}
+

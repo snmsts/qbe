@@ -31,6 +31,8 @@
    #:gvn #:normins #:getcon #:isconbits
    ;; amd64 abi lowering (M3/B1)
    #:amd64-abi #:amd64-isel #:simpl #:reg #:reg-p #:reg-id #:call-ref #:call-ref-p #:slot-ref-p
+   ;; backend (M4): register materialization, liveness, spill costs
+   #:materialize-regs #:be-fill-live #:fill-cost #:ref-tid #:tid-ref #:+tmp0+
    ;; amd64 codegen (M1) + driver
    #:emit-fn #:emit-module #:module-asm-string
    #:build-exe #:compile-and-run))

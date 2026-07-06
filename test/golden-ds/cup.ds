@@ -1,0 +1,27 @@
+**** Function test ****
+> Loop information:
+	loop       (  3   0) [ n0 n1 ]
+
+> Spill costs:
+	n0         21
+	n1         30
+	cmp        0
+
+
+> Block information:
+	start      (    1) [ ]
+	loop       (   10) [ n1 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $test() {
+@start
+@loop
+	%n0 =l phi @start -1988, @loop %n1
+	%n1 =l add %n0, 1
+	xcmpl 1991, %n1
+	jfisge @end, @loop
+@end
+	ret0
+}
+

@@ -1,0 +1,7 @@
+**** Function blit ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ blt.2 blt.5 blt.8 ]
+	          live: 2 0
+

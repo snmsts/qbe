@@ -1,0 +1,19 @@
+**** Function f ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ p n.1 ]
+	          gen:  [ p n.1 ]
+	          live: 4 0
+	loop      in:   [ p r.3 n.4 ]
+	          out:  [ p r.3 n.5 ]
+	          gen:  [ n.4 n.5 ]
+	          live: 5 0
+	loop1     in:   [ p n.5 ]
+	          out:  [ p n.5 r.6 ]
+	          gen:  [ p n.5 r.6 ]
+	          live: 5 0
+	end       in:   [ r.3 ]
+	          out:  [ ]
+	          gen:  [ r.3 ]
+	          live: 1 0
+

@@ -24,6 +24,7 @@
                              (:file "amd64")
                              (:file "amd64-abi")
                              (:file "amd64-isel")
+                             (:file "backend")
                              (:file "driver")))))
 
 (asdf:defsystem "qbe-cl/test"

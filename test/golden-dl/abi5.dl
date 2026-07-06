@@ -1,0 +1,7 @@
+**** Function test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ r1 i1 w2 i2 s3 w3 p3 i3 w4 d4 i4 s5 d5 l5 i5 i6 s7 d71 d72 i7 w81 w82 w83 w84 i8 w9 s9 d9 i9 wa sa da ia w0b w1b sb db ib abi.1 abi.2 abi.3 abi.5 abi.6 abi.8 abi.9 abi.11 abi.12 abi.14 abi.15 abi.17 abi.18 abi.19 abi.20 isel.22 isel.23 isel.24 isel.25 isel.26 isel.27 isel.28 isel.29 isel.30 isel.31 isel.32 isel.33 isel.34 ]
+	          live: 11 15
+

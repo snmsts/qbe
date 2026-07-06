@@ -1,0 +1,23 @@
+**** Function f ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ a ]
+	          gen:  [ a ]
+	          live: 3 0
+	loop      in:   [ b a0 ]
+	          out:  [ b a1 a0 ]
+	          gen:  [ b a1 a0 ]
+	          live: 5 0
+	loop0     in:   [ b a1 a0 ]
+	          out:  [ b a1 ]
+	          gen:  [ a1 a0 snk.1 ]
+	          live: 5 0
+	loop1     in:   [ b a1 a0 ]
+	          out:  [ b a1 ]
+	          gen:  [ a1 a0 snk.2 ]
+	          live: 5 0
+	end       in:   [ b ]
+	          out:  [ ]
+	          gen:  [ b ]
+	          live: 1 0
+

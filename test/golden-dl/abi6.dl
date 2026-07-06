@@ -1,0 +1,7 @@
+**** Function f ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ d1 d2 abi.2 abi.3 abi.5 abi.6 abi.8 abi.9 isel.13 isel.14 ]
+	          live: 11 17
+

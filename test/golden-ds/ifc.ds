@@ -1,0 +1,368 @@
+**** Function ifc1 ****
+> Loop information:
+
+> Spill costs:
+	v0         2
+	v1         2
+	c          2
+	v          0
+	v.1        2
+	v.2        0
+	v.3        0
+
+
+> Block information:
+	start      (    1) [ v.1 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifc1() {
+@start
+	%c =w copy R3
+	%v1 =l copy R4
+	%v0 =l copy R5
+	xcmpw 0, %c
+	%v.1 =l xseline %v1, %v0
+@end
+	R1 =l copy %v.1
+	ret0 0001
+}
+
+**** Function ifc2 ****
+> Loop information:
+
+> Spill costs:
+	v0         2
+	v1         2
+	p          2
+	c          0
+	v          0
+	v.4        2
+	v.5        0
+	v.6        0
+
+
+> Block information:
+	start      (    1) [ v.4 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifc2() {
+@start
+	%p =w copy R3
+	%v1 =l copy R4
+	%v0 =l copy R5
+	xcmpw 42, %p
+	%v.4 =l xseline %v1, %v0
+@end
+	R1 =l copy %v.4
+	ret0 0001
+}
+
+**** Function ifc3 ****
+> Loop information:
+
+> Spill costs:
+	v0         2
+	v1         2
+	p          2
+	c          0
+	v          0
+	v.7        2
+	v.8        0
+	v.9        0
+
+
+> Block information:
+	start      (    1) [ v.7 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifc3() {
+@start
+	%p =w copy R3
+	%v1 =l copy R4
+	%v0 =l copy R5
+	xcmpw 42, %p
+	%v.7 =l xseliugt %v1, %v0
+@end
+	R1 =l copy %v.7
+	ret0 0001
+}
+
+**** Function ifclts ****
+> Loop information:
+
+> Spill costs:
+	s0         2
+	s1         2
+	v0         2
+	v1         2
+	c          0
+	v          0
+	v.10       2
+	v.11       0
+	v.12       0
+
+
+> Block information:
+	start      (    1) [ v.10 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifclts() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	xcmps %s0, %s1
+	%v.10 =l xselfgt %v1, %v0
+@end
+	R1 =l copy %v.10
+	ret0 0001
+}
+
+**** Function ifcles ****
+> Loop information:
+
+> Spill costs:
+	s0         2
+	s1         2
+	v0         2
+	v1         2
+	c          0
+	v          0
+	v.13       2
+	v.14       0
+	v.15       0
+
+
+> Block information:
+	start      (    1) [ v.13 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifcles() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	xcmps %s0, %s1
+	%v.13 =l xselfge %v1, %v0
+@end
+	R1 =l copy %v.13
+	ret0 0001
+}
+
+**** Function ifcgts ****
+> Loop information:
+
+> Spill costs:
+	s0         2
+	s1         2
+	v0         2
+	v1         2
+	c          0
+	v          0
+	v.16       2
+	v.17       0
+	v.18       0
+
+
+> Block information:
+	start      (    1) [ v.16 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifcgts() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	xcmps %s1, %s0
+	%v.16 =l xselfgt %v1, %v0
+@end
+	R1 =l copy %v.16
+	ret0 0001
+}
+
+**** Function ifcges ****
+> Loop information:
+
+> Spill costs:
+	s0         2
+	s1         2
+	v0         2
+	v1         2
+	c          0
+	v          0
+	v.19       2
+	v.20       0
+	v.21       0
+
+
+> Block information:
+	start      (    1) [ v.19 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifcges() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	xcmps %s1, %s0
+	%v.19 =l xselfge %v1, %v0
+@end
+	R1 =l copy %v.19
+	ret0 0001
+}
+
+**** Function ifceqs ****
+> Loop information:
+
+> Spill costs:
+	s0         2
+	s1         2
+	v0         2
+	v1         2
+	c          2
+	v          0
+	v.22       2
+	v.23       0
+	v.24       0
+	isel.25    2
+	isel.26    2
+
+
+> Block information:
+	start      (    1) [ v.22 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifceqs() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	xcmps %s1, %s0
+	%isel.25 =w flagfeq
+	%isel.26 =w flagfo
+	%c =w and %isel.25, %isel.26
+	copy %c
+	%v.22 =l xseline %v1, %v0
+@end
+	R1 =l copy %v.22
+	ret0 0001
+}
+
+**** Function ifcnes ****
+> Loop information:
+
+> Spill costs:
+	s0         2
+	s1         2
+	v0         2
+	v1         2
+	c          2
+	v          0
+	v.27       2
+	v.28       0
+	v.29       0
+	isel.30    2
+	isel.31    2
+
+
+> Block information:
+	start      (    1) [ v.27 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifcnes() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	xcmps %s1, %s0
+	%isel.30 =w flagfne
+	%isel.31 =w flagfuo
+	%c =w or %isel.30, %isel.31
+	copy %c
+	%v.27 =l xseline %v1, %v0
+@end
+	R1 =l copy %v.27
+	ret0 0001
+}
+
+**** Function ifcos ****
+> Loop information:
+
+> Spill costs:
+	s0         2
+	s1         2
+	v0         2
+	v1         2
+	c          0
+	v          0
+	v.32       2
+	v.33       0
+	v.34       0
+
+
+> Block information:
+	start      (    1) [ v.32 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifcos() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	xcmps %s1, %s0
+	%v.32 =l xselfo %v1, %v0
+@end
+	R1 =l copy %v.32
+	ret0 0001
+}
+
+**** Function ifcuos ****
+> Loop information:
+
+> Spill costs:
+	s0         2
+	s1         2
+	v0         2
+	v1         2
+	c          0
+	v          0
+	v.35       2
+	v.36       0
+	v.37       0
+
+
+> Block information:
+	start      (    1) [ v.35 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $ifcuos() {
+@start
+	%v1 =l copy R4
+	%v0 =l copy R5
+	%s1 =s copy R18
+	%s0 =s copy R17
+	xcmps %s1, %s0
+	%v.35 =l xselfuo %v1, %v0
+@end
+	R1 =l copy %v.35
+	ret0 0001
+}
+

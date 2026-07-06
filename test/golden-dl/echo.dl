@@ -1,0 +1,23 @@
+**** Function main ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ av0 ac0 ]
+	          gen:  [ argc argv av0 ac0 ]
+	          live: 4 0
+	loop      in:   [ av ac ]
+	          out:  [ av ac ]
+	          gen:  [ ac ]
+	          live: 4 0
+	loop1     in:   [ av ac ]
+	          out:  [ av ac sep ]
+	          gen:  [ ac sep isel.2 isel.3 ]
+	          live: 6 0
+	loop2     in:   [ av ac sep ]
+	          out:  [ av1 ac1 ]
+	          gen:  [ av av1 ac ac1 sep arg r isel.4 ]
+	          live: 13 15
+	end       in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 1 0
+

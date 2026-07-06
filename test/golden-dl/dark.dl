@@ -1,0 +1,15 @@
+**** Function test ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ ]
+	          gen:  [ av a1 r1 r2 ]
+	          live: 4 0
+	cal       in:   [ ]
+	          out:  [ ]
+	          gen:  [ i ]
+	          live: 11 15
+	fin       in:   [ ]
+	          out:  [ ]
+	          gen:  [ ]
+	          live: 2 0
+

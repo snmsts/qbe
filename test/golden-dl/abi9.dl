@@ -1,0 +1,7 @@
+**** Function f ****
+> Liveness analysis:
+	_0        in:   [ ]
+	          out:  [ ]
+	          gen:  [ self abi.1 blt.2 blt.5 blt.8 blt.11 ]
+	          live: 2 0
+

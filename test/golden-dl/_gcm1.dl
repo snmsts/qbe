@@ -1,0 +1,41 @@
+**** Function ifmv ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ r.3 ]
+	          gen:  [ p1 p2 p3 rt.1 rf.2 r.3 ]
+	          live: 6 0
+	exit      in:   [ r.3 ]
+	          out:  [ ]
+	          gen:  [ r.3 ]
+	          live: 1 0
+
+**** Function hoist1 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ p1 p2 p3 ]
+	          gen:  [ p1 p2 p3 ]
+	          live: 5 0
+	loop      in:   [ p2 p3 i.8 n.9 ]
+	          out:  [ p2 p3 i.11 n.12 ]
+	          gen:  [ i.8 n.9 i.11 n.12 ]
+	          live: 6 0
+	exit      in:   [ p2 p3 n.12 ]
+	          out:  [ ]
+	          gen:  [ p2 p3 r base.10 n.12 ]
+	          live: 3 0
+
+**** Function hoist2 ****
+> Liveness analysis:
+	start     in:   [ ]
+	          out:  [ p1 base.17 ]
+	          gen:  [ p1 p2 p3 base.17 ]
+	          live: 5 0
+	loop      in:   [ i.15 n.16 base.17 ]
+	          out:  [ base.17 i.18 n.19 ]
+	          gen:  [ i.15 n.16 base.17 i.18 n.19 ]
+	          live: 5 0
+	exit      in:   [ base.17 n.19 ]
+	          out:  [ ]
+	          gen:  [ r base.17 n.19 ]
+	          live: 2 0
+

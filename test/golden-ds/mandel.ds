@@ -1,0 +1,141 @@
+**** Function mandel ****
+> Loop information:
+	loop       (  4   7) [ x cr i i1 zr zr1 zi zi1 tmp zr2 zi2 zrx zix sum cmp2 ]
+
+> Spill costs:
+	x          11
+	y          2
+	cr         11
+	ci         0
+	i          22
+	i1         30
+	zr         41
+	zr1        20
+	zi         41
+	zi1        20
+	tmp        30
+	zr2        30
+	zi2        30
+	zrx        20
+	zix        20
+	sum        20
+	cmp1       0
+	cmp2       20
+	snk.1      2
+
+
+> Block information:
+	mandel     (    1) [ x cr ]
+	loop       (   10) [ x cr i i1 zr zi zr2 zi2 ]
+	loop1      (   10) [ x cr i1 zr1 zi1 ]
+	reti       (    1) [ ]
+	ret0       (    1) [ ]
+
+> After spilling:
+function $mandel() {
+@mandel
+	%y =d copy R18
+	%x =d copy R17
+	%cr =d sub %y, [$".Lfp1"]
+@loop
+	%i =w phi @mandel 0, @loop1 %i1
+	%zr =d phi @mandel [$".Lfp0"], @loop1 %zr1
+	%zi =d phi @mandel [$".Lfp0"], @loop1 %zi1
+	%i1 =w add %i, 1
+	%zr2 =d mul %zr, %zr
+	%zi2 =d mul %zi, %zi
+	%sum =d add %zr2, %zi2
+	xcmpd [$".Lfp2"], %sum
+	jffgt @reti, @loop1
+@loop1
+	xcmpw 1000, %i1
+	%cmp2 =w flagisgt
+	%zrx =d sub %zr2, %zi2
+	%zr1 =d add %cr, %zrx
+	%tmp =d mul %zr, %zi
+	%zix =d add %tmp, %tmp
+	%zi1 =d add %x, %zix
+	xcmpw 0, %cmp2
+	jfine @ret0, @loop
+@reti
+	%snk.1 =w add %i, 1
+	R1 =w copy %snk.1
+	ret0 0001
+@ret0
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function main ****
+> Loop information:
+	loopy      ( 11  17) [ y y1 x x1 i r0 r1 r2 ]
+	loopx      ( 11  17) [ y x x1 i r0 r1 ]
+
+> Spill costs:
+	y          121
+	y1         30
+	x          310
+	x1         300
+	i          200
+	r0         100
+	r1         100
+	cmp1       0
+	r2         10
+	cmp2       0
+
+
+> Block information:
+	main       (    1) [ ]
+	loopy      (   10) [ y ]
+	loopx      (  100) [ ]
+	in         (  100) [ y x ]
+	out        (  100) [ y x ]
+	loopx1     (  100) [ y x1 ]
+	loopy1     (   10) [ y1 ]
+	ret        (    1) [ ]
+
+> After spilling:
+function $main() {
+@main
+@loopy
+	%y =d phi @main [$".Lfp3"], @loopy1 %y1
+	stored %y, S0
+@loopx
+	%x =d phi @loopy [$".Lfp3"], @loopx1 %x1
+	stored %x, S2
+	R18 =d copy %y
+	R17 =d copy %x
+	call $mandel, 0201
+	%i =w copy R1
+	xcmpw 0, %i
+	jfine @out, @in
+@in
+	R5 =w copy 42
+	call $putchar, 0011
+	%r0 =w copy R1
+	%x =d load S2
+	%y =d load S0
+	jmp @loopx1
+@out
+	R5 =w copy 32
+	call $putchar, 0011
+	%r1 =w copy R1
+	%x =d load S2
+	%y =d load S0
+@loopx1
+	%x1 =d add %x, [$".Lfp5"]
+	xcmpd [$".Lfp4"], %x1
+	jffgt @loopy1, @loopx
+@loopy1
+	R5 =w copy 10
+	call $putchar, 0011
+	%r2 =w copy R1
+	%y =d load S0
+	%y1 =d add %y, [$".Lfp5"]
+	xcmpd [$".Lfp4"], %y1
+	jffgt @ret, @loopy
+@ret
+	R1 =w copy 0
+	ret0 0001
+}
+

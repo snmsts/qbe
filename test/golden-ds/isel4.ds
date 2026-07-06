@@ -1,0 +1,128 @@
+**** Function f0 ****
+> Loop information:
+
+> Spill costs:
+	a          2
+	b          2
+	c          0
+	d          0
+	e          0
+	q          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f0() {
+@start
+	%b =l copy R4
+	%a =l copy R5
+	%q =l loadsw [8 + %a + 4 * %b]
+	R1 =w copy %q
+	ret0 0001
+}
+
+**** Function f1 ****
+> Loop information:
+
+> Spill costs:
+	a          2
+	b          2
+	c          0
+	f          0
+	d          0
+	e          0
+	q          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f1() {
+@start
+	%b =l copy R4
+	%a =l copy R5
+	%q =l loadsw [8 + %a + 4 * %b]
+	R1 =w copy %q
+	ret0 0001
+}
+
+**** Function f2 ****
+> Loop information:
+
+> Spill costs:
+	a          2
+	b          2
+	l          0
+	d          0
+	e          0
+	q          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f2() {
+@start
+	%b =l copy R4
+	%a =l copy R5
+	%q =l loadsw [8 + %a + 4 * %b]
+	R1 =w copy %q
+	ret0 0001
+}
+
+**** Function f3 ****
+> Loop information:
+
+> Spill costs:
+	a          2
+	b          2
+	l          0
+	d          0
+	f          0
+	e          0
+	q          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f3() {
+@start
+	%b =l copy R4
+	%a =l copy R5
+	%q =l loadsw [8 + %a + 4 * %b]
+	R1 =w copy %q
+	ret0 0001
+}
+
+**** Function f4 ****
+> Loop information:
+
+> Spill costs:
+	a          2
+	b          2
+	c          0
+	d          0
+	e          0
+	f          0
+	q          2
+
+
+> Block information:
+	start      (    1) [ ]
+
+> After spilling:
+function $f4() {
+@start
+	%b =l copy R4
+	%a =l copy R5
+	%q =l loadsw [8 + %a + 4 * %b]
+	R1 =w copy %q
+	ret0 0001
+}
+

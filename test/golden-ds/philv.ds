@@ -1,0 +1,56 @@
+**** Function t0 ****
+> Loop information:
+	loop       (  5   0) [ x0 y0 y1 ]
+
+> Spill costs:
+	x0         22
+	y0         21
+	y1         20
+
+
+> Block information:
+	start      (    1) [ ]
+	loop       (   10) [ x0 y0 y1 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $t0() {
+@start
+@loop
+	%x0 =w phi @start 256, @loop %y0
+	%y0 =w phi @start 128, @loop %y1
+	%y1 =w shr %x0, 1
+	jfine @loop, @end
+@end
+	R1 =w copy %x0
+	ret0 0001
+}
+
+**** Function t1 ****
+> Loop information:
+	loop       (  5   0) [ y0 y1 x0 ]
+
+> Spill costs:
+	y0         21
+	y1         20
+	x0         22
+
+
+> Block information:
+	start      (    1) [ ]
+	loop       (   10) [ y0 y1 x0 ]
+	end        (    1) [ ]
+
+> After spilling:
+function $t1() {
+@start
+@loop
+	%y0 =w phi @start 128, @loop %y1
+	%x0 =w phi @start 256, @loop %y0
+	%y1 =w shr %x0, 1
+	jfine @loop, @end
+@end
+	R1 =w copy %x0
+	ret0 0001
+}
+
