@@ -9,6 +9,13 @@
 (defparameter *ret-types*
   '(:retw :retl :rets :retd :retsb :retub :retsh :retuh :retc :ret0))
 
+;;; isel flag-conditioned jump terminators (all.h JMPS jf* entries).
+(defparameter *jf-jumps*
+  '(:jfieq :jfine :jfisge :jfisgt :jfisle :jfislt :jfiuge :jfiugt :jfiule :jfiult
+    :jffeq :jffge :jffgt :jffle :jfflt :jffne :jffo :jffuo))
+
+(defun jf-jump-p (jt) (and (member jt *jf-jumps*) t))
+
 (defun fmt-c-float (x)
   "C printf %f / %lf: fixed notation, 6 fractional digits."
   (format nil "~,6F" x))
@@ -86,6 +93,10 @@
        (format stream "~cjnz " #\Tab)
        (print-ref arg stream)
        (format stream ", @~a, @~a~%" (blk-name (blk-s1 b)) (blk-name (blk-s2 b))))
+      ;; isel flag-conditioned jumps: no arg (condition lives in the flags).
+      ((jf-jump-p jt)
+       (format stream "~c~a @~a, @~a~%" #\Tab (string-downcase (symbol-name jt))
+               (blk-name (blk-s1 b)) (blk-name (blk-s2 b))))
       (t (error "qbe: cannot print jmp ~s" jt)))))
 
 (defun print-fn (fn &optional (stream *standard-output*))

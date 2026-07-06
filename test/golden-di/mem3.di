@@ -1,0 +1,40 @@
+**** Function func ****
+> After instruction selection:
+function $func() {
+@start.0
+	%abi.1 =l copy R5
+	storel 1, [S0]
+	storel 2, [8 + S0]
+	%blt.14 =l load [8 + S0]
+	storel %blt.14, [16 + S0]
+	%blt.11 =l load [0 + S0]
+	storel %blt.11, [8 + S0]
+	%blt.8 =l load [0 + S0]
+	storel %blt.8, [0 + %abi.1]
+	%blt.5 =l load [8 + S0]
+	storel %blt.5, [8 + %abi.1]
+	%blt.2 =l load [16 + S0]
+	storel %blt.2, [16 + %abi.1]
+	R1 =l copy %abi.1
+	ret0 0001
+}
+
+**** Function main ****
+> After instruction selection:
+function $main() {
+@start.27
+	%isel.18 =l addr S0
+	R5 =l copy %isel.18
+	call $func, 0011
+	%returns.34 =l copy R1
+	%load.48 =l load [16 + %returns.34]
+	xcmpl 2, %load.48
+	jfieq @passed.32, @failed.31
+@failed.31
+	call $abort, 0001
+	copy R1
+@passed.32
+	R1 =w copy 0
+	ret0 0001
+}
+

@@ -1,0 +1,11 @@
+**** Function tests ****
+> After instruction selection:
+function $tests() {
+@start
+	storew 1, $a
+	storew 2, $a
+	storew 3, $a
+	storew 0, $a
+	ret0
+}
+

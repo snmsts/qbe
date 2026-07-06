@@ -1,0 +1,15 @@
+**** Function test ****
+> After instruction selection:
+function $test() {
+@start
+@loop
+	%s =w phi @start 0, @loop %s1
+	%n =w phi @start 100, @loop %n1
+	%s1 =w add %s, %n
+	%n1 =w sub %n, 1
+	jfine @loop, @end
+@end
+	storew %s1, $a
+	ret0
+}
+

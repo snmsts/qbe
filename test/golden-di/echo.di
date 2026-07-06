@@ -1,0 +1,36 @@
+**** Function main ****
+> After instruction selection:
+function $main() {
+@start
+	%argv =l copy R4
+	%argc =w copy R5
+	storel 1663398693, [S0]
+	%av0 =l add %argv, 8
+	%ac0 =w sub %argc, 1
+@loop
+	%av =l phi @start %av0, @loop2 %av1
+	%ac =w phi @start %ac0, @loop2 %ac1
+	xcmpw 0, %ac
+	jfieq @end, @loop1
+@loop1
+	xcmpw 1, %ac
+	%isel.3 =w copy 32
+	%isel.2 =w copy 10
+	%sep =w xselieq %isel.2, %isel.3
+@loop2
+	%arg =l load [%av]
+	R3 =w copy %sep
+	R4 =l copy %arg
+	%isel.4 =l addr S0
+	R5 =l copy %isel.4
+	R1 =w copy 0
+	call $printf, 1031
+	%r =w copy R1
+	%av1 =l add %av, 8
+	%ac1 =w sub %ac, 1
+	jmp @loop
+@end
+	R1 =w copy 0
+	ret0 0001
+}
+
