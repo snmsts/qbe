@@ -58,6 +58,9 @@
    (idom     :initform nil :accessor blk-idom)
    (doms     :initform nil :accessor blk-doms     :documentation "Immediate-dominated children.")
    (fron     :initform nil :accessor blk-fron     :documentation "Dominance frontier.")
+   ;; GCM: dominator-tree depth + loop weight (cfg.c filldepth/fillloop).
+   (depth    :initform -1  :accessor blk-depth)
+   (loop     :initform 1   :accessor blk-loop)
    ;; liveness (filled by fill-live, ssa.lisp): temp-id bitsets + counts.
    (in       :initform nil :accessor blk-in)
    (out      :initform nil :accessor blk-out)

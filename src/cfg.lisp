@@ -101,3 +101,53 @@ drop unreachable blocks from the layout list."
     (when (blk-s2 b)
       (loop for a = b then (blk-idom a) until (sdom a (blk-s2 b))
             do (add-fron a (blk-s2 b))))))
+
+;;; -------------------------------------------------- GCM: depth, loop, lca
+;;; cfg.c filldepth / lca / loopiter+loopmark+multloop / fillloop.  filldepth
+;;; requires fill-dom; fillloop requires rpo + preds.
+
+(defun fill-depth (fn)
+  "Dominator-tree depth of every block (cfg.c filldepth)."
+  (dolist (b (fn-blocks fn)) (setf (blk-depth b) -1))
+  (setf (blk-depth (fn-start fn)) 0)
+  (dolist (b (fn-blocks fn))
+    (when (= (blk-depth b) -1)
+      (let ((depth 1) (d (blk-idom b)))
+        (loop while (= (blk-depth d) -1) do (incf depth) (setf d (blk-idom d)))
+        (incf depth (blk-depth d))
+        (setf (blk-depth b) depth)
+        ;; back-fill the chain of ancestors we just walked over
+        (loop for a = (blk-idom b) then (blk-idom a)
+              while (= (blk-depth a) -1)
+              do (setf (blk-depth a) (decf depth)))))))
+
+(defun lca (b1 b2)
+  "Least common ancestor of B1,B2 in the dominator tree (cfg.c lca)."
+  (cond
+    ((null b1) b2)
+    ((null b2) b1)
+    (t (loop while (> (blk-depth b1) (blk-depth b2)) do (setf b1 (blk-idom b1)))
+       (loop while (> (blk-depth b2) (blk-depth b1)) do (setf b2 (blk-idom b2)))
+       (loop until (eq b1 b2) do (setf b1 (blk-idom b1) b2 (blk-idom b2)))
+       b1)))
+
+(defun loopmark (hd b f)
+  "cfg.c loopmark: mark B (and its preds) as belonging to loop header HD."
+  (when (and (>= (blk-id b) (blk-id hd)) (/= (blk-visit b) (blk-id hd)))
+    (setf (blk-visit b) (blk-id hd))
+    (funcall f hd b)
+    (dolist (p (blk-preds b)) (loopmark hd p f))))
+
+(defun loopiter (fn f)
+  "cfg.c loopiter: find natural loops via back edges, apply F to loop members."
+  (dolist (b (fn-blocks fn)) (setf (blk-visit b) -1))
+  (loop for n below (fn-nblk fn)
+        for b = (aref (fn-rpo fn) n) do
+    (dolist (p (blk-preds b))
+      (when (>= (blk-id p) n) (loopmark b p f)))))
+
+(defun fill-loop (fn)
+  "cfg.c fillloop: loop weight = 10^(loop nesting depth) per block."
+  (dolist (b (fn-blocks fn)) (setf (blk-loop b) 1))
+  (loopiter fn (lambda (hd b) (declare (ignore hd))
+                 (setf (blk-loop b) (* (blk-loop b) 10)))))
