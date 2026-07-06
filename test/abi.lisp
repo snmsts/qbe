@@ -73,8 +73,16 @@
     (get-output-stream-string out)))
 
 (defun our-abi (fn)
+  ;; Full pre-abi pipeline (mirrors main.c for amd64, T.cansel=1): SSA, the
+  ;; mid-end (gvn -> simplcfg -> gcm), then if-conversion, then abi1.  loadopt
+  ;; and coalesce (before gvn in QBE) are still unimplemented, so functions
+  ;; needing them remain gated.
   (qbe:fill-cfg fn) (qbe:fill-use fn) (qbe:promote fn) (qbe:fill-use fn)
-  (qbe:ssa fn) (qbe:amd64-abi fn)
+  (qbe:ssa fn) (qbe:fill-use fn)
+  (qbe:gvn fn) (qbe:fill-cfg fn) (qbe:simplcfg fn)
+  (qbe:fill-use fn) (qbe:fill-dom fn) (qbe:gcm fn) (qbe:fill-use fn)
+  (qbe:ifconvert fn) (qbe:fill-cfg fn) (qbe:fill-use fn) (qbe:fill-dom fn)
+  (qbe:amd64-abi fn)
   (qbe:print-fn-to-string fn))
 
 (defun diff-abi (ssa-path)

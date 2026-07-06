@@ -20,6 +20,7 @@
                              (:file "mem")
                              (:file "gvn")
                              (:file "gcm")
+                             (:file "ifopt")
                              (:file "amd64")
                              (:file "amd64-abi")
                              (:file "driver")))))

@@ -21,7 +21,7 @@
    #:print-fn #:print-fn-to-string
    ;; cfg / dominators (M2/A1)
    #:fill-cfg #:fill-rpo #:fill-preds #:fill-dom #:fill-fron #:sdom #:dom
-   #:fill-depth #:fill-loop #:lca #:simplcfg #:gcm
+   #:fill-depth #:fill-loop #:lca #:simplcfg #:gcm #:ifconvert
    ;; ssa construction (M2/A2+A3)
    #:fn-tmp #:fn-ntmp #:blk-in #:blk-out #:blk-gen
    #:fill-use #:fill-live #:phiins #:renblk #:ssa #:*tmp-counter*
