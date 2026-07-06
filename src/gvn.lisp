@@ -87,25 +87,28 @@
 ;;; ----------------------------------------------------------- copyref
 ;;; copy.c copyref, core cases (width-analysis/zeroval/and-mask deferred).
 
-(defun copyref (fn i)
-  (let ((op (ins-op i)) (a0 (ins-arg0 i)) (a1 (ins-arg1 i)))
-    (declare (ignore fn))
-    (cond
-      ((eq op :copy) a0)
-      ;; op identity value: x+0, x*1, x|0, ...  (integer only; skip cmp-id which
-      ;; needs width analysis)
-      ((and (op-hasid op) (= (cls-base (ins-cls i)) 0)
-            (eq a1 (aref *con01* (op-idval op)))
-            (not (op-cmpeqwl op)))
-       a0)
+(defun copyref (fn b i)
+  (let ((op (ins-op i)) (a0 (ins-arg0 i)) (a1 (ins-arg1 i)) (cls (ins-cls i)))
+    (block nil
+      (when (eq op :copy) (return a0))
+      ;; op identity value: x+0, x*1, x|0, ...  (integer only; the cmpeqwl `x==1`
+      ;; case needs isw1 width analysis, deferred — skip it here)
+      (when (and (op-hasid op) (= (cls-base cls) 0)
+                 (eq a1 (aref *con01* (op-idval op)))
+                 (not (op-cmpeqwl op)))
+        (return a0))
       ;; idempotent with identical args: x&x, x|x
-      ((and (op-idemp op) (eq a0 a1)) a0)
+      (when (and (op-idemp op) (eq a0 a1)) (return a0))
       ;; integer cmp with identical args -> eqval
-      ((and (or (op-cmpeqwl op) (op-cmplgtewl op)) (eq a0 a1))
-       (aref *con01* (op-eqval op)))
+      (when (and (or (op-cmpeqwl op) (op-cmplgtewl op)) (eq a0 a1))
+        (return (aref *con01* (op-eqval op))))
+      ;; cmp eq/ne 0 where the operand is provably 0/non-0 at this point
+      (when (and (op-cmpeqwl op) (eq a1 (aref *con01* 0)))
+        (multiple-value-bind (found z) (zeroval fn b a0 (argcls op cls 0))
+          (when found (return (aref *con01* (logxor (op-eqval op) z 1))))))
       ;; extsw/extuw producing a w result is a copy
-      ((and (eq (ins-cls i) :w) (member op '(:extsw :extuw))) a0)
-      (t nil))))
+      (when (and (eq cls :w) (member op '(:extsw :extuw))) (return a0))
+      nil)))
 
 ;;; ----------------------------------------------------------- foldref
 ;;; fold.c: constant-fold an instruction whose args are all constants into a
@@ -320,11 +323,10 @@
   (or (op-pinned (ins-op i)) (isdivwl i)))
 
 (defun dedupins (fn b i)
-  (declare (ignore b))
   (normins fn i)
   (when (or (eq (ins-op i) :nop) (pinned-ins i))
     (return-from dedupins))
-  (let ((r (copyref fn i)))
+  (let ((r (copyref fn b i)))
     (when r (killins fn i r) (return-from dedupins)))
   (let ((r (foldref fn i)))
     (when r (killins fn i r) (return-from dedupins)))
@@ -393,15 +395,149 @@
                              pars)))
           (setf (blk-ins start) (append pars slots rest)))))))
 
+;;; ---------------------------------------------------------- dedupjmp
+;;; gvn.c dedupjmp + supporting inference: collapse a jnz to a jmp when its
+;;; condition is provably constant (literal, s1==s2, or 0/non-0 inferred from a
+;;; dominating branch), and propagate the known-0 value into the dominated
+;;; branch so later dedupins can fold.
+
+(defun cmpeqz (fn r)
+  "If R is defined by a `<cmp>eq/ne <x>, 0` (cmpeqwl op with arg1==0), return
+   (values t x argcls eqval); else NIL.  (gvn.c cmpeqz)"
+  (declare (ignore fn))
+  (when (tmp-p r)
+    (let ((i (tmp-def r)))
+      (when (and i (op-cmpeqwl (ins-op i)) (eq (ins-arg1 i) (aref *con01* 0)))
+        (values t (ins-arg0 i) (argcls (ins-op i) (ins-cls i) 0)
+                (op-eqval (ins-op i)))))))
+
+;;; reachability (cfg.c reaches/reachrec/reachesnotvia) via blk-visit scratch.
+(defun reachrec (b to)
+  (cond ((eq b to) t)
+        ((or (null b) (not (zerop (blk-visit b)))) nil)
+        (t (setf (blk-visit b) 1)
+           (or (reachrec (blk-s1 b) to) (reachrec (blk-s2 b) to)))))
+
+(defun reaches (fn b to)
+  (prog1 (reachrec b to)
+    (dolist (x (fn-blocks fn)) (setf (blk-visit x) 0))))
+
+(defun reachesnotvia (fn b to excl)
+  "Can B reach TO without passing through EXCL?  (cfg.c reachesnotvia)"
+  (setf (blk-visit excl) 1)
+  (reaches fn b to))
+
+(defun branchdom (fn bif bbr1 bbr2 b)
+  "Is B exclusively in the BBR1 branch of the jnz at BIF?  (gvn.c branchdom)"
+  (and (not (eq b bif))
+       (dom bbr1 b)
+       (not (reachesnotvia fn bbr2 b bif))))
+
+(defun domzero (fn d b)
+  "If B is dominated by exactly one branch of jnz D, return (values t z) with
+   z=0 for the s1 (true) branch, z=1 for the s2 (false) branch."
+  (cond ((branchdom fn d (blk-s1 d) (blk-s2 d) b) (values t 0))
+        ((branchdom fn d (blk-s2 d) (blk-s1 d) b) (values t 1))
+        (t (values nil nil))))
+
+(defun zeroval (fn b r cls)
+  "Infer a 0/non-0 value for R at block B from a dominating jnz.  Returns
+   (values t z), z=1 meaning R is provably 0 here.  (gvn.c zeroval)"
+  (loop for d = (blk-idom b) then (blk-idom d) while d do
+    (when (eq (blk-jmp-type d) :jnz)
+      (when (and (eq r (blk-jmp-arg d)) (eq cls :w))
+        (multiple-value-bind (ok z) (domzero fn d b)
+          (when ok (return-from zeroval (values t z)))))
+      (multiple-value-bind (ok arg cls1 eqval) (cmpeqz fn (blk-jmp-arg d))
+        (when (and ok (eq r arg) (eq cls cls1))
+          (multiple-value-bind (dz z) (domzero fn d b)
+            (when dz (return-from zeroval (values t (logxor z eqval)))))))))
+  (values nil nil))
+
+(defun usecls (u r cls)
+  "Class at which use U references R (gvn.c usecls); Km normalized to Kl."
+  (ecase (use-rec-type u)
+    (:ins (let* ((i (use-rec-payload u)) (k :x))
+            (when (eq (ins-arg0 i) r) (setf k (argcls (ins-op i) (ins-cls i) 0)))
+            (when (and (eq (ins-arg1 i) r) (or (eq k :x) (not (kwide k))))
+              (setf k (argcls (ins-op i) (ins-cls i) 1)))
+            (setf k (if (eq k :m) :l k))
+            (if (eq k :x) cls k)))
+    (:phi (let ((p (use-rec-payload u))) (if (null (phi-to p)) cls (phi-cls p))))
+    (:jmp :w)))
+
+(defun propjnz0 (fn bif s0 snon0 r cls)
+  "Replace uses of R by 0 in blocks that are exclusively in BIF's S0 branch,
+   when S0 is entered only from BIF and the use width matches.  (gvn.c propjnz0)"
+  (when (and (= 1 (length (blk-preds s0))) (tmp-p r))
+    (dolist (u (copy-list (tmp-use r)))
+      (let ((b (aref (fn-rpo fn) (use-rec-bid u))))
+        (when (and (eq (usecls u r cls) cls)
+                   (branchdom fn bif s0 snon0 b))
+          (replaceuse fn u r (aref *con01* 0)))))))
+
+(defun dedupjmp (fn b)
+  (when (eq (blk-jmp-type b) :jnz)
+    (let ((arg (blk-jmp-arg b)))
+      ;; propagate jmp arg as 0 through the s2 (false) branch
+      (propjnz0 fn b (blk-s2 b) (blk-s1 b) arg :w)
+      ;; propagate the compared value as 0 through a cmp-eq/ne-0 def
+      (multiple-value-bind (ok carg ccls ceqval) (cmpeqz fn arg)
+        (when ok
+          (let ((ps (vector (blk-s1 b) (blk-s2 b))))
+            (propjnz0 fn b (aref ps (logxor ceqval 1)) (aref ps ceqval) carg ccls))))
+      ;; collapse trivial/constant jnz to jmp
+      (let ((v 1) (z 0) (collapse nil) (cv (isconbits arg)))
+        (cond
+          ((eq (blk-s1 b) (blk-s2 b)) (setf collapse t))
+          (cv (setf v cv collapse t))
+          (t (multiple-value-bind (found zz) (zeroval fn b arg :w)
+               (when found (setf z zz collapse t)))))
+        (when collapse
+          (when (or (eql v 0) (/= z 0))
+            (setf (blk-s1 b) (blk-s2 b)))
+          (setf (blk-s2 b) nil (blk-jmp-type b) :jmp (blk-jmp-arg b) nil))))))
+
+;;; ---------------------------------------------------------- rebuildcfg
+;;; cfg.c fixphis + gvn.c rebuildcfg: after collapses, refill the CFG (pruning
+;;; now-dead blocks) and hoist still-active instructions from dead blocks into
+;;; start so their (already CSE'd) values survive.
+
+(defun fixphis (fn live)
+  "Drop phi args from predecessors that are dead or no longer branch to B."
+  (dolist (b (fn-blocks fn))
+    (dolist (p (blk-phis b))
+      (setf (phi-args p)
+            (remove-if-not
+             (lambda (pair)
+               (let ((bp (car pair)))
+                 (and (gethash bp live)
+                      (or (eq (blk-s1 bp) b) (eq (blk-s2 bp) b)))))
+             (phi-args p))))))
+
+(defun rebuildcfg (fn)
+  (let ((old-rpo (copy-seq (fn-rpo fn))) (start (fn-start fn)))
+    (fill-cfg fn)                       ; prunes dead blocks, renumbers, preds
+    (let ((live (make-hash-table :test 'eq)))
+      (dolist (b (fn-blocks fn)) (setf (gethash b live) t))
+      (fixphis fn live)
+      ;; hoist active ins out of killed blocks, in rpo order
+      (loop for b across old-rpo unless (gethash b live) do
+        (dolist (i (blk-ins b))
+          (when (and (not (op-pinned (ins-op i))) (eq (gvndup i nil) i))
+            (setf (blk-ins start) (nconc (blk-ins start) (list i)))))))))
+
 (defun gvn (fn)
-  "Global value numbering (C3): copy-prop + CSE + phi-dedup + canonicalization.
-Requires fill-cfg.  (foldref, dedupjmp, dead-block move: later.)"
+  "Global value numbering (C3): canonicalization + copy-prop + const-fold + CSE
++ phi-dedup + jnz simplification, then rebuild the CFG.  Requires fill-cfg."
   (let ((*con01* (vector (getcon 0 fn) (getcon 1 fn)))
         (*gvntbl* (make-hash-table :test 'equal)))
     (narrowpars fn)
     (fill-use fn)
+    (dolist (b (fn-blocks fn)) (setf (blk-visit b) 0))
     (loop for n below (fn-nblk fn)
           for b = (aref (fn-rpo fn) n) do
       (dedupphi fn b)
-      (dolist (i (blk-ins b)) (dedupins fn b i)))
-    (fill-cfg fn)))                     ; rebuildcfg (no dead-block move yet)
+      (dolist (i (blk-ins b)) (dedupins fn b i))
+      (dedupjmp fn b))
+    (rebuildcfg fn)))

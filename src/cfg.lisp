@@ -29,7 +29,10 @@ drop unreachable blocks from the layout list."
       (dolist (b (fn-blocks fn))
         (setf (blk-id b) (- po (blk-id b) 1))
         (setf (aref rpo (blk-id b)) b))
-      (setf (fn-rpo fn) rpo (fn-nblk fn) po))))
+      (setf (fn-rpo fn) rpo (fn-nblk fn) po)
+      ;; relink the layout chain to the surviving blocks (QBE's fillrpo rebuilds
+      ;; ->link); the printer reads blk-link for jmp fall-through elision.
+      (loop for (b . rest) on (fn-blocks fn) do (setf (blk-link b) (car rest))))))
 
 (defun fill-preds (fn)
   (dolist (b (fn-blocks fn)) (setf (blk-preds b) nil))
