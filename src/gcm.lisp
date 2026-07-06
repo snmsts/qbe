@@ -277,9 +277,56 @@
         (setf idx (schedins fn b vec idx idxmap (lambda (i) (push i out)))))
       (setf (blk-ins b) (nreverse out)))))
 
+;;; --- sink: duplicate trivial ops to their point of use to cut register
+;;;     pressure (gcm.c cheap/sinkref/sink).  A value kept in an early block by
+;;;     another use is copied (as a fresh "snk" temp) into a block that uses it
+;;;     via a load/store address or a jump arg.
+
+(defun isstore-op (op)
+  (member op '(:storeb :storeh :storew :storel :stores :stored)))
+
+(defun cheap (i)
+  "gcm.c cheap: an integer-result arithmetic op or comparison."
+  (and (= 0 (cls-base (ins-cls i)))
+       (or (member (ins-op i) '(:neg :add :sub :mul :and :or :xor :sar :shr :shl))
+           (int-cmp-p (ins-op i)) (flt-cmp-p (ins-op i)))))
+
+(defvar *sink-emit* nil "Accumulated sunk copies, in qbe emit-buffer order.")
+
+(defun sinkref (fn b r)
+  "gcm.c sinkref: if R is a cheap value defined outside B, return a fresh snk
+   copy placed in B (emitting it), else R.  The recursive rewrites of the copy's
+   own args are DISCARDED (qbe emits by value), so inner sinks become dead
+   copies — replicated faithfully."
+  (if (not (tmp-p r))
+      r
+      (let ((tm r))
+        (if (or (null (tmp-def tm)) (= (tmp-bid tm) (blk-id b))
+                (pinned-ins (tmp-def tm)) (not (cheap (tmp-def tm))))
+            r
+            (let ((nr (newtmp "snk" (tmp-cls tm) fn))
+                  (copy (copy-ins (tmp-def tm))))
+              (setf (tmp-gcmbid nr) (blk-id b) (ins-to copy) nr)
+              (push copy *sink-emit*)
+              (sinkref fn b (ins-arg0 copy))   ; rewrite discarded, emits inner
+              (sinkref fn b (ins-arg1 copy))
+              nr)))))
+
+(defun sink (fn)
+  (let ((*sink-emit* '()))
+    (dolist (b (fn-blocks fn))
+      (dolist (i (blk-ins b))
+        (cond ((isload-op (ins-op i)) (setf (ins-arg0 i) (sinkref fn b (ins-arg0 i))))
+              ((isstore-op (ins-op i)) (setf (ins-arg1 i) (sinkref fn b (ins-arg1 i))))))
+      (setf (blk-jmp-arg b) (sinkref fn b (blk-jmp-arg b))))
+    ;; addgcmins: distribute the emitted copies to their target blocks, in the
+    ;; same order qbe's addgcmins walks its emit buffer (= push order here)
+    (dolist (i *sink-emit*)
+      (let ((tb (aref (fn-rpo fn) (tmp-gcmbid (ins-to i)))))
+        (setf (blk-ins tb) (nconc (blk-ins tb) (list i)))))))
+
 (defun gcm (fn)
-  "Global code motion (gcm.c).  Requires fill-cfg, fill-use, fill-dom.
-STAGE 3: early/late scheduling + gcmmove + schedblk (sink deferred)."
+  "Global code motion (gcm.c).  Requires fill-cfg, fill-use, fill-dom."
   (fill-depth fn)
   (fill-loop fn)
   (dotimes (tid (fn-ntmp fn))
@@ -288,5 +335,7 @@ STAGE 3: early/late scheduling + gcmmove + schedblk (sink deferred)."
   (dotimes (bid (fn-nblk fn)) (earlyblk fn bid))
   (dotimes (bid (fn-nblk fn)) (lateblk fn bid))
   (gcmmove fn)
+  (fill-use fn)
+  (sink fn)
   (fill-use fn)
   (schedblk fn))
