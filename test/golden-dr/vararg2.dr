@@ -1,0 +1,1009 @@
+**** Function qbeprint0 ****
+> Register mappings:
+	start      beg
+	           end (fmt1, R10)
+	loop       beg (p, R10)
+	           end (p, R10) (c.4, R1)
+	loop1      beg (p, R10) (c.4, R1)
+	           end (p1, R10)
+	cased      beg (p1, R10)
+	           end (abi.19, R2) (p1, R10)
+	cased.3    beg (p1, R10)
+	           end (p1, R10) (abi.24, R1)
+	cased.2    beg (p1, R10) (abi.19, R2)
+	           end (p1, R10) (abi.18, R1)
+	cased.1    beg (p1, R10) (abi.17, R1)
+	           end (p1, R10)
+	casef      beg (p1, R10)
+	           end (abi.7, R2) (p1, R10)
+	casef.3    beg (p1, R10)
+	           end (p1, R10) (abi.12, R1)
+	casef.2    beg (p1, R10) (abi.7, R2)
+	           end (p1, R10) (abi.6, R1)
+	casef.1    beg (p1, R10) (abi.5, R1)
+	           end (p1, R10)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbeprint0() {
+@start
+	storew 2122789, [S1]
+	storew 2123557, [S0]
+	storew 0, [S2]
+	R10 =l add R5, 1
+	storew 8, [S3]
+	storew 48, [4 + S3]
+	R1 =l add R15, 16
+	storel R1, [8 + S3]
+	R1 =l add R15, -176
+	storel R1, [16 + S3]
+@loop
+	R1 =w loadsb [R10]
+	xcmpw 0, R1
+	jfine @loop1, @end
+@loop1
+	xcmpw 103, R1
+	R1 =w flagieq
+	R10 =l add R10, 3
+	xcmpw 0, R1
+	jfine @casef, @cased
+@casef
+	R2 =l loadsw [4 + S3]
+	xcmpw 176, R2
+	jfiult @casef.2, @casef.3
+@casef.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @casef.1
+@casef.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 16
+	storew R2, [4 + S3]
+@casef.1
+	R17 =d load [R1]
+	R5 =l addr S0
+	R1 =w copy 1
+	call $printf, 1111
+	jmp @loop
+@cased
+	R2 =l loadsw [0 + S3]
+	xcmpw 48, R2
+	jfiult @cased.2, @cased.3
+@cased.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @cased.1
+@cased.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 8
+	storew R2, [0 + S3]
+@cased.1
+	R4 =w load [R1]
+	R5 =l addr S1
+	R1 =w copy 0
+	call $printf, 1021
+	jmp @loop
+@end
+	R5 =l addr S2
+	call $puts, 0011
+	ret0
+}
+
+**** Function qbecall0 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbecall0() {
+@start
+	storew 8, [S0]
+	storew 48, [4 + S0]
+	R1 =l add R15, 16
+	storel R1, [8 + S0]
+	R1 =l add R15, -176
+	storel R1, [16 + S0]
+	R4 =l addr S0
+	call $print, 0021
+	ret0
+}
+
+**** Function qbeprint1 ****
+> Register mappings:
+	start      beg
+	           end (fmt1, R10)
+	loop       beg (p, R10)
+	           end (p, R10) (c.46, R1)
+	loop1      beg (p, R10) (c.46, R1)
+	           end (p1, R10)
+	cased      beg (p1, R10)
+	           end (abi.62, R2) (p1, R10)
+	cased.3    beg (p1, R10)
+	           end (p1, R10) (abi.67, R1)
+	cased.2    beg (p1, R10) (abi.62, R2)
+	           end (p1, R10) (abi.61, R1)
+	cased.1    beg (p1, R10) (abi.60, R1)
+	           end (p1, R10)
+	casef      beg (p1, R10)
+	           end (abi.50, R2) (p1, R10)
+	casef.3    beg (p1, R10)
+	           end (p1, R10) (abi.55, R1)
+	casef.2    beg (p1, R10) (abi.50, R2)
+	           end (p1, R10) (abi.49, R1)
+	casef.1    beg (p1, R10) (abi.48, R1)
+	           end (p1, R10)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbeprint1() {
+@start
+	storew 2122789, [S1]
+	storew 2123557, [S0]
+	storew 0, [S2]
+	R10 =l add R4, 1
+	storew 16, [S3]
+	storew 48, [4 + S3]
+	R1 =l add R15, 16
+	storel R1, [8 + S3]
+	R1 =l add R15, -176
+	storel R1, [16 + S3]
+@loop
+	R1 =w loadsb [R10]
+	xcmpw 0, R1
+	jfine @loop1, @end
+@loop1
+	xcmpw 103, R1
+	R1 =w flagieq
+	R10 =l add R10, 3
+	xcmpw 0, R1
+	jfine @casef, @cased
+@casef
+	R2 =l loadsw [4 + S3]
+	xcmpw 176, R2
+	jfiult @casef.2, @casef.3
+@casef.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @casef.1
+@casef.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 16
+	storew R2, [4 + S3]
+@casef.1
+	R17 =d load [R1]
+	R5 =l addr S0
+	R1 =w copy 1
+	call $printf, 1111
+	jmp @loop
+@cased
+	R2 =l loadsw [0 + S3]
+	xcmpw 48, R2
+	jfiult @cased.2, @cased.3
+@cased.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @cased.1
+@cased.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 8
+	storew R2, [0 + S3]
+@cased.1
+	R4 =w load [R1]
+	R5 =l addr S1
+	R1 =w copy 0
+	call $printf, 1021
+	jmp @loop
+@end
+	R5 =l addr S2
+	call $puts, 0011
+	ret0
+}
+
+**** Function qbecall1 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 0
+
+> After register allocation:
+function $qbecall1() {
+@start
+	R5 =l copy R4
+	storew 16, [S0]
+	storew 48, [4 + S0]
+	R1 =l add R15, 16
+	storel R1, [8 + S0]
+	R1 =l add R15, -176
+	storel R1, [16 + S0]
+	R4 =l addr S0
+	call $print, 0021
+	ret0
+}
+
+**** Function qbeprint2 ****
+> Register mappings:
+	start      beg
+	           end (fmt1, R10)
+	loop       beg (p, R10)
+	           end (p, R10) (c.89, R1)
+	loop1      beg (p, R10) (c.89, R1)
+	           end (p1, R10)
+	cased      beg (p1, R10)
+	           end (abi.104, R2) (p1, R10)
+	cased.3    beg (p1, R10)
+	           end (p1, R10) (abi.109, R1)
+	cased.2    beg (p1, R10) (abi.104, R2)
+	           end (p1, R10) (abi.103, R1)
+	cased.1    beg (p1, R10) (abi.102, R1)
+	           end (p1, R10)
+	casef      beg (p1, R10)
+	           end (abi.92, R2) (p1, R10)
+	casef.3    beg (p1, R10)
+	           end (p1, R10) (abi.97, R1)
+	casef.2    beg (p1, R10) (abi.92, R2)
+	           end (p1, R10) (abi.91, R1)
+	casef.1    beg (p1, R10) (abi.90, R1)
+	           end (p1, R10)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbeprint2() {
+@start
+	storew 2122789, [S1]
+	storew 2123557, [S0]
+	storew 0, [S2]
+	R10 =l add R5, 1
+	storew 8, [S3]
+	storew 64, [4 + S3]
+	R1 =l add R15, 16
+	storel R1, [8 + S3]
+	R1 =l add R15, -176
+	storel R1, [16 + S3]
+@loop
+	R1 =w loadsb [R10]
+	xcmpw 0, R1
+	jfine @loop1, @end
+@loop1
+	xcmpw 103, R1
+	R1 =w flagieq
+	R10 =l add R10, 3
+	xcmpw 0, R1
+	jfine @casef, @cased
+@casef
+	R2 =l loadsw [4 + S3]
+	xcmpw 176, R2
+	jfiult @casef.2, @casef.3
+@casef.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @casef.1
+@casef.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 16
+	storew R2, [4 + S3]
+@casef.1
+	R17 =d load [R1]
+	R5 =l addr S0
+	R1 =w copy 1
+	call $printf, 1111
+	jmp @loop
+@cased
+	R2 =l loadsw [0 + S3]
+	xcmpw 48, R2
+	jfiult @cased.2, @cased.3
+@cased.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @cased.1
+@cased.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 8
+	storew R2, [0 + S3]
+@cased.1
+	R4 =w load [R1]
+	R5 =l addr S1
+	R1 =w copy 0
+	call $printf, 1021
+	jmp @loop
+@end
+	R5 =l addr S2
+	call $puts, 0011
+	ret0
+}
+
+**** Function qbecall2 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbecall2() {
+@start
+	storew 8, [S0]
+	storew 64, [4 + S0]
+	R1 =l add R15, 16
+	storel R1, [8 + S0]
+	R1 =l add R15, -176
+	storel R1, [16 + S0]
+	R4 =l addr S0
+	call $print, 0021
+	ret0
+}
+
+**** Function qbeprint3 ****
+> Register mappings:
+	start      beg
+	           end (fmt1, R10)
+	loop       beg (p, R10)
+	           end (p, R10) (c.131, R1)
+	loop1      beg (p, R10) (c.131, R1)
+	           end (p1, R10)
+	cased      beg (p1, R10)
+	           end (abi.150, R2) (p1, R10)
+	cased.3    beg (p1, R10)
+	           end (p1, R10) (abi.155, R1)
+	cased.2    beg (p1, R10) (abi.150, R2)
+	           end (p1, R10) (abi.149, R1)
+	cased.1    beg (p1, R10) (abi.148, R1)
+	           end (p1, R10)
+	casef      beg (p1, R10)
+	           end (abi.138, R2) (p1, R10)
+	casef.3    beg (p1, R10)
+	           end (p1, R10) (abi.143, R1)
+	casef.2    beg (p1, R10) (abi.138, R2)
+	           end (p1, R10) (abi.137, R1)
+	casef.1    beg (p1, R10) (abi.136, R1)
+	           end (p1, R10)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbeprint3() {
+@start
+	storew 2122789, [S1]
+	storew 2123557, [S0]
+	storew 0, [S2]
+	R10 =l add R6, 1
+	storew 40, [S3]
+	storew 48, [4 + S3]
+	R1 =l add R15, 16
+	storel R1, [8 + S3]
+	R1 =l add R15, -176
+	storel R1, [16 + S3]
+@loop
+	R1 =w loadsb [R10]
+	xcmpw 0, R1
+	jfine @loop1, @end
+@loop1
+	xcmpw 103, R1
+	R1 =w flagieq
+	R10 =l add R10, 3
+	xcmpw 0, R1
+	jfine @casef, @cased
+@casef
+	R2 =l loadsw [4 + S3]
+	xcmpw 176, R2
+	jfiult @casef.2, @casef.3
+@casef.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @casef.1
+@casef.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 16
+	storew R2, [4 + S3]
+@casef.1
+	R17 =d load [R1]
+	R5 =l addr S0
+	R1 =w copy 1
+	call $printf, 1111
+	jmp @loop
+@cased
+	R2 =l loadsw [0 + S3]
+	xcmpw 48, R2
+	jfiult @cased.2, @cased.3
+@cased.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @cased.1
+@cased.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 8
+	storew R2, [0 + S3]
+@cased.1
+	R4 =w load [R1]
+	R5 =l addr S1
+	R1 =w copy 0
+	call $printf, 1021
+	jmp @loop
+@end
+	R5 =l addr S2
+	call $puts, 0011
+	ret0
+}
+
+**** Function qbecall3 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 0
+
+> After register allocation:
+function $qbecall3() {
+@start
+	R5 =l copy R6
+	storew 40, [S0]
+	storew 48, [4 + S0]
+	R1 =l add R15, 16
+	storel R1, [8 + S0]
+	R1 =l add R15, -176
+	storel R1, [16 + S0]
+	R4 =l addr S0
+	call $print, 0021
+	ret0
+}
+
+**** Function qbeprint4 ****
+> Register mappings:
+	start      beg
+	           end (fmt1, R10)
+	loop       beg (p, R10)
+	           end (p, R10) (c.177, R1)
+	loop1      beg (p, R10) (c.177, R1)
+	           end (p1, R10)
+	cased      beg (p1, R10)
+	           end (abi.192, R2) (p1, R10)
+	cased.3    beg (p1, R10)
+	           end (p1, R10) (abi.197, R1)
+	cased.2    beg (p1, R10) (abi.192, R2)
+	           end (p1, R10) (abi.191, R1)
+	cased.1    beg (p1, R10) (abi.190, R1)
+	           end (p1, R10)
+	casef      beg (p1, R10)
+	           end (abi.180, R2) (p1, R10)
+	casef.3    beg (p1, R10)
+	           end (p1, R10) (abi.185, R1)
+	casef.2    beg (p1, R10) (abi.180, R2)
+	           end (p1, R10) (abi.179, R1)
+	casef.1    beg (p1, R10) (abi.178, R1)
+	           end (p1, R10)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbeprint4() {
+@start
+	storew 2122789, [S1]
+	storew 2123557, [S0]
+	storew 0, [S2]
+	R10 =l add R5, 1
+	storew 8, [S3]
+	storew 144, [4 + S3]
+	R1 =l add R15, 16
+	storel R1, [8 + S3]
+	R1 =l add R15, -176
+	storel R1, [16 + S3]
+@loop
+	R1 =w loadsb [R10]
+	xcmpw 0, R1
+	jfine @loop1, @end
+@loop1
+	xcmpw 103, R1
+	R1 =w flagieq
+	R10 =l add R10, 3
+	xcmpw 0, R1
+	jfine @casef, @cased
+@casef
+	R2 =l loadsw [4 + S3]
+	xcmpw 176, R2
+	jfiult @casef.2, @casef.3
+@casef.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @casef.1
+@casef.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 16
+	storew R2, [4 + S3]
+@casef.1
+	R17 =d load [R1]
+	R5 =l addr S0
+	R1 =w copy 1
+	call $printf, 1111
+	jmp @loop
+@cased
+	R2 =l loadsw [0 + S3]
+	xcmpw 48, R2
+	jfiult @cased.2, @cased.3
+@cased.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @cased.1
+@cased.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 8
+	storew R2, [0 + S3]
+@cased.1
+	R4 =w load [R1]
+	R5 =l addr S1
+	R1 =w copy 0
+	call $printf, 1021
+	jmp @loop
+@end
+	R5 =l addr S2
+	call $puts, 0011
+	ret0
+}
+
+**** Function qbecall4 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbecall4() {
+@start
+	storew 8, [S0]
+	storew 144, [4 + S0]
+	R1 =l add R15, 16
+	storel R1, [8 + S0]
+	R1 =l add R15, -176
+	storel R1, [16 + S0]
+	R4 =l addr S0
+	call $print, 0021
+	ret0
+}
+
+**** Function qbeprint5 ****
+> Register mappings:
+	start      beg
+	           end (fmt1, R10)
+	loop       beg (p, R10)
+	           end (p, R10) (c.219, R1)
+	loop1      beg (p, R10) (c.219, R1)
+	           end (p1, R10)
+	cased      beg (p1, R10)
+	           end (abi.239, R2) (p1, R10)
+	cased.3    beg (p1, R10)
+	           end (p1, R10) (abi.244, R1)
+	cased.2    beg (p1, R10) (abi.239, R2)
+	           end (p1, R10) (abi.238, R1)
+	cased.1    beg (p1, R10) (abi.237, R1)
+	           end (p1, R10)
+	casef      beg (p1, R10)
+	           end (abi.227, R2) (p1, R10)
+	casef.3    beg (p1, R10)
+	           end (p1, R10) (abi.232, R1)
+	casef.2    beg (p1, R10) (abi.227, R2)
+	           end (p1, R10) (abi.226, R1)
+	casef.1    beg (p1, R10) (abi.225, R1)
+	           end (p1, R10)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbeprint5() {
+@start
+	storew 2122789, [S1]
+	storew 2123557, [S0]
+	storew 0, [S2]
+	R10 =l add R7, 1
+	storew 48, [S3]
+	storew 160, [4 + S3]
+	R1 =l add R15, 16
+	storel R1, [8 + S3]
+	R1 =l add R15, -176
+	storel R1, [16 + S3]
+@loop
+	R1 =w loadsb [R10]
+	xcmpw 0, R1
+	jfine @loop1, @end
+@loop1
+	xcmpw 103, R1
+	R1 =w flagieq
+	R10 =l add R10, 3
+	xcmpw 0, R1
+	jfine @casef, @cased
+@casef
+	R2 =l loadsw [4 + S3]
+	xcmpw 176, R2
+	jfiult @casef.2, @casef.3
+@casef.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @casef.1
+@casef.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 16
+	storew R2, [4 + S3]
+@casef.1
+	R17 =d load [R1]
+	R5 =l addr S0
+	R1 =w copy 1
+	call $printf, 1111
+	jmp @loop
+@cased
+	R2 =l loadsw [0 + S3]
+	xcmpw 48, R2
+	jfiult @cased.2, @cased.3
+@cased.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @cased.1
+@cased.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 8
+	storew R2, [0 + S3]
+@cased.1
+	R4 =w load [R1]
+	R5 =l addr S1
+	R1 =w copy 0
+	call $printf, 1021
+	jmp @loop
+@end
+	R5 =l addr S2
+	call $puts, 0011
+	ret0
+}
+
+**** Function qbecall5 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 0
+
+> After register allocation:
+function $qbecall5() {
+@start
+	R5 =l copy R7
+	storew 48, [S0]
+	storew 160, [4 + S0]
+	R1 =l add R15, 16
+	storel R1, [8 + S0]
+	R1 =l add R15, -176
+	storel R1, [16 + S0]
+	R4 =l addr S0
+	call $print, 0021
+	ret0
+}
+
+**** Function qbeprint6 ****
+> Register mappings:
+	start      beg
+	           end (fmt1, R10)
+	loop       beg (p, R10)
+	           end (p, R10) (c.266, R1)
+	loop1      beg (p, R10) (c.266, R1)
+	           end (p1, R10)
+	cased      beg (p1, R10)
+	           end (abi.291, R2) (p1, R10)
+	cased.3    beg (p1, R10)
+	           end (p1, R10) (abi.296, R1)
+	cased.2    beg (p1, R10) (abi.291, R2)
+	           end (p1, R10) (abi.290, R1)
+	cased.1    beg (p1, R10) (abi.289, R1)
+	           end (p1, R10)
+	casef      beg (p1, R10)
+	           end (abi.279, R2) (p1, R10)
+	casef.3    beg (p1, R10)
+	           end (p1, R10) (abi.284, R1)
+	casef.2    beg (p1, R10) (abi.279, R2)
+	           end (p1, R10) (abi.278, R1)
+	casef.1    beg (p1, R10) (abi.277, R1)
+	           end (p1, R10)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbeprint6() {
+@start
+	R1 =l load S-16
+	storew 2122789, [S1]
+	storew 2123557, [S0]
+	storew 0, [S2]
+	R10 =l add R1, 1
+	storew 48, [S3]
+	storew 176, [4 + S3]
+	R1 =l add R15, 72
+	storel R1, [8 + S3]
+	R1 =l add R15, -176
+	storel R1, [16 + S3]
+@loop
+	R1 =w loadsb [R10]
+	xcmpw 0, R1
+	jfine @loop1, @end
+@loop1
+	xcmpw 103, R1
+	R1 =w flagieq
+	R10 =l add R10, 3
+	xcmpw 0, R1
+	jfine @casef, @cased
+@casef
+	R2 =l loadsw [4 + S3]
+	xcmpw 176, R2
+	jfiult @casef.2, @casef.3
+@casef.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @casef.1
+@casef.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 16
+	storew R2, [4 + S3]
+@casef.1
+	R17 =d load [R1]
+	R5 =l addr S0
+	R1 =w copy 1
+	call $printf, 1111
+	jmp @loop
+@cased
+	R2 =l loadsw [0 + S3]
+	xcmpw 48, R2
+	jfiult @cased.2, @cased.3
+@cased.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @cased.1
+@cased.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 8
+	storew R2, [0 + S3]
+@cased.1
+	R4 =w load [R1]
+	R5 =l addr S1
+	R1 =w copy 0
+	call $printf, 1021
+	jmp @loop
+@end
+	R5 =l addr S2
+	call $puts, 0011
+	ret0
+}
+
+**** Function qbecall6 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 0
+
+> After register allocation:
+function $qbecall6() {
+@start
+	R1 =l load S-16
+	R5 =l copy R1
+	storew 48, [S0]
+	storew 176, [4 + S0]
+	R1 =l add R15, 72
+	storel R1, [8 + S0]
+	R1 =l add R15, -176
+	storel R1, [16 + S0]
+	R4 =l addr S0
+	call $print, 0021
+	ret0
+}
+
+**** Function qbeprint7 ****
+> Register mappings:
+	start      beg
+	           end (fmt1, R10)
+	loop       beg (p, R10)
+	           end (p, R10) (c.318, R1)
+	loop1      beg (p, R10) (c.318, R1)
+	           end (p1, R10)
+	cased      beg (p1, R10)
+	           end (abi.342, R2) (p1, R10)
+	cased.3    beg (p1, R10)
+	           end (p1, R10) (abi.347, R1)
+	cased.2    beg (p1, R10) (abi.342, R2)
+	           end (p1, R10) (abi.341, R1)
+	cased.1    beg (p1, R10) (abi.340, R1)
+	           end (p1, R10)
+	casef      beg (p1, R10)
+	           end (abi.330, R2) (p1, R10)
+	casef.3    beg (p1, R10)
+	           end (p1, R10) (abi.335, R1)
+	casef.2    beg (p1, R10) (abi.330, R2)
+	           end (p1, R10) (abi.329, R1)
+	casef.1    beg (p1, R10) (abi.328, R1)
+	           end (p1, R10)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qbeprint7() {
+@start
+	R1 =l load S-10
+	storew 2122789, [S1]
+	storew 2123557, [S0]
+	storew 0, [S2]
+	R10 =l add R1, 1
+	storew 48, [S3]
+	storew 48, [4 + S3]
+	R1 =l add R15, 48
+	storel R1, [8 + S3]
+	R1 =l add R15, -176
+	storel R1, [16 + S3]
+@loop
+	R1 =w loadsb [R10]
+	xcmpw 0, R1
+	jfine @loop1, @end
+@loop1
+	xcmpw 103, R1
+	R1 =w flagieq
+	R10 =l add R10, 3
+	xcmpw 0, R1
+	jfine @casef, @cased
+@casef
+	R2 =l loadsw [4 + S3]
+	xcmpw 176, R2
+	jfiult @casef.2, @casef.3
+@casef.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @casef.1
+@casef.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 16
+	storew R2, [4 + S3]
+@casef.1
+	R17 =d load [R1]
+	R5 =l addr S0
+	R1 =w copy 1
+	call $printf, 1111
+	jmp @loop
+@cased
+	R2 =l loadsw [0 + S3]
+	xcmpw 48, R2
+	jfiult @cased.2, @cased.3
+@cased.3
+	R1 =l load [8 + S3]
+	R2 =l add R1, 8
+	storel R2, [8 + S3]
+	jmp @cased.1
+@cased.2
+	R1 =l load [16 + S3]
+	R1 =l add R1, R2
+	R2 =w add R2, 8
+	storew R2, [0 + S3]
+@cased.1
+	R4 =w load [R1]
+	R5 =l addr S1
+	R1 =w copy 0
+	call $printf, 1021
+	jmp @loop
+@end
+	R5 =l addr S2
+	call $puts, 0011
+	ret0
+}
+
+**** Function qbecall7 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 0
+
+> After register allocation:
+function $qbecall7() {
+@start
+	R1 =l load S-10
+	R5 =l copy R1
+	storew 48, [S0]
+	storew 48, [4 + S0]
+	R1 =l add R15, 48
+	storel R1, [8 + S0]
+	R1 =l add R15, -176
+	storel R1, [16 + S0]
+	R4 =l addr S0
+	call $print, 0021
+	ret0
+}
+

@@ -1,0 +1,35 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $test() {
+@start
+	R1 =w loadsw $z
+	R10 =w add R1, R1
+	R1 =l extsw R10
+	storel 4, [S0]
+	storew 5, [12 + S0]
+	R2 =l addr $F
+	R1 =l add R1, R2
+	R2 =l salloc 16
+	storel 6, [0 + R2]
+	R6 =l load [S0]
+	R7 =l load [8 + S0]
+	R2 =w copy 3
+	R3 =w copy 2
+	R4 =w copy 1
+	R5 =w copy R10
+	call R1, 0061
+	salloc -16
+	R1 =w add R10, R1
+	storew R1, $a
+	ret0
+}
+

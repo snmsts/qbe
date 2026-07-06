@@ -1,0 +1,41 @@
+**** Function f ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  2
+	new blocks: 0
+
+> After register allocation:
+function $f() {
+@start
+	S12 =d copy R24
+	S14 =d copy R21
+	storel R22, [S0]
+	storel R23, [8 + S0]
+	storel R19, [S4]
+	storel R20, [8 + S4]
+	storel R17, [S8]
+	storel R18, [8 + S8]
+	R17 =d load [S8]
+	R18 =d load [8 + S8]
+	call $phfa3, 0201
+	R17 =d load [S4]
+	R18 =d load [8 + S4]
+	call $phfa3, 0201
+	R17 =d load [S0]
+	R18 =d load [8 + S0]
+	call $phfa3, 0201
+	R17 =d load S14
+	R5 =l addr $dfmt
+	R1 =w copy 1
+	call $printf, 1111
+	R17 =d load S12
+	R5 =l addr $dfmt
+	R1 =w copy 1
+	call $printf, 1111
+	ret0
+}
+

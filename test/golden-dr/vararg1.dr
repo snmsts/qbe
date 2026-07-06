@@ -1,0 +1,87 @@
+**** Function f ****
+> Register mappings:
+	start      beg
+	           end (abi.15, R2)
+	start.6    beg
+	           end (abi.20, R1)
+	start.5    beg (abi.15, R2)
+	           end (abi.14, R1)
+	start.4    beg
+	           end (abi.3, R2)
+	start.3    beg
+	           end (abi.8, R1)
+	start.2    beg (abi.3, R2)
+	           end (abi.2, R1)
+	start.1    beg (abi.1, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f() {
+@start
+	storew 8, [S0]
+	storew 48, [4 + S0]
+	R1 =l add R15, 16
+	storel R1, [8 + S0]
+	R1 =l add R15, -176
+	storel R1, [16 + S0]
+	R2 =l loadsw [0 + S0]
+	xcmpw 48, R2
+	jfiult @start.5, @start.6
+@start.6
+	R1 =l load [8 + S0]
+	R2 =l add R1, 8
+	storel R2, [8 + S0]
+	jmp @start.4
+@start.5
+	R1 =l load [16 + S0]
+	R1 =l add R1, R2
+	R2 =w add R2, 8
+	storew R2, [0 + S0]
+@start.4
+	R2 =l loadsw [4 + S0]
+	xcmpw 176, R2
+	jfiult @start.2, @start.3
+@start.3
+	R1 =l load [8 + S0]
+	R2 =l add R1, 8
+	storel R2, [8 + S0]
+	jmp @start.1
+@start.2
+	R1 =l load [16 + S0]
+	R1 =l add R1, R2
+	R2 =w add R2, 16
+	storew R2, [4 + S0]
+@start.1
+	R17 =d load [R1]
+	ret0 0004
+}
+
+**** Function g ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $g() {
+@start
+	storew 8, [S0]
+	storew 48, [4 + S0]
+	R1 =l add R15, 16
+	storel R1, [8 + S0]
+	R1 =l add R15, -176
+	storel R1, [16 + S0]
+	R4 =l addr S0
+	call $print, 0021
+	ret0 0001
+}
+

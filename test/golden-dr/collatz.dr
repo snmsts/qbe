@@ -1,0 +1,93 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+	loop       beg (n, R2) (cmax, R4)
+	           end (n, R2) (cmax, R4)
+	cloop      beg (n0, R2) (c0, R1) (n, R3) (cmax, R4)
+	           end (n0, R2) (c0, R1) (n, R3) (cmax, R4)
+	iter0      beg (n0, R2) (c0, R1) (n, R3) (cmax, R4)
+	           end (n0, R2) (c0, R1) (n, R3) (cmax, R4)
+	iter1      beg (n0, R2) (n, R3) (cmax, R4) (c0, R1)
+	           end (n0, R2) (c1, R1) (n, R3) (cmax, R4)
+	even       beg (c1, R1) (n, R3) (cmax, R4) (n0, R2)
+	           end (c1, R1) (n, R3) (cmax, R4) (n3, R2)
+	odd        beg (c1, R1) (n, R3) (cmax, R4) (n0, R2)
+	           end (c1, R1) (n2, R2) (n, R3) (cmax, R4)
+	getmemo    beg (n, R2) (cmax, R4) (c0, R1) (n0, R3)
+	           end (n, R2) (cmax, R4) (c2, R1)
+	endcl      beg (c, R1) (cmax, R4) (n, R2)
+	           end (c, R1) (cmax, R4) (n9, R2)
+	oldm       beg (cmax, R4) (n9, R2)
+	           end (cmax, R4) (n9, R2)
+	newm       beg (c, R1) (n9, R2)
+	           end (c, R1) (n9, R2)
+	end        beg (cmax, R4)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  8
+	new blocks: 5
+
+> After register allocation:
+function $test() {
+@start
+	jmp @start_loop
+@loop
+	xcmpw 1000, R2
+	jfislt @loop_cloop, @end
+@cloop
+	xcmpw 1, R2
+	jfine @iter0, @cloop_endcl
+@iter0
+	xcmpw R3, R2
+	jfislt @iter0_getmemo, @iter1
+@iter1
+	R1 =w add R1, 1
+	xtestw 1, R2
+	jfine @odd, @even
+@odd
+	R2 =w mul R2, 3
+	R2 =w add R2, 1
+	jmp @cloop
+@even
+	R2 =w shr R2, 1
+	jmp @cloop
+@getmemo
+	R3 =l extsw R3
+	R3 =w loadsw [S0 + 4 * R3]
+	R1 =w add R1, R3
+@endcl
+	R3 =l extsw R2
+	storew R1, [S0 + 4 * R3]
+	R3 =w copy R2
+	R2 =w add R2, 1
+	xcmpw R1, R4
+	jfisle @newm, @oldm
+@newm
+	jmp @newm_loop
+@oldm
+	jmp @loop
+@end
+	storew R4, $a
+	ret0
+@newm_loop
+	R4 =w copy R1
+	jmp @loop
+@iter0_getmemo
+	swapw R2, R3
+	jmp @getmemo
+@cloop_endcl
+	R2 =w copy R3
+	jmp @endcl
+@loop_cloop
+	R3 =w copy R2
+	R1 =w copy 0
+	jmp @cloop
+@start_loop
+	R4 =w copy 0
+	R2 =w copy 1
+	jmp @loop
+}
+

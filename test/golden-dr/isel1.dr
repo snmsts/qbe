@@ -1,0 +1,22 @@
+**** Function f ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f() {
+@start
+	R1 =l mul R5, 8
+	R2 =l addr $a
+	R1 =l add R1, R2
+	R2 =l mul R4, 4
+	R1 =l add R1, R2
+	R1 =w loadsw R1
+	ret0 0001
+}
+

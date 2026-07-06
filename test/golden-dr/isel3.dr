@@ -1,0 +1,180 @@
+**** Function slt ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $slt() {
+@start
+	xcmpw R4, R5
+	R1 =w flagislt
+	ret0 0001
+}
+
+**** Function sle ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $sle() {
+@start
+	xcmpw R4, R5
+	R1 =w flagisle
+	ret0 0001
+}
+
+**** Function sgt ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $sgt() {
+@start
+	xcmpw R4, R5
+	R1 =w flagisgt
+	ret0 0001
+}
+
+**** Function sge ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $sge() {
+@start
+	xcmpw R4, R5
+	R1 =w flagisge
+	ret0 0001
+}
+
+**** Function ult ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ult() {
+@start
+	xcmpw R4, R5
+	R1 =w flagiult
+	ret0 0001
+}
+
+**** Function ule ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ule() {
+@start
+	xcmpw R4, R5
+	R1 =w flagiule
+	ret0 0001
+}
+
+**** Function ugt ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ugt() {
+@start
+	xcmpw R4, R5
+	R1 =w flagiugt
+	ret0 0001
+}
+
+**** Function uge ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $uge() {
+@start
+	xcmpw R4, R5
+	R1 =w flagiuge
+	ret0 0001
+}
+
+**** Function eq ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $eq() {
+@start
+	xcmpw R4, R5
+	R1 =w flagieq
+	ret0 0001
+}
+
+**** Function ne ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ne() {
+@start
+	xcmpw R4, R5
+	R1 =w flagine
+	ret0 0001
+}
+

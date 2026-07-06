@@ -1,0 +1,98 @@
+**** Function main ****
+> Register mappings:
+	start      beg
+	           end
+	L0         beg (v3.4, R2) (v1.6, R6) (v2.5, R7)
+	           end (v3.4, R2) (v1.6, R6) (v2.5, R7)
+	L8         beg (v3.4, R2) (v1.6, R6) (v2.5, R7)
+	           end (v3.4, R2) (v4.8, R5) (v1.6, R6) (v2.5, R7)
+	L5         beg (v3.4, R2) (v4.8, R5) (v1.6, R6) (v2.5, R7)
+	           end (v3.4, R2) (v4.8, R5) (v1.6, R6) (v2.5, R7)
+	L2         beg (v0.10, R4) (v3.4, R2) (v4.8, R5) (v1.6, R6) (v2.5, R7)
+	           end (v0.10, R4) (v3.4, R2) (v4.8, R5) (v1.6, R6) (v2.5, R7)
+	L10        beg (v0.10, R4) (v3.4, R2) (v4.8, R5) (v1.6, R6) (v2.5, R7)
+	           end (v0.10, R4) (v3.4, R2) (v4.8, R5) (v1.6, R6) (v2.5, R7)
+	L4         beg (v3.4, R2) (v4.8, R5) (v1.6, R6) (v2.5, R7) (v0.10, R4)
+	           end (v3.4, R2) (v18, R4) (v4.8, R5) (v1.6, R6) (v2.5, R7)
+	L11        beg (v3.4, R2) (v1.6, R6) (v2.5, R7)
+	           end (v3.4, R2) (v1.6, R6) (v2.5, R7)
+	L3         beg (v3.4, R2) (v1.6, R6) (v2.5, R7) (v4.11, R5)
+	           end (v3.4, R2) (v2.12, R7) (v1.13, R6)
+	L6         beg (v2.12, R7) (v1.13, R6) (v3.4, R2)
+	           end (v24, R2) (v2.12, R7) (v1.13, R6)
+	L1         beg (v2.5, R7)
+	           end
+	L7         beg
+	           end
+	L13        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  7
+	new blocks: 3
+
+> After register allocation:
+function $main() {
+@start
+	jmp @start_L0
+@L0
+	xcmpw 201, R6
+	jfine @L8, @L1
+@L8
+	R4 =w copy 2
+	R1 =w copy R2
+	R3 =w sign R1
+	xidivw R4
+	R1 =w copy R3
+	xcmpw 0, R1
+	R3 =w copy 1
+	R1 =w copy 0
+	R5 =w xselieq R1, R3
+@L5
+	jmp @L5_L2
+@L2
+	xcmpw R2, R4
+	jfislt @L10, @L3
+@L10
+	R1 =w copy R2
+	R3 =w sign R1
+	xidivw R4
+	R1 =w copy R3
+	xcmpw 0, R1
+	jfieq @L11, @L4
+@L11
+	jmp @L11_L3
+@L4
+	R4 =w add R4, 2
+	jmp @L2
+@L3
+	R1 =w add R6, 1
+	xcmpw 0, R5
+	R7 =w xseline R2, R7
+	R6 =w xseline R1, R6
+@L6
+	R2 =w add R2, 1
+	jmp @L0
+@L1
+	xcmpw 1229, R7
+	jfine @L13, @L7
+@L13
+	R1 =w copy 1
+	ret0 0001
+@L7
+	R1 =w copy 0
+	ret0 0001
+@L11_L3
+	R5 =w copy 0
+	jmp @L3
+@L5_L2
+	R4 =w copy 3
+	jmp @L2
+@start_L0
+	R6 =w copy 5
+	R7 =w copy 11
+	R2 =w copy 12
+	jmp @L0
+}
+

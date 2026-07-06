@@ -1,0 +1,63 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+	loop       beg (n.5, R4) (x.6, R2)
+	           end (n.5, R4) (x.6, R2)
+	next       beg (n.5, R4) (x.6, R2)
+	           end (x.8, R2) (n.5, R4)
+	tloop      beg (t.9, R5) (x.8, R2) (n.5, R4)
+	           end (t.9, R5) (x.8, R2) (n.5, R4)
+	test       beg (t.9, R5) (x.8, R2) (n.5, R4)
+	           end (t.9, R5) (x.8, R2) (n.5, R4)
+	tnext      beg (x.8, R2) (n.5, R4) (t.9, R5)
+	           end (x.8, R2) (n.5, R4) (t.11, R5)
+	prime      beg (x.8, R2) (n.5, R4)
+	           end (x.8, R2) (n.10, R4)
+	end        beg (x.6, R2)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  4
+	new blocks: 2
+
+> After register allocation:
+function $test() {
+@start
+	jmp @start_loop
+@loop
+	xcmpw 10000, R4
+	jfieq @end, @next
+@next
+	R2 =w add R2, 2
+	jmp @next_tloop
+@tloop
+	R1 =w mul R5, R5
+	xcmpw R2, R1
+	jfisgt @prime, @test
+@test
+	R1 =w copy R2
+	R3 =w sign R1
+	xidivw R5
+	R1 =w copy R3
+	xcmpw 0, R1
+	jfine @tnext, @loop
+@tnext
+	R5 =w add R5, 2
+	jmp @tloop
+@prime
+	R4 =w add R4, 1
+	jmp @loop
+@end
+	storew R2, $a
+	ret0
+@next_tloop
+	R5 =w copy 3
+	jmp @tloop
+@start_loop
+	R2 =w copy 3
+	R4 =w copy 2
+	jmp @loop
+}
+

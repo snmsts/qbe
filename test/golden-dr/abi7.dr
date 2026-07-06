@@ -1,0 +1,20 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $test() {
+@start
+	R1 =l load $s
+	R2 =l addr $s
+	R2 =l add R2, 8
+	R3 =l load [R2]
+	ret0 0002
+}
+

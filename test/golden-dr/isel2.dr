@@ -1,0 +1,278 @@
+**** Function lt ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $lt() {
+@start
+	xcmpd R17, R18
+	R1 =w flagfgt
+	ret0 0001
+}
+
+**** Function le ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $le() {
+@start
+	xcmpd R17, R18
+	R1 =w flagfge
+	ret0 0001
+}
+
+**** Function gt ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $gt() {
+@start
+	xcmpd R18, R17
+	R1 =w flagfgt
+	ret0 0001
+}
+
+**** Function ge ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ge() {
+@start
+	xcmpd R18, R17
+	R1 =w flagfge
+	ret0 0001
+}
+
+**** Function eq1 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $eq1() {
+@start
+	xcmpd R18, R17
+	R1 =w flagfeq
+	R2 =w flagfo
+	R1 =w and R1, R2
+	ret0 0001
+}
+
+**** Function eq2 ****
+> Register mappings:
+	start      beg
+	           end
+	false      beg
+	           end
+	true       beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $eq2() {
+@start
+	xcmpd R18, R17
+	R1 =w flagfeq
+	R2 =w flagfo
+	R1 =w and R1, R2
+	copy R1
+	jfine @true, @false
+@true
+	R1 =w copy 1
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function eq3 ****
+> Register mappings:
+	start      beg
+	           end (x, R17) (y, R18)
+	false      beg
+	           end
+	true       beg (x, R17) (y, R18)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $eq3() {
+@start
+	xcmpd R18, R17
+	R1 =w flagfeq
+	R2 =w flagfo
+	R1 =w and R1, R2
+	copy R1
+	jfine @true, @false
+@true
+	xcmpd R18, R17
+	R1 =w flagfeq
+	R2 =w flagfo
+	R1 =w and R1, R2
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function ne1 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ne1() {
+@start
+	xcmpd R18, R17
+	R1 =w flagfne
+	R2 =w flagfuo
+	R1 =w or R1, R2
+	ret0 0001
+}
+
+**** Function ne2 ****
+> Register mappings:
+	start      beg
+	           end
+	false      beg
+	           end
+	true       beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ne2() {
+@start
+	xcmpd R18, R17
+	R1 =w flagfne
+	R2 =w flagfuo
+	R1 =w or R1, R2
+	copy R1
+	jfine @true, @false
+@true
+	R1 =w copy 1
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function ne3 ****
+> Register mappings:
+	start      beg
+	           end (x, R17) (y, R18)
+	false      beg
+	           end
+	true       beg (x, R17) (y, R18)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ne3() {
+@start
+	xcmpd R18, R17
+	R1 =w flagfne
+	R2 =w flagfuo
+	R1 =w or R1, R2
+	copy R1
+	jfine @true, @false
+@true
+	xcmpd R18, R17
+	R1 =w flagfne
+	R2 =w flagfuo
+	R1 =w or R1, R2
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function o ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $o() {
+@start
+	xcmpd R18, R17
+	R1 =w flagfo
+	ret0 0001
+}
+
+**** Function uo ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $uo() {
+@start
+	xcmpd R18, R17
+	R1 =w flagfuo
+	ret0 0001
+}
+

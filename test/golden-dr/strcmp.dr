@@ -1,0 +1,45 @@
+**** Function strcmp ****
+> Register mappings:
+	.37        beg
+	           end (s1.3.val, R5) (s2.5.val, R4)
+	.5         beg (s2.5.3, R4) (s1.3.4, R5)
+	           end (s2.5.3, R4) (.16, R1) (s1.3.4, R5)
+	.14        beg (s2.5.3, R4) (.16, R1) (s1.3.4, R5)
+	           end (s2.5.3, R4) (.16, R1) (s1.3.4, R5) (.20, R2)
+	.13        beg (s2.5.3, R4) (s1.3.4, R5) (.16, R1) (.20, R2)
+	           end (s2.5.3, R4) (s1.3.4, R5) (.16, R1)
+	.6         beg (s2.5.3, R4) (s1.3.4, R5)
+	           end (.10, R5) (.12, R4)
+	.8         beg (s2.5.3, R4) (.16, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $strcmp() {
+@.37
+	jmp @.5
+@.6
+	R5 =l add R5, 1
+	R4 =l add R4, 1
+@.5
+	R1 =w loadsb [R5]
+	xcmpw 0, R1
+	jfine @.14, @.8
+@.14
+	R2 =w loadsb [R4]
+	xcmpw 0, R2
+	jfine @.13, @.8
+@.13
+	xcmpw R2, R1
+	jfieq @.6, @.8
+@.8
+	R1 =w extub R1
+	R2 =w loadub [R4]
+	R1 =w sub R1, R2
+	ret0 0001
+}
+

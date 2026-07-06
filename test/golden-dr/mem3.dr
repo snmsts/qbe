@@ -1,0 +1,58 @@
+**** Function func ****
+> Register mappings:
+	start.0    beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 0
+
+> After register allocation:
+function $func() {
+@start.0
+	R1 =l copy R5
+	storel 1, [S0]
+	storel 2, [8 + S0]
+	R2 =l load [8 + S0]
+	storel R2, [16 + S0]
+	R2 =l load [0 + S0]
+	storel R2, [8 + S0]
+	R2 =l load [0 + S0]
+	storel R2, [0 + R1]
+	R2 =l load [8 + S0]
+	storel R2, [8 + R1]
+	R2 =l load [16 + S0]
+	storel R2, [16 + R1]
+	ret0 0001
+}
+
+**** Function main ****
+> Register mappings:
+	start.27   beg
+	           end
+	failed.31  beg
+	           end
+	passed.32  beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $main() {
+@start.27
+	R5 =l addr S0
+	call $func, 0011
+	R1 =l load [16 + R1]
+	xcmpl 2, R1
+	jfieq @passed.32, @failed.31
+@failed.31
+	call $abort, 0001
+@passed.32
+	R1 =w copy 0
+	ret0 0001
+}
+

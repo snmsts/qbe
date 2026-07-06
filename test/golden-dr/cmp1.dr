@@ -1,0 +1,23 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end (cmp.2, R1)
+	no         beg (cmp.2, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $test() {
+@start
+	xcmpw 1, R5
+	R2 =w flagiugt
+	R1 =w copy 1
+	R1 =w xseliugt R1, R2
+@no
+	ret0 0001
+}
+

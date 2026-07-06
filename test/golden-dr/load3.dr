@@ -1,0 +1,64 @@
+**** Function rand ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $rand() {
+@start
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function chk ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $chk() {
+@start
+	xcmpw 1, R5
+	R1 =w flagieq
+	xcmpw 0, R4
+	R2 =w flagieq
+	R1 =w and R1, R2
+	R1 =w xor R1, 1
+	ret0 0001
+}
+
+**** Function main ****
+> Register mappings:
+	start      beg
+	           end
+	blit       beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $main() {
+@start
+	storew 1, [S0]
+	storew 0, [4 + S0]
+	call $rand, 0001
+@blit
+	R4 =w copy 0
+	R5 =w copy 1
+	call $chk, 0021
+	ret0 0001
+}
+

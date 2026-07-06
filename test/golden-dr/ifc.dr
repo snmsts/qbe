@@ -1,0 +1,239 @@
+**** Function ifc1 ****
+> Register mappings:
+	start      beg
+	           end (v.1, R1)
+	end        beg (v.1, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifc1() {
+@start
+	xcmpw 0, R3
+	R1 =l xseline R4, R5
+@end
+	ret0 0001
+}
+
+**** Function ifc2 ****
+> Register mappings:
+	start      beg
+	           end (v.4, R1)
+	end        beg (v.4, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifc2() {
+@start
+	xcmpw 42, R3
+	R1 =l xseline R4, R5
+@end
+	ret0 0001
+}
+
+**** Function ifc3 ****
+> Register mappings:
+	start      beg
+	           end (v.7, R1)
+	end        beg (v.7, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifc3() {
+@start
+	xcmpw 42, R3
+	R1 =l xseliugt R4, R5
+@end
+	ret0 0001
+}
+
+**** Function ifclts ****
+> Register mappings:
+	start      beg
+	           end (v.10, R1)
+	end        beg (v.10, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifclts() {
+@start
+	xcmps R17, R18
+	R1 =l xselfgt R4, R5
+@end
+	ret0 0001
+}
+
+**** Function ifcles ****
+> Register mappings:
+	start      beg
+	           end (v.13, R1)
+	end        beg (v.13, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifcles() {
+@start
+	xcmps R17, R18
+	R1 =l xselfge R4, R5
+@end
+	ret0 0001
+}
+
+**** Function ifcgts ****
+> Register mappings:
+	start      beg
+	           end (v.16, R1)
+	end        beg (v.16, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifcgts() {
+@start
+	xcmps R18, R17
+	R1 =l xselfgt R4, R5
+@end
+	ret0 0001
+}
+
+**** Function ifcges ****
+> Register mappings:
+	start      beg
+	           end (v.19, R1)
+	end        beg (v.19, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifcges() {
+@start
+	xcmps R18, R17
+	R1 =l xselfge R4, R5
+@end
+	ret0 0001
+}
+
+**** Function ifceqs ****
+> Register mappings:
+	start      beg
+	           end (v.22, R1)
+	end        beg (v.22, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifceqs() {
+@start
+	xcmps R18, R17
+	R1 =w flagfeq
+	R2 =w flagfo
+	R1 =w and R1, R2
+	copy R1
+	R1 =l xseline R4, R5
+@end
+	ret0 0001
+}
+
+**** Function ifcnes ****
+> Register mappings:
+	start      beg
+	           end (v.27, R1)
+	end        beg (v.27, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifcnes() {
+@start
+	xcmps R18, R17
+	R1 =w flagfne
+	R2 =w flagfuo
+	R1 =w or R1, R2
+	copy R1
+	R1 =l xseline R4, R5
+@end
+	ret0 0001
+}
+
+**** Function ifcos ****
+> Register mappings:
+	start      beg
+	           end (v.32, R1)
+	end        beg (v.32, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifcos() {
+@start
+	xcmps R18, R17
+	R1 =l xselfo R4, R5
+@end
+	ret0 0001
+}
+
+**** Function ifcuos ****
+> Register mappings:
+	start      beg
+	           end (v.35, R1)
+	end        beg (v.35, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifcuos() {
+@start
+	xcmps R18, R17
+	R1 =l xselfuo R4, R5
+@end
+	ret0 0001
+}
+

@@ -1,0 +1,93 @@
+**** Function f ****
+> Register mappings:
+	start      beg
+	           end (n0, R13)
+	loop       beg (n1, R13) (pb, R12) (pa, R11) (p9, R10) (p8, R9) (p7, R8) (p6, R7) (p5, R6) (p4, R5) (p3, R4) (p2, R3) (p1, R2) (p0, R1)
+	           end (p01, R1) (p11, R2) (p21, R3) (p31, R4) (p41, R5) (p51, R6) (p61, R7) (p71, R8) (p81, R9) (p91, R10) (pa1, R11) (pb1, R12) (pc1, R13) (pd1, R14)
+	end        beg (pc1, R13) (pb1, R12) (pa1, R11) (p91, R10) (p81, R9) (p71, R8) (p61, R7) (p51, R6) (p41, R5) (p31, R4) (p21, R3) (p11, R2) (p01, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  22
+	new blocks: 2
+
+> After register allocation:
+function $f() {
+@start
+	R13 =w copy R5
+	jmp @start_loop
+@loop
+	R1 =w add R1, 1
+	R2 =w add R2, 2
+	R3 =w add R3, 3
+	R4 =w add R4, 4
+	R5 =w add R5, 5
+	R6 =w add R6, 6
+	R7 =w add R7, 7
+	R8 =w add R8, 8
+	R9 =w add R9, 9
+	R10 =w add R10, 10
+	R11 =w add R11, 11
+	R12 =w add R12, 12
+	R14 =w add S9, 13
+	storew R14, S5
+	R14 =w add S8, 14
+	storew R14, S1
+	R14 =w add S7, 15
+	storew R14, S2
+	R14 =w add S6, 16
+	storew R14, S3
+	R13 =w sub R13, 1
+	storew R13, S4
+	R14 =w load S1
+	R13 =w load S5
+	jfine @loop_loop, @end
+@end
+	R1 =w add R1, R2
+	storew R1, S0
+	R14 =w load S3
+	R1 =w load S2
+	R2 =w load S1
+	R3 =w add R3, S0
+	R3 =w add R4, R3
+	R3 =w add R5, R3
+	R3 =w add R6, R3
+	R3 =w add R7, R3
+	R3 =w add R8, R3
+	R3 =w add R9, R3
+	R3 =w add R10, R3
+	R3 =w add R11, R3
+	R3 =w add R12, R3
+	R3 =w add R13, R3
+	R2 =w add R2, R3
+	R1 =w add R1, R2
+	R1 =w add R14, R1
+	ret0 0001
+@loop_loop
+	S6 =w copy S3
+	S7 =w copy S2
+	S8 =w copy R14
+	S9 =w copy R13
+	R13 =w copy S4
+	jmp @loop
+@start_loop
+	S6 =w copy 0
+	S7 =w copy 0
+	S8 =w copy 0
+	S9 =w copy 0
+	R12 =w copy 0
+	R11 =w copy 0
+	R10 =w copy 0
+	R9 =w copy 0
+	R8 =w copy 0
+	R7 =w copy 0
+	R6 =w copy 0
+	R5 =w copy 0
+	R4 =w copy 0
+	R3 =w copy 0
+	R2 =w copy 0
+	R1 =w copy 0
+	jmp @loop
+}
+

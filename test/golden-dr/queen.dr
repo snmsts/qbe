@@ -1,0 +1,243 @@
+**** Function chk ****
+> Register mappings:
+	l0         beg
+	           end (t0, R5) (t1, R4) (t18, R3) (t35, R6)
+	l1         beg (i.4, R2) (t0, R5) (t1, R4) (r.3, R1) (t18, R3) (t35, R6)
+	           end (i.4, R2) (t7, R7) (t0, R5) (t1, R4) (r.3, R1) (t18, R3) (t35, R6)
+	l2         beg (i.4, R2) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (t7, R7) (r.3, R1)
+	           end (i.4, R2) (t15, R8) (t23, R1) (t37, R11) (t42, R13) (t59, R9) (t64, R12) (t0, R5) (t1, R4) (t18, R3) (t35, R6)
+	l4         beg (i.4, R2) (t15, R8) (t37, R11) (t42, R13) (t59, R9) (t64, R12) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (t23, R1)
+	           end (i.4, R2) (t15, R8) (t37, R11) (t42, R13) (t59, R9) (t64, R12) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (t48, R1)
+	l5         beg (i.4, R2) (t15, R8) (r.7, R1) (t42, R13) (t59, R9) (t64, R12) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (t37, R11)
+	           end (i.4, R2) (t15, R8) (r.7, R1) (t42, R13) (t59, R9) (t64, R12) (t71, R10) (t93, R7) (t0, R5) (t1, R4) (t18, R3) (t35, R6)
+	l7         beg (i.4, R2) (t15, R8) (t42, R13) (t64, R12) (t71, R10) (t93, R7) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (r.7, R1) (t59, R9)
+	           end (i.4, R2) (t15, R8) (t42, R13) (t64, R12) (t71, R10) (t93, R7) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (t77, R1)
+	l8         beg (i.4, R2) (t15, R8) (r.8, R1) (t64, R12) (t71, R10) (t93, R7) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (t42, R13)
+	           end (i.4, R2) (t15, R8) (r.8, R1) (t64, R12) (t71, R10) (t93, R7) (t95, R11) (t117, R9) (t0, R5) (t1, R4) (t18, R3) (t35, R6)
+	l10        beg (i.4, R2) (t15, R8) (t71, R10) (t93, R7) (t95, R11) (t117, R9) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (r.8, R1) (t64, R12)
+	           end (i.4, R2) (t15, R8) (t71, R10) (t93, R7) (t95, R11) (t117, R9) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (t106, R1)
+	l11        beg (i.4, R2) (t15, R8) (r.9, R1) (t93, R7) (t117, R9) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (t71, R10) (t95, R11)
+	           end (i.4, R2) (t15, R8) (r.9, R1) (t93, R7) (t117, R9) (t0, R5) (t1, R4) (t18, R3) (t35, R6)
+	l13        beg (i.4, R2) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (r.9, R1) (t93, R7) (t15, R8) (t117, R9)
+	           end (i.4, R2) (t0, R5) (t1, R4) (t18, R3) (t35, R6) (t135, R1)
+	l14        beg (t0, R5) (t1, R4) (r.10, R1) (t18, R3) (t35, R6) (i.4, R2)
+	           end (t0, R5) (t1, R4) (r.10, R1) (t152, R2) (t18, R3) (t35, R6)
+	l3         beg (r.3, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  2
+	new blocks: 1
+
+> After register allocation:
+function $chk() {
+@l0
+	R1 =l extsw R5
+	R3 =l mul R1, 8
+	R1 =l extsw R4
+	R6 =l mul R1, 4
+	jmp @l0_l1
+@l1
+	R7 =w loadsw $glo1
+	xcmpw R7, R2
+	jfislt @l2, @l3
+@l2
+	R8 =l load $glo3
+	R10 =l load [R8 + 1 * R3]
+	R9 =l extsw R2
+	R10 =w loadsw [R10 + 4 * R9]
+	R1 =w add R10, R1
+	R9 =l load [R8 + 8 * R9]
+	R9 =w loadsw [R9 + 1 * R6]
+	R1 =w add R1, R9
+	R9 =w add R5, R2
+	xcmpw R7, R9
+	R11 =w flagislt
+	R10 =w add R4, R2
+	xcmpw R7, R10
+	R13 =w flagislt
+	R7 =w and R11, R13
+	R9 =l extsw R9
+	R9 =l mul R9, 8
+	R10 =l extsw R10
+	R12 =l mul R10, 4
+	xcmpw 0, R7
+	jfine @l4, @l5
+@l4
+	R7 =l load [R8 + 1 * R9]
+	R7 =w loadsw [R7 + 1 * R12]
+	R1 =w add R1, R7
+@l5
+	R7 =w sub R4, R2
+	xcmpw 0, R7
+	R10 =w flagisge
+	R11 =w and R11, R10
+	R7 =l extsw R7
+	R7 =l mul R7, 4
+	xcmpw 0, R11
+	jfine @l7, @l8
+@l7
+	R9 =l load [R8 + 1 * R9]
+	R9 =w loadsw [R9 + 1 * R7]
+	R1 =w add R9, R1
+@l8
+	R9 =w sub R5, R2
+	xcmpw 0, R9
+	R11 =w flagisge
+	R13 =w and R13, R11
+	R9 =l extsw R9
+	R9 =l mul R9, 8
+	xcmpw 0, R13
+	jfine @l10, @l11
+@l10
+	R13 =l load [R8 + 1 * R9]
+	R12 =w loadsw [R12 + 1 * R13]
+	R1 =w add R12, R1
+@l11
+	xtestw R10, R11
+	jfine @l13, @l14
+@l13
+	R8 =l load [R8 + 1 * R9]
+	R7 =w loadsw [R7 + 1 * R8]
+	R1 =w add R7, R1
+@l14
+	R2 =w add R2, 1
+	jmp @l1
+@l3
+	ret0 0001
+@l0_l1
+	R2 =w copy 0
+	R1 =w copy 0
+	jmp @l1
+}
+
+**** Function go ****
+> Register mappings:
+	l16        beg
+	           end (t0, R5)
+	l18        beg (t0, R5)
+	           end (t27, R10) (t0, R5) (t30, R12)
+	l20        beg (x.32, R11) (t27, R10) (t0, R5) (t30, R12)
+	           end (x.32, R11) (t27, R10) (t0, R5) (t30, R12)
+	l21        beg (x.32, R11) (t27, R10) (t30, R12) (t0, R5)
+	           end (x.32, R11) (t27, R10) (t0, R5) (t30, R12)
+	l23        beg (x.32, R11) (t27, R10) (t30, R12) (t0, R5)
+	           end (x.32, R11) (t27, R10) (t0, R5) (t30, R12)
+	l24        beg (t0, R5) (t27, R10) (t30, R12) (x.32, R11)
+	           end (t0, R5) (t27, R10) (t45, R11) (t30, R12)
+	l22        beg
+	           end
+	l17        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  5
+	new blocks: 1
+
+> After register allocation:
+function $go() {
+@l16
+	R1 =w loadsw $glo1
+	xcmpw R1, R5
+	jfieq @l17, @l18
+@l17
+	R1 =w loadsw $glo2
+	R1 =w add R1, 1
+	storew R1, $glo2
+	R1 =w copy 0
+	ret0 0001
+@l18
+	R1 =l extsw R5
+	R10 =l mul R1, 4
+	R12 =w add R5, 1
+	jmp @l18_l20
+@l20
+	R1 =w loadsw $glo1
+	xcmpw R1, R11
+	jfislt @l21, @l22
+@l21
+	R4 =w copy R5
+	R13 =w copy R5
+	R5 =w copy R11
+	call $chk, 0021
+	R5 =w copy R13
+	xcmpw 0, R1
+	jfieq @l23, @l24
+@l23
+	R1 =l load $glo3
+	R13 =l extsw R11
+	R2 =l load [R1 + 8 * R13]
+	R1 =w loadsw [R2 + 1 * R10]
+	R1 =w add R1, 1
+	storew R1, [R2 + 1 * R10]
+	R14 =w copy R5
+	R5 =w copy R12
+	call $go, 0011
+	R5 =w copy R14
+	R1 =l load $glo3
+	R2 =l load [R1 + 8 * R13]
+	R1 =w loadsw [R10 + 1 * R2]
+	R1 =w sub R1, 1
+	storew R1, [R10 + 1 * R2]
+@l24
+	R11 =w add R11, 1
+	jmp @l20
+@l22
+	R1 =w copy 0
+	ret0 0001
+@l18_l20
+	R11 =w copy 0
+	jmp @l20
+}
+
+**** Function main ****
+> Register mappings:
+	l26        beg
+	           end
+	l27        beg (i.37, R10)
+	           end (i.37, R10) (t10, R5)
+	l28        beg (i.37, R10) (t10, R5)
+	           end (t20, R10)
+	l29        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $main() {
+@l26
+	storew 8, $glo1
+	R4 =w copy 8
+	R5 =w copy 8
+	call $calloc, 0021
+	storel R1, $glo3
+	jmp @l26_l27
+@l27
+	R5 =w loadsw $glo1
+	xcmpw R5, R10
+	jfislt @l28, @l29
+@l28
+	R4 =w copy 4
+	call $calloc, 0021
+	R2 =l load $glo3
+	R3 =l extsw R10
+	storel R1, [R2 + 8 * R3]
+	R10 =w add R10, 1
+	jmp @l27
+@l29
+	R5 =w copy 0
+	call $go, 0011
+	R1 =w loadsw $glo2
+	xcmpw 92, R1
+	R1 =w flagine
+	ret0 0001
+@l26_l27
+	R10 =w copy 0
+	jmp @l27
+}
+

@@ -1,0 +1,74 @@
+**** Function gcm_test ****
+> Register mappings:
+	start      beg
+	           end (b, R2)
+	loop       beg (b, R2) (i.1, R1)
+	           end (i.2, R1) (b, R2)
+	end        beg (i.2, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $gcm_test() {
+@start
+	R2 =w add R5, 1
+	jmp @start_loop
+@loop
+	R1 =w add R1, R2
+	xcmpw 10, R1
+	jfislt @loop, @end
+@end
+	R1 =w mul R1, 2
+	ret0 0001
+@start_loop
+	R1 =w copy 0
+	jmp @loop
+}
+
+**** Function gcm_test2 ****
+> Register mappings:
+	start      beg
+	           end (a, R5)
+	loop       beg (x.4, R1) (f.5, R3) (s.1, R2) (a, R5)
+	           end (x.4, R1) (f.5, R3) (s.1, R2) (a, R5)
+	if         beg (s.1, R2) (a, R5) (f.5, R3) (x.4, R1)
+	           end (x.6, R1) (s.1, R2) (f.7, R3) (a, R5)
+	if_false   beg (a, R5) (x.6, R1) (f.7, R3) (s.1, R2)
+	           end (a, R5) (x.6, R1) (s.2, R2) (f.7, R3)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  3
+	new blocks: 1
+
+> After register allocation:
+function $gcm_test2() {
+@start
+	jmp @start_loop
+@loop
+	xcmpw 0, R5
+	jfine @if, @end
+@if
+	R4 =w add R1, 1
+	xcmpw 0, R3
+	R1 =w xseline R4, R1
+	R4 =w copy 0
+	R3 =w xseline R4, R3
+@if_false
+	R2 =w add R2, R1
+	jmp @loop
+@end
+	ret0
+@start_loop
+	R2 =w copy 0
+	R3 =w copy 1
+	R1 =w copy 0
+	jmp @loop
+}
+

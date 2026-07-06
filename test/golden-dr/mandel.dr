@@ -1,0 +1,127 @@
+**** Function mandel ****
+> Register mappings:
+	mandel     beg
+	           end (x, R17) (cr, R20)
+	loop       beg (zi, R19) (x, R17) (cr, R20) (zr, R18) (i, R1)
+	           end (zr, R21) (zi, R19) (i1, R1) (zr2, R18) (zi2, R22) (x, R17) (cr, R20) (i, R2)
+	loop1      beg (x, R17) (i1, R1) (cr, R20) (zi, R19) (zr, R21) (zr2, R18) (zi2, R22)
+	           end (x, R17) (i1, R1) (zr1, R18) (zi1, R19) (cr, R20)
+	ret0       beg
+	           end
+	reti       beg (i, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  6
+	new blocks: 2
+
+> After register allocation:
+function $mandel() {
+@mandel
+	R20 =d sub R18, [$".Lfp1"]
+	jmp @mandel_loop
+@loop
+	R2 =w copy R1
+	R1 =w add R1, 1
+	R21 =d copy R18
+	R18 =d mul R18, R18
+	R22 =d mul R19, R19
+	R23 =d add R18, R22
+	xcmpd [$".Lfp2"], R23
+	jffgt @loop_reti, @loop1
+@loop1
+	xcmpw 1000, R1
+	R2 =w flagisgt
+	R18 =d sub R18, R22
+	R18 =d add R20, R18
+	R19 =d mul R21, R19
+	R19 =d add R19, R19
+	R19 =d add R17, R19
+	xcmpw 0, R2
+	jfine @ret0, @loop
+@reti
+	R1 =w add R1, 1
+	ret0 0001
+@ret0
+	R1 =w copy 0
+	ret0 0001
+@loop_reti
+	R1 =w copy R2
+	jmp @reti
+@mandel_loop
+	R19 =d copy [$".Lfp0"]
+	R18 =d copy [$".Lfp0"]
+	R1 =w copy 0
+	jmp @loop
+}
+
+**** Function main ****
+> Register mappings:
+	main       beg
+	           end
+	loopy      beg (y, R18)
+	           end (y, R18)
+	loopx      beg (x, R17) (y, R18)
+	           end
+	in         beg
+	           end (x, R17) (y, R18)
+	out        beg
+	           end (x, R17) (y, R18)
+	loopx1     beg (y, R18) (x, R17)
+	           end (x1, R17) (y, R18)
+	loopy1     beg
+	           end (y1, R18)
+	ret        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  2
+	new blocks: 2
+
+> After register allocation:
+function $main() {
+@main
+	jmp @main_loopy
+@loopy
+	stored R18, S0
+	jmp @loopy_loopx
+@loopx
+	stored R17, S2
+	call $mandel, 0201
+	xcmpw 0, R1
+	jfine @out, @in
+@in
+	R5 =w copy 42
+	call $putchar, 0011
+	R17 =d load S2
+	R18 =d load S0
+	jmp @loopx1
+@out
+	R5 =w copy 32
+	call $putchar, 0011
+	R17 =d load S2
+	R18 =d load S0
+@loopx1
+	R17 =d add R17, [$".Lfp5"]
+	xcmpd [$".Lfp4"], R17
+	jffgt @loopy1, @loopx
+@loopy1
+	R5 =w copy 10
+	call $putchar, 0011
+	R18 =d load S0
+	R18 =d add R18, [$".Lfp5"]
+	xcmpd [$".Lfp4"], R18
+	jffgt @ret, @loopy
+@ret
+	R1 =w copy 0
+	ret0 0001
+@loopy_loopx
+	R17 =d copy [$".Lfp3"]
+	jmp @loopx
+@main_loopy
+	R18 =d copy [$".Lfp3"]
+	jmp @loopy
+}
+

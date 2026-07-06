@@ -1,0 +1,21 @@
+**** Function sum ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $sum() {
+@start
+	storel R5, [S0]
+	storel R17, [8 + S0]
+	R17 =s load [S0]
+	R18 =s load [8 + S0]
+	R17 =s add R17, R18
+	ret0 0004
+}
+

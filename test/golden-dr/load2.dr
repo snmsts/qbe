@@ -1,0 +1,32 @@
+**** Function f ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f() {
+@start
+	storew 1432778632, [S0]
+	R5 =w copy 287475780
+	call $px, 0011
+	storew 1432778632, [S0]
+	R5 =w copy 293046340
+	call $px, 0011
+	storew 1432778632, [S0]
+	R5 =w copy 1719109700
+	call $px, 0011
+	storew 1432778632, [S0]
+	R5 =w copy 287462758
+	call $px, 0011
+	storew 0, [S0]
+	storew 1432778632, [4 + S0]
+	R5 =w copy 1719109632
+	call $px, 0011
+	ret0
+}
+

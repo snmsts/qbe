@@ -1,0 +1,351 @@
+**** Function chacha20_rounds_qbe ****
+> Register mappings:
+	start      beg
+	           end (t0.99, R4) (t1.100, R14) (t2.101, R7) (t3.102, R10) (t5.104, R13) (t8.107, R9) (t9.108, R12) (t10.109, R3) (t11.110, R6) (t12.111, R1) (t13.112, R8) (t4.103, R2) (t6.105, R5) (t7.106, R11)
+	loop       beg (t7.125, R14) (t6.126, R6) (t14.118, R11) (t10.122, R3) (t2.130, R7) (t9.123, R12) (t5.127, R13) (t13.119, R8) (t1.131, R4) (t4.128, R9) (t8.124, R2) (t12.120, R5) (t0.132, R1)
+	           end (t0.187, R1) (t15.189, R2) (t10.190, R3) (t1.199, R4) (t12.201, R5) (t11.202, R6) (t2.211, R7) (t13.213, R8) (t8.214, R9) (t3.223, R10) (t14.225, R11) (t9.226, R12) (t5.192, R13) (t6.204, R14)
+	done       beg (out.98, R5) (t15.189, R2) (t14.225, R11) (t13.213, R8) (t12.201, R1) (t11.202, R6) (t10.190, R3) (t9.226, R12) (t8.214, R9) (t5.192, R13) (t3.223, R10) (t2.211, R7) (t1.199, R14) (t0.187, R4)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  30
+	new blocks: 3
+
+> After register allocation:
+function $chacha20_rounds_qbe() {
+@start
+	R1 =l copy R4
+	S4 =l copy R5
+	R4 =w loadsw [R1]
+	R14 =w loadsw [4 + R1]
+	R7 =w loadsw [8 + R1]
+	R10 =w loadsw [12 + R1]
+	R2 =w loadsw [16 + R1]
+	R13 =w loadsw [20 + R1]
+	R5 =w loadsw [24 + R1]
+	R11 =w loadsw [28 + R1]
+	R9 =w loadsw [32 + R1]
+	R12 =w loadsw [36 + R1]
+	R3 =w loadsw [40 + R1]
+	R6 =w loadsw [44 + R1]
+	R8 =w loadsw [48 + R1]
+	storew R8, S74
+	R8 =w loadsw [52 + R1]
+	storew R8, S75
+	R8 =w loadsw [56 + R1]
+	storew R8, S72
+	R1 =w loadsw [60 + R1]
+	storew R1, S73
+	R8 =w load S75
+	R1 =w load S74
+	jmp @start_loop
+@loop
+	R1 =w add R9, R1
+	R10 =w xor R5, R1
+	R5 =w shl R10, 16
+	R10 =w shr R10, 16
+	R5 =w xor R5, R10
+	R2 =w add R2, R5
+	R10 =w xor R9, R2
+	R9 =w shl R10, 12
+	R10 =w shr R10, 20
+	R10 =w xor R9, R10
+	R1 =w add R1, R10
+	R9 =w xor R5, R1
+	R5 =w copy R4
+	R4 =w shl R9, 8
+	R9 =w shr R9, 24
+	R4 =w xor R4, R9
+	R9 =w copy R8
+	R8 =w add R2, R4
+	R2 =w copy R13
+	R13 =w xor R10, R8
+	R10 =w shl R13, 7
+	R13 =w shr R13, 25
+	R13 =w xor R10, R13
+	R5 =w add R2, R5
+	R10 =w xor R9, R5
+	R9 =w shl R10, 16
+	R10 =w shr R10, 16
+	R9 =w xor R9, R10
+	R10 =w add R12, R9
+	R12 =w xor R2, R10
+	R2 =w shl R12, 12
+	R12 =w shr R12, 20
+	R2 =w xor R2, R12
+	R5 =w add R5, R2
+	R12 =w xor R9, R5
+	R9 =w copy R7
+	R7 =w shl R12, 8
+	R12 =w shr R12, 24
+	R7 =w xor R7, R12
+	R12 =w add R10, R7
+	R10 =w xor R2, R12
+	R2 =w copy R3
+	R3 =w shl R10, 7
+	R10 =w shr R10, 25
+	R3 =w xor R3, R10
+	R9 =w add R6, R9
+	R11 =w xor R11, R9
+	R10 =w shl R11, 16
+	R11 =w shr R11, 16
+	R10 =w xor R10, R11
+	R2 =w add R2, R10
+	R11 =w xor R6, R2
+	R6 =w shl R11, 12
+	R11 =w shr R11, 20
+	R6 =w xor R6, R11
+	R9 =w add R9, R6
+	R11 =w xor R10, R9
+	R10 =w shl R11, 8
+	R11 =w shr R11, 24
+	R11 =w xor R10, R11
+	R2 =w add R2, R11
+	R10 =w xor R6, R2
+	R6 =w shl R10, 7
+	R10 =w shr R10, 25
+	R6 =w xor R6, R10
+	R10 =w add R14, S71
+	storew R10, S65
+	R10 =w xor S70, S65
+	storew R10, S69
+	R10 =w shl S69, 16
+	storew R10, S67
+	R10 =w shr S69, 16
+	storew R10, S68
+	R10 =w xor S67, S68
+	storew R10, S61
+	R10 =w add S66, S61
+	storew R10, S60
+	R10 =w xor R14, S60
+	storew R10, S64
+	R10 =w load S65
+	R14 =w shl S64, 12
+	storew R14, S62
+	R14 =w shr S64, 20
+	storew R14, S63
+	R14 =w xor S62, S63
+	storew R14, S56
+	R10 =w add R10, S56
+	storew R10, S55
+	R10 =w load S61
+	R10 =w xor R10, S55
+	storew R10, S59
+	R10 =w load S60
+	R14 =w shl S59, 8
+	storew R14, S57
+	R14 =w shr S59, 24
+	storew R14, S58
+	R14 =w xor S57, S58
+	storew R14, S51
+	R10 =w add R10, S51
+	storew R10, S37
+	R10 =w load S56
+	R10 =w xor R10, S37
+	storew R10, S54
+	R10 =w load S55
+	R14 =w shl S54, 7
+	storew R14, S52
+	R14 =w shr S54, 25
+	storew R14, S53
+	R14 =w xor S52, S53
+	storew R14, S23
+	R1 =w add R1, R3
+	storew R1, S50
+	R1 =w load S51
+	R1 =w xor R1, S50
+	storew R1, S49
+	R1 =w load S50
+	R14 =w shl S49, 16
+	storew R14, S47
+	R14 =w shr S49, 16
+	storew R14, S48
+	R14 =w xor S47, S48
+	storew R14, S46
+	R2 =w add R2, S46
+	storew R2, S45
+	R2 =w load S46
+	R3 =w xor R3, S45
+	storew R3, S43
+	R3 =w load S45
+	R14 =w shl S43, 12
+	storew R14, S44
+	R14 =w shr S43, 20
+	storew R14, S42
+	R14 =w load S44
+	R14 =w xor R14, S42
+	storew R14, S41
+	R1 =w add R1, R14
+	R14 =w xor R2, R1
+	R2 =w shl R14, 8
+	R14 =w shr R14, 24
+	R2 =w xor R2, R14
+	R3 =w add R3, R2
+	R14 =w xor S41, R3
+	storew R14, S40
+	R14 =w shl S40, 7
+	storew R14, S38
+	R14 =w shr S40, 25
+	storew R14, S39
+	R14 =w xor S38, S39
+	storew R14, S6
+	R5 =w add R5, R6
+	storew R5, S36
+	R5 =w load S37
+	R4 =w xor R4, S36
+	storew R4, S35
+	R4 =w load S36
+	R14 =w shl S35, 16
+	storew R14, S33
+	R14 =w shr S35, 16
+	storew R14, S34
+	R14 =w xor S33, S34
+	storew R14, S32
+	R5 =w add R5, S32
+	storew R5, S31
+	R5 =w load S32
+	R6 =w xor R6, S31
+	storew R6, S29
+	R6 =w load S31
+	R14 =w shl S29, 12
+	storew R14, S30
+	R14 =w shr S29, 20
+	storew R14, S28
+	R14 =w load S30
+	R14 =w xor R14, S28
+	storew R14, S27
+	R4 =w add R4, R14
+	R14 =w xor R5, R4
+	R5 =w shl R14, 8
+	R14 =w shr R14, 24
+	R5 =w xor R5, R14
+	R6 =w add R6, R5
+	R14 =w xor S27, R6
+	storew R14, S26
+	R14 =w shl S26, 7
+	storew R14, S24
+	R14 =w shr S26, 25
+	storew R14, S25
+	R14 =w xor S24, S25
+	storew R14, S2
+	R9 =w add R9, S23
+	storew R9, S22
+	R9 =w load S23
+	R7 =w xor R7, S22
+	storew R7, S21
+	R7 =w load S22
+	R14 =w shl S21, 16
+	storew R14, S19
+	R14 =w shr S21, 16
+	storew R14, S20
+	R14 =w xor S19, S20
+	storew R14, S18
+	R8 =w add R8, S18
+	storew R8, S17
+	R8 =w load S18
+	R9 =w xor R9, S17
+	storew R9, S15
+	R9 =w load S17
+	R14 =w shl S15, 12
+	storew R14, S16
+	R14 =w shr S15, 20
+	storew R14, S14
+	R14 =w load S16
+	R14 =w xor R14, S14
+	storew R14, S13
+	R7 =w add R7, R14
+	R14 =w xor R8, R7
+	R8 =w shl R14, 8
+	R14 =w shr R14, 24
+	R8 =w xor R8, R14
+	R9 =w add R9, R8
+	R14 =w xor S13, R9
+	storew R14, S12
+	R14 =w shl S12, 7
+	storew R14, S10
+	R14 =w shr S12, 25
+	storew R14, S11
+	R14 =w xor S10, S11
+	storew R14, S1
+	R10 =w add R13, R10
+	R14 =w xor R11, R10
+	R11 =w shl R14, 16
+	R14 =w shr R14, 16
+	R11 =w xor R11, R14
+	R12 =w add R12, R11
+	R14 =w xor R13, R12
+	R13 =w shl R14, 12
+	R14 =w shr R14, 20
+	R13 =w xor R13, R14
+	R10 =w add R10, R13
+	R14 =w xor R11, R10
+	R11 =w shl R14, 8
+	R14 =w shr R14, 24
+	R11 =w xor R11, R14
+	R12 =w add R12, R11
+	R13 =w xor R13, R12
+	R14 =w shl R13, 7
+	storew R14, S7
+	R13 =w shr R13, 25
+	storew R13, S8
+	R13 =w load S9
+	R14 =w xor S7, S8
+	storew R14, S0
+	R13 =w sub R13, 10
+	storew R13, S3
+	R14 =w load S2
+	R13 =w load S6
+	jfine @loop_loop, @loop_done
+@done
+	storew R4, [R5]
+	R4 =w load S2
+	storew R14, [4 + R5]
+	R14 =w load S1
+	storew R7, [8 + R5]
+	R7 =w load S0
+	storew R10, [12 + R5]
+	storew R7, [16 + R5]
+	storew R13, [20 + R5]
+	storew R4, [24 + R5]
+	storew R14, [28 + R5]
+	storew R9, [32 + R5]
+	storew R12, [36 + R5]
+	storew R3, [40 + R5]
+	storew R6, [44 + R5]
+	storew R1, [48 + R5]
+	storew R8, [52 + R5]
+	storew R11, [56 + R5]
+	storew R2, [60 + R5]
+	ret0
+@loop_done
+	R14 =w copy R4
+	R4 =w copy R1
+	R1 =w copy R5
+	R5 =l copy S4
+	jmp @done
+@loop_loop
+	S71 =w copy R10
+	S66 =w copy R6
+	R6 =w copy R14
+	R14 =w copy S1
+	S70 =w copy R2
+	R2 =w copy R9
+	R9 =w copy S0
+	S9 =w copy S3
+	jmp @loop
+@start_loop
+	S71 =w copy R10
+	swapw R2, R9
+	S66 =w copy R6
+	R6 =w copy R5
+	R5 =w copy R1
+	R1 =w copy R4
+	R4 =w copy R14
+	R14 =w copy R11
+	R11 =w copy S72
+	S70 =w copy S73
+	S9 =w copy 10
+	jmp @loop
+}
+

@@ -129,6 +129,9 @@ Idempotent guard via fn-regs?.  After this, spill/rega/emit see QBE's layout."
       (dotimes (i nuser)
         (let ((tm (aref old i)))
           (setf (tmp-id tm) (+ +tmp0+ i))
+          ;; tmp-phi is a union-find PARENT temp id; shift it into the new space
+          ;; too (else phicls resolves to register slots — breaks rega hints).
+          (when (tmp-phi tm) (incf (tmp-phi tm) +tmp0+))
           (setf (aref new (+ +tmp0+ i)) tm)))
       (setf (fn-tmp fn) new (fn-regs? fn) t))))
 

@@ -26,6 +26,7 @@
                              (:file "amd64-isel")
                              (:file "backend")
                              (:file "spill")
+                             (:file "rega")
                              (:file "driver")))))
 
 (asdf:defsystem "qbe-cl/test"

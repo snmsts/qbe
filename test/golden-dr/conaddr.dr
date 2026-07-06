@@ -1,0 +1,109 @@
+**** Function f0 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f0() {
+@start
+	R1 =l addr $a
+	R1 =w loadub [R1 + 1 * R5]
+	ret0 0001
+}
+
+**** Function f1 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f1() {
+@start
+	R1 =w loadub [10 + R5]
+	ret0 0001
+}
+
+**** Function f2 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f2() {
+@start
+	R1 =l mul R4, 2
+	R1 =l add R5, R1
+	R2 =l addr $a
+	R1 =l add R1, R2
+	R1 =w loadub R1
+	ret0 0001
+}
+
+**** Function f3 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f3() {
+@start
+	R1 =l addr $a
+	R1 =l add R5, R1
+	ret0 0001
+}
+
+**** Function f4 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f4() {
+@start
+	R1 =l addr $p
+	storel R1, $p
+	ret0
+}
+
+**** Function writeto0 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $writeto0() {
+@start
+	storel 0, 0
+	ret0
+}
+

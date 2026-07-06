@@ -1,0 +1,488 @@
+**** Function qfn0 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qfn0() {
+@start
+	R25 =s load S-4
+	stores R25, S0
+	R4 =w copy 0
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R17 =s load S0
+	call $ps, 0101
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn1 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  3
+	new blocks: 0
+
+> After register allocation:
+function $qfn1() {
+@start
+	S2 =s copy R17
+	storel R4, [S0]
+	R4 =w copy 1
+	R10 =w copy R5
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =w copy R10
+	call $pw, 0011
+	R17 =s load S2
+	call $ps, 0101
+	R5 =l addr S0
+	call $pfi1, 0011
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn2 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  3
+	new blocks: 0
+
+> After register allocation:
+function $qfn2() {
+@start
+	S2 =s copy R17
+	storel R4, [S0]
+	R4 =w copy 2
+	R10 =w copy R5
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =w copy R10
+	call $pw, 0011
+	R5 =l addr S0
+	call $pfi2, 0011
+	R17 =s load S2
+	call $ps, 0101
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn3 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  3
+	new blocks: 0
+
+> After register allocation:
+function $qfn3() {
+@start
+	S2 =s copy R17
+	storel R4, [S0]
+	R4 =w copy 3
+	R10 =w copy R5
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =w copy R10
+	call $pw, 0011
+	R17 =s load S2
+	call $ps, 0101
+	R5 =l addr S0
+	call $pfi3, 0011
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn4 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qfn4() {
+@start
+	storel R17, [S0]
+	R4 =w copy 4
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =l addr S0
+	call $pss, 0011
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn5 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  5
+	new blocks: 0
+
+> After register allocation:
+function $qfn5() {
+@start
+	R25 =s load S-4
+	stores R25, S2
+	R17 =d copy R24
+	storel R17, [S0]
+	R4 =w copy 5
+	R10 =l copy R5
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =l copy R10
+	R10 =l copy R5
+	R5 =l addr S0
+	call $pss, 0011
+	R17 =s load S2
+	call $ps, 0101
+	R5 =l copy R10
+	call $pl, 0011
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn6 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qfn6() {
+@start
+	storel R5, [S0]
+	storel R4, [8 + S0]
+	R4 =w copy 6
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =l addr S0
+	call $plb, 0011
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn7 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qfn7() {
+@start
+	R4 =w copy 7
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =l addr S-6
+	call $plb, 0011
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn8 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qfn8() {
+@start
+	R4 =w copy 8
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =l addr S-8
+	call $plb, 0011
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn9 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qfn9() {
+@start
+	R4 =w copy 9
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =l addr S-4
+	call $pbig, 0011
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn10 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  6
+	new blocks: 0
+
+> After register allocation:
+function $qfn10() {
+@start
+	R10 =l load S-14
+	S0 =s copy R17
+	R5 =l copy R10
+	R4 =w copy 10
+	R10 =l copy R5
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =l copy R10
+	R10 =l copy R5
+	R5 =l addr S-8
+	call $pbig, 0011
+	R17 =s load S0
+	call $ps, 0101
+	R5 =l copy R10
+	call $pl, 0011
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function qfn11 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $qfn11() {
+@start
+	R4 =w copy 11
+	R5 =l addr $ctoqbestr
+	R1 =w copy 0
+	call $printf, 1021
+	R5 =l addr S-4
+	call $pddd, 0011
+	R5 =l addr $emptystr
+	call $puts, 0011
+	ret0
+}
+
+**** Function main ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $main() {
+@start
+	R1 =l salloc 16
+	storel s_9.900000, [0 + R1]
+	R24 =s copy [$".Lfp1"]
+	R23 =s copy [$".Lfp1"]
+	R22 =s copy [$".Lfp1"]
+	R21 =s copy [$".Lfp1"]
+	R20 =s copy [$".Lfp1"]
+	R19 =s copy [$".Lfp1"]
+	R18 =s copy [$".Lfp1"]
+	R17 =s copy [$".Lfp1"]
+	call $cfn0, 0801
+	salloc -16
+	R4 =l load $fi1
+	R17 =s copy [$".Lfp2"]
+	R5 =w copy 1
+	call $cfn1, 0121
+	R17 =s copy [$".Lfp3"]
+	R4 =l load $fi2
+	R5 =w copy 1
+	call $cfn2, 0121
+	R4 =l load $fi3
+	R17 =s copy [$".Lfp2"]
+	R5 =w copy 1
+	call $cfn3, 0121
+	R17 =d load $ss
+	call $cfn4, 0101
+	R1 =l salloc 16
+	storel s_9.900000, [0 + R1]
+	R5 =l copy 10
+	R24 =d load $ss
+	R23 =d copy [$".Lfp1"]
+	R22 =d copy [$".Lfp1"]
+	R21 =d copy [$".Lfp1"]
+	R20 =d copy [$".Lfp1"]
+	R19 =d copy [$".Lfp1"]
+	R18 =d copy [$".Lfp1"]
+	R17 =d copy [$".Lfp1"]
+	call $cfn5, 0811
+	salloc -16
+	R5 =l load $lb
+	R1 =l addr $lb
+	R1 =l add R1, 8
+	R4 =l load [R1]
+	call $cfn6, 0021
+	R1 =l salloc 32
+	R2 =l addr $lb
+	R2 =l add R2, 0
+	R2 =l load [R2]
+	storel R2, [8 + R1]
+	R2 =l addr $lb
+	R2 =l add R2, 8
+	R2 =l load [R2]
+	storel R2, [16 + R1]
+	storel 0, [0 + R1]
+	R7 =w copy 0
+	R6 =w copy 0
+	R2 =w copy 0
+	R3 =w copy 0
+	R4 =w copy 0
+	R5 =w copy 0
+	call $cfn7, 0061
+	salloc -32
+	R1 =l salloc 32
+	R2 =l addr $lb
+	R2 =l add R2, 0
+	R2 =l load [R2]
+	storel R2, [16 + R1]
+	R2 =l addr $lb
+	R2 =l add R2, 8
+	R2 =l load [R2]
+	storel R2, [24 + R1]
+	storel 0, [8 + R1]
+	storel 0, [0 + R1]
+	R7 =w copy 0
+	R6 =w copy 0
+	R2 =w copy 0
+	R3 =w copy 0
+	R4 =w copy 0
+	R5 =w copy 0
+	call $cfn8, 0061
+	salloc -32
+	R2 =l salloc 32
+	R1 =l addr $big
+	R1 =l add R1, 0
+	R1 =w loadub [R1]
+	storeb R1, [0 + R2]
+	R1 =l addr $big
+	R1 =l add R1, 1
+	R1 =l load [R1]
+	storel R1, [1 + R2]
+	R1 =l addr $big
+	R1 =l add R1, 9
+	R1 =l load [R1]
+	storel R1, [9 + R2]
+	call $cfn9, 0001
+	salloc -32
+	R1 =l salloc 48
+	storel 11, [40 + R1]
+	R2 =l addr $big
+	R2 =l add R2, 0
+	R2 =w loadub [R2]
+	storeb R2, [16 + R1]
+	R2 =l addr $big
+	R2 =l add R2, 1
+	R2 =l load [R2]
+	storel R2, [17 + R1]
+	R2 =l addr $big
+	R2 =l add R2, 9
+	R2 =l load [R2]
+	storel R2, [25 + R1]
+	storel 0, [8 + R1]
+	storel 0, [0 + R1]
+	R17 =s copy [$".Lfp0"]
+	R7 =w copy 0
+	R6 =w copy 0
+	R2 =w copy 0
+	R3 =w copy 0
+	R4 =w copy 0
+	R5 =w copy 0
+	call $cfn10, 0161
+	salloc -48
+	R2 =l salloc 32
+	R1 =l addr $ddd
+	R1 =l add R1, 0
+	R1 =l load [R1]
+	storel R1, [0 + R2]
+	R1 =l addr $ddd
+	R1 =l add R1, 8
+	R1 =l load [R1]
+	storel R1, [8 + R2]
+	R1 =l addr $ddd
+	R1 =l add R1, 16
+	R1 =l load [R1]
+	storel R1, [16 + R2]
+	call $cfn11, 0001
+	salloc -32
+	R1 =w copy 0
+	ret0 0001
+}
+

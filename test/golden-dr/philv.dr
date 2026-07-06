@@ -1,0 +1,66 @@
+**** Function t0 ****
+> Register mappings:
+	start      beg
+	           end
+	loop       beg (x0, R1) (y0, R3)
+	           end (x0, R1) (y0, R2) (y1, R3)
+	end        beg (x0, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  4
+	new blocks: 2
+
+> After register allocation:
+function $t0() {
+@start
+	jmp @start_loop
+@loop
+	R2 =w copy R3
+	R3 =w shr R1, 1
+	jfine @loop_loop, @end
+@end
+	ret0 0001
+@loop_loop
+	R1 =w copy R2
+	jmp @loop
+@start_loop
+	R3 =w copy 128
+	R1 =w copy 256
+	jmp @loop
+}
+
+**** Function t1 ****
+> Register mappings:
+	start      beg
+	           end
+	loop       beg (x0, R1) (y0, R3)
+	           end (x0, R1) (y0, R2) (y1, R3)
+	end        beg (x0, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  4
+	new blocks: 2
+
+> After register allocation:
+function $t1() {
+@start
+	jmp @start_loop
+@loop
+	R2 =w copy R3
+	R3 =w shr R1, 1
+	jfine @loop_loop, @end
+@end
+	ret0 0001
+@loop_loop
+	R1 =w copy R2
+	jmp @loop
+@start_loop
+	R1 =w copy 256
+	R3 =w copy 128
+	jmp @loop
+}
+

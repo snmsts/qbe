@@ -1,0 +1,30 @@
+**** Function main ****
+> Register mappings:
+	_0         beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $main() {
+@_0
+	R1 =l salloc 32
+	R2 =l copy 9223372036854775807
+	storel R2, [16 + R1]
+	storel 8, [8 + R1]
+	storel 7, [0 + R1]
+	R7 =l copy 6
+	R6 =l copy 5
+	R2 =l copy 4
+	R3 =l copy 3
+	R4 =l copy 2
+	R5 =l copy 1
+	call $myfunc, 0061
+	salloc -32
+	R1 =w copy 0
+	ret0 0001
+}
+

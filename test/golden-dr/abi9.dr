@@ -1,0 +1,26 @@
+**** Function f ****
+> Register mappings:
+	_0         beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 0
+
+> After register allocation:
+function $f() {
+@_0
+	R1 =l copy R5
+	storel 77, [S0]
+	R2 =l load [0 + S0]
+	storel R2, [0 + R1]
+	R2 =l load [8 + S0]
+	storel R2, [8 + R1]
+	R2 =l load [16 + S0]
+	storel R2, [16 + R1]
+	R2 =l load [24 + S0]
+	storel R2, [24 + R1]
+	ret0 0001
+}
+

@@ -1,0 +1,26 @@
+**** Function f ****
+> Register mappings:
+	start      beg
+	           end (ptr, R1)
+	end        beg (ptr, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f() {
+@start
+	storew 0, [S0]
+	xcmpw 0, R5
+	R2 =l addr S1
+	R1 =l addr S0
+	R1 =l xseline R1, R2
+@end
+	storew 1, [R1]
+	R1 =w loadsw [S0]
+	ret0 0001
+}
+

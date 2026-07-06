@@ -1,0 +1,30 @@
+**** Function main ****
+> Register mappings:
+	start      beg
+	           end (isel.1, R1)
+	loop       beg (mem, R1)
+	           end (isel.2, R1)
+	exit       beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $main() {
+@start
+	storew 4, [S0]
+	storew 5, [S1]
+	R1 =l addr S0
+@loop
+	R1 =w load [R1]
+	xcmpw 5, R1
+	R1 =l addr S1
+	jfieq @exit, @loop
+@exit
+	R1 =w copy 0
+	ret0 0001
+}
+
