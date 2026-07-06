@@ -48,6 +48,30 @@
 (defparameter *nrsave* (vector 9 +nfpr+))   ; {NGPS_SYSV, NFPS}
 
 (defun reg-fp-p (id) (and (<= +fpr0+ id) (< id (+ +fpr0+ +nfpr+))))
+(defun kwide (cls) (and (member cls '(:l :d)) t))   ; KWIDE: Kl/Kd occupy 8 bytes
+(defparameter +rsave-mask+
+  (reduce (lambda (m id) (logior m (ash 1 id))) *sysv-rsave* :initial-value 0)
+  "Bitmask of all caller-save registers (rsave).")
+
+;;; amd64 memargs (ops.h X(NMemArgs,...)): how many operands may be a memory
+;;; operand (reloaded straight from a slot rather than forced into a register).
+(defparameter *memargs*
+  (let ((h (make-hash-table)))
+    (dolist (op '(:add :sub :mul :and :or :xor)) (setf (gethash op h) 2))
+    (dolist (op '(:neg :sar :shr :shl :swap :xidiv :xdiv :xcmp :xtest))
+      (setf (gethash op h) 1))
+    h))
+(defun memargs (op) (gethash op *memargs* 0))
+
+;;; extra bitset ops used by spill/rega (ssa.lisp has make/copy/zero/union/...).
+(defun bs-inter (dst src) (bit-and dst src dst))    ; dst &= src
+(defun bs-diff (dst src) (bit-andc2 dst src dst))   ; dst &= ~src
+(defun bs-count (bs) (count 1 bs))
+(defun bs-regmask (bs)
+  "Integer of the register bits [0,+tmp0+) of BS (QBE's bs->t[0])."
+  (let ((m 0)) (dotimes (i +tmp0+) (when (bs-has bs i) (setf m (logior m (ash 1 i))))) m))
+(defun bs-set-regmask (bs mask) (dotimes (i +tmp0+) (when (logbitp i mask) (bs-set bs i))))
+(defun bs-clr-regmask (bs mask) (dotimes (i +tmp0+) (when (logbitp i mask) (bs-clr bs i))))
 
 ;;; RCall mask decoders (amd64/sysv.c retregs/argregs).  Each returns
 ;;; (values reg-id-list ngp nfp) where the counts feed nlive bookkeeping.

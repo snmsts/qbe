@@ -82,6 +82,11 @@ argument registers.  Returns the list of copy instructions, in order."
          (if (= (cls-base (ins-cls i)) 0) (incf ni) (incf ns)))
         (:pare (abi-unsupported "env parameter"))
         (t (abi-unsupported "sub-word or aggregate parameter"))))
+    ;; fn->reg = argregs consumed by params (sysv.c: fn->reg = argregs(fa)); the
+    ;; registers params arrive in, needed by spill's start-block invariant + emit.
+    (setf (fn-reg fn)
+          (logior (loop for j below ni sum (ash 1 (aref *sysv-int-args* j)))
+                  (loop for j below ns sum (ash 1 (+ +xmm0+ j)))))
     ;; *emitted* read left-to-right already equals QBE's forward emit order
     ;; (push == QBE's prepend-at-\-\-curi), so no reversal.
     *emitted*))
