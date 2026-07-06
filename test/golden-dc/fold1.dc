@@ -1,0 +1,90 @@
+**** Function f1 ****
+> Before CFG simplification:
+function $f1() {
+@start
+	nop
+	retw 4294967295
+}
+
+> After CFG simplification:
+function $f1() {
+@start
+	nop
+	retw 4294967295
+}
+
+**** Function f2 ****
+> Before CFG simplification:
+function $f2() {
+@start
+	%x =w div 4294967040, 8
+	retw %x
+}
+
+> After CFG simplification:
+function $f2() {
+@start
+	%x =w div 4294967040, 8
+	retw %x
+}
+
+**** Function f3 ****
+> Before CFG simplification:
+function $f3() {
+@start
+	%x =w rem 4294967284, 7
+	retw %x
+}
+
+> After CFG simplification:
+function $f3() {
+@start
+	%x =w rem 4294967284, 7
+	retw %x
+}
+
+**** Function f4 ****
+> Before CFG simplification:
+function $f4() {
+@start
+	nop
+	retw 0
+}
+
+> After CFG simplification:
+function $f4() {
+@start
+	nop
+	retw 0
+}
+
+**** Function f5 ****
+> Before CFG simplification:
+function $f5() {
+@start
+	%x =w udiv 1, 1
+	retw %x
+}
+
+> After CFG simplification:
+function $f5() {
+@start
+	%x =w udiv 1, 1
+	retw %x
+}
+
+**** Function f6 ****
+> Before CFG simplification:
+function $f6() {
+@start
+	%x =w urem 0, 7
+	retw %x
+}
+
+> After CFG simplification:
+function $f6() {
+@start
+	%x =w urem 0, 7
+	retw %x
+}
+

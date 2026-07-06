@@ -1,0 +1,23 @@
+**** Function sum ****
+> Before CFG simplification:
+function $sum() {
+@start
+	%p =l parc :fps
+	%f1 =s load %p
+	%p8 =l add %p, 8
+	%f2 =s load %p8
+	%s =s add %f1, %f2
+	rets %s
+}
+
+> After CFG simplification:
+function $sum() {
+@start
+	%p =l parc :fps
+	%f1 =s load %p
+	%p8 =l add %p, 8
+	%f2 =s load %p8
+	%s =s add %f1, %f2
+	rets %s
+}
+

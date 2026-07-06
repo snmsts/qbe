@@ -1,0 +1,27 @@
+**** Function f ****
+> Before CFG simplification:
+function $f() {
+@start
+	%i =l par
+	%j =l par
+	%off1 =l mul %i, 8
+	%a_i =l add %off1, $a
+	%off2 =l mul %j, 4
+	%a_ij =l add %a_i, %off2
+	%x =w loadsw %a_ij
+	retw %x
+}
+
+> After CFG simplification:
+function $f() {
+@start
+	%i =l par
+	%j =l par
+	%off1 =l mul %i, 8
+	%a_i =l add %off1, $a
+	%off2 =l mul %j, 4
+	%a_ij =l add %a_i, %off2
+	%x =w loadsw %a_ij
+	retw %x
+}
+

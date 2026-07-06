@@ -1,0 +1,19 @@
+**** Function f ****
+> Before CFG simplification:
+function $f() {
+@_0
+	%self =l par
+	%_1 =l alloc8 16
+	storel 77, %_1
+	retc %_1, :obj
+}
+
+> After CFG simplification:
+function $f() {
+@_0
+	%self =l par
+	%_1 =l alloc8 16
+	storel 77, %_1
+	retc %_1, :obj
+}
+

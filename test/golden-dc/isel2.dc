@@ -1,0 +1,260 @@
+**** Function lt ****
+> Before CFG simplification:
+function $lt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cltd %x, %y
+	retw %r
+}
+
+> After CFG simplification:
+function $lt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cltd %x, %y
+	retw %r
+}
+
+**** Function le ****
+> Before CFG simplification:
+function $le() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cled %x, %y
+	retw %r
+}
+
+> After CFG simplification:
+function $le() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cled %x, %y
+	retw %r
+}
+
+**** Function gt ****
+> Before CFG simplification:
+function $gt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cgtd %x, %y
+	retw %r
+}
+
+> After CFG simplification:
+function $gt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cgtd %x, %y
+	retw %r
+}
+
+**** Function ge ****
+> Before CFG simplification:
+function $ge() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cged %x, %y
+	retw %r
+}
+
+> After CFG simplification:
+function $ge() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cged %x, %y
+	retw %r
+}
+
+**** Function eq1 ****
+> Before CFG simplification:
+function $eq1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	retw %r
+}
+
+> After CFG simplification:
+function $eq1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	retw %r
+}
+
+**** Function eq2 ****
+> Before CFG simplification:
+function $eq2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+> After CFG simplification:
+function $eq2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+**** Function eq3 ****
+> Before CFG simplification:
+function $eq3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw %r
+@false
+	retw 0
+}
+
+> After CFG simplification:
+function $eq3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw %r
+@false
+	retw 0
+}
+
+**** Function ne1 ****
+> Before CFG simplification:
+function $ne1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	retw %r
+}
+
+> After CFG simplification:
+function $ne1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	retw %r
+}
+
+**** Function ne2 ****
+> Before CFG simplification:
+function $ne2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+> After CFG simplification:
+function $ne2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+**** Function ne3 ****
+> Before CFG simplification:
+function $ne3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw %r
+@false
+	retw 0
+}
+
+> After CFG simplification:
+function $ne3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw %r
+@false
+	retw 0
+}
+
+**** Function o ****
+> Before CFG simplification:
+function $o() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cod %x, %y
+	retw %r
+}
+
+> After CFG simplification:
+function $o() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cod %x, %y
+	retw %r
+}
+
+**** Function uo ****
+> Before CFG simplification:
+function $uo() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cuod %x, %y
+	retw %r
+}
+
+> After CFG simplification:
+function $uo() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cuod %x, %y
+	retw %r
+}
+

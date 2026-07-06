@@ -1,0 +1,49 @@
+**** Function sum ****
+> Before CFG simplification:
+function $sum() {
+@start
+	%arr =l par
+	%num =w par
+	nop
+	nop
+@loop
+	%n1 =w phi @start %num, @loop1 %n2
+	%s0 =w phi @start 0, @loop1 %s1
+	%n2 =w sub %n1, 1
+	%c =w cslew %n1, 0
+	jnz %c, @end, @loop1
+@loop1
+	%idx0 =l extsw %n2
+	%idx1 =l mul %idx0, 4
+	%idx2 =l add %arr, %idx1
+	%w =w loadsw %idx2
+	%s1 =w add %s0, %w
+	jmp @loop
+@end
+	retw %s0
+}
+
+> After CFG simplification:
+function $sum() {
+@start
+	%arr =l par
+	%num =w par
+	nop
+	nop
+@loop
+	%n1 =w phi @start %num, @loop1 %n2
+	%s0 =w phi @start 0, @loop1 %s1
+	%n2 =w sub %n1, 1
+	%c =w cslew %n1, 0
+	jnz %c, @end, @loop1
+@loop1
+	%idx0 =l extsw %n2
+	%idx1 =l mul %idx0, 4
+	%idx2 =l add %arr, %idx1
+	%w =w loadsw %idx2
+	%s1 =w add %s0, %w
+	jmp @loop
+@end
+	retw %s0
+}
+

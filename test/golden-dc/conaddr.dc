@@ -1,0 +1,112 @@
+**** Function f0 ****
+> Before CFG simplification:
+function $f0() {
+@start
+	%o =l par
+	%addr =l add %o, $a
+	%char =w loadub %addr
+	retw %char
+}
+
+> After CFG simplification:
+function $f0() {
+@start
+	%o =l par
+	%addr =l add %o, $a
+	%char =w loadub %addr
+	retw %char
+}
+
+**** Function f1 ****
+> Before CFG simplification:
+function $f1() {
+@start
+	%o =l par
+	nop
+	%addr =l add %o, 10
+	%char =w loadub %addr
+	retw %char
+}
+
+> After CFG simplification:
+function $f1() {
+@start
+	%o =l par
+	nop
+	%addr =l add %o, 10
+	%char =w loadub %addr
+	retw %char
+}
+
+**** Function f2 ****
+> Before CFG simplification:
+function $f2() {
+@start
+	%o1 =l par
+	%o2 =l par
+	%o22 =l mul %o2, 2
+	%o =l add %o1, %o22
+	%addr =l add %o, $a
+	%char =w loadub %addr
+	retw %char
+}
+
+> After CFG simplification:
+function $f2() {
+@start
+	%o1 =l par
+	%o2 =l par
+	%o22 =l mul %o2, 2
+	%o =l add %o1, %o22
+	%addr =l add %o, $a
+	%char =w loadub %addr
+	retw %char
+}
+
+**** Function f3 ****
+> Before CFG simplification:
+function $f3() {
+@start
+	%o =l par
+	%addr =l add %o, $a
+	retl %addr
+}
+
+> After CFG simplification:
+function $f3() {
+@start
+	%o =l par
+	%addr =l add %o, $a
+	retl %addr
+}
+
+**** Function f4 ****
+> Before CFG simplification:
+function $f4() {
+@start
+	storel $p, $p
+	ret0
+}
+
+> After CFG simplification:
+function $f4() {
+@start
+	storel $p, $p
+	ret0
+}
+
+**** Function writeto0 ****
+> Before CFG simplification:
+function $writeto0() {
+@start
+	storel 0, 0
+	ret0
+}
+
+> After CFG simplification:
+function $writeto0() {
+@start
+	storel 0, 0
+	ret0
+}
+

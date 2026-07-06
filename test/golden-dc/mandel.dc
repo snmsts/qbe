@@ -1,0 +1,132 @@
+**** Function mandel ****
+> Before CFG simplification:
+function $mandel() {
+@mandel
+	%x =d par
+	%y =d par
+	nop
+	nop
+	%cr =d sub %y, d_0.500000
+	nop
+@loop
+	%i =w phi @mandel 0, @loop1 %i1
+	%zr =d phi @mandel 0, @loop1 %zr1
+	%zi =d phi @mandel 0, @loop1 %zi1
+	%i1 =w add %i, 1
+	%tmp =d mul %zr, %zi
+	%zr2 =d mul %zr, %zr
+	%zi2 =d mul %zi, %zi
+	%zrx =d sub %zr2, %zi2
+	%zr1 =d add %cr, %zrx
+	%zix =d add %tmp, %tmp
+	%zi1 =d add %x, %zix
+	%sum =d add %zr2, %zi2
+	%cmp1 =w cgtd %sum, d_16.000000
+	jnz %cmp1, @reti, @loop1
+@loop1
+	%cmp2 =w csgtw %i1, 1000
+	jnz %cmp2, @ret0, @loop
+@reti
+	retw %i1
+@ret0
+	retw 0
+}
+
+> After CFG simplification:
+function $mandel() {
+@mandel
+	%x =d par
+	%y =d par
+	nop
+	nop
+	%cr =d sub %y, d_0.500000
+	nop
+@loop
+	%i =w phi @mandel 0, @loop1 %i1
+	%zr =d phi @mandel 0, @loop1 %zr1
+	%zi =d phi @mandel 0, @loop1 %zi1
+	%i1 =w add %i, 1
+	%tmp =d mul %zr, %zi
+	%zr2 =d mul %zr, %zr
+	%zi2 =d mul %zi, %zi
+	%zrx =d sub %zr2, %zi2
+	%zr1 =d add %cr, %zrx
+	%zix =d add %tmp, %tmp
+	%zi1 =d add %x, %zix
+	%sum =d add %zr2, %zi2
+	%cmp1 =w cgtd %sum, d_16.000000
+	jnz %cmp1, @reti, @loop1
+@loop1
+	%cmp2 =w csgtw %i1, 1000
+	jnz %cmp2, @ret0, @loop
+@reti
+	retw %i1
+@ret0
+	retw 0
+}
+
+**** Function main ****
+> Before CFG simplification:
+function $main() {
+@main
+@loopy
+	%y =d phi @main d_-1.000000, @loopy1 %y1
+@loopx
+	%x =d phi @loopy d_-1.000000, @loopx1 %x1
+	argd %x
+	argd %y
+	%i =w call $mandel
+	jnz %i, @out, @in
+@in
+	argw 42
+	%r0 =w call $putchar
+	jmp @loopx1
+@out
+	argw 32
+	%r1 =w call $putchar
+@loopx1
+	%x1 =d add %x, d_0.032000
+	%cmp1 =w cgtd %x1, d_1.000000
+	jnz %cmp1, @loopy1, @loopx
+@loopy1
+	argw 10
+	%r2 =w call $putchar
+	%y1 =d add %y, d_0.032000
+	%cmp2 =w cgtd %y1, d_1.000000
+	jnz %cmp2, @ret, @loopy
+@ret
+	retw 0
+}
+
+> After CFG simplification:
+function $main() {
+@main
+@loopy
+	%y =d phi @main d_-1.000000, @loopy1 %y1
+@loopx
+	%x =d phi @loopy d_-1.000000, @loopx1 %x1
+	argd %x
+	argd %y
+	%i =w call $mandel
+	jnz %i, @out, @in
+@in
+	argw 42
+	%r0 =w call $putchar
+	jmp @loopx1
+@out
+	argw 32
+	%r1 =w call $putchar
+@loopx1
+	%x1 =d add %x, d_0.032000
+	%cmp1 =w cgtd %x1, d_1.000000
+	jnz %cmp1, @loopy1, @loopx
+@loopy1
+	argw 10
+	%r2 =w call $putchar
+	%y1 =d add %y, d_0.032000
+	%cmp2 =w cgtd %y1, d_1.000000
+	jnz %cmp2, @ret, @loopy
+@ret
+	retw 0
+}
+

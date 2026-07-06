@@ -1,0 +1,23 @@
+**** Function main ****
+> Before CFG simplification:
+function $main() {
+@start
+	nop
+	argl $fmt
+	argv
+	argd d_1.200000
+	%x =w call $printf
+	retw 0
+}
+
+> After CFG simplification:
+function $main() {
+@start
+	nop
+	argl $fmt
+	argv
+	argd d_1.200000
+	%x =w call $printf
+	retw 0
+}
+

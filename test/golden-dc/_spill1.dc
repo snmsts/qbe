@@ -1,0 +1,27 @@
+**** Function test ****
+> Before CFG simplification:
+function $test() {
+@start
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	ret0
+}
+
+> After CFG simplification:
+function $test() {
+@start
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	ret0
+}
+

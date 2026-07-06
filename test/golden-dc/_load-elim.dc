@@ -1,0 +1,35 @@
+**** Function f ****
+> Before CFG simplification:
+function $f() {
+@start
+	%p =l par
+	%c =w par
+	jnz %c, @true, @false
+@true
+	nop
+	%v1 =w loaduw %p2
+	jmp @end
+@false
+	%p2 =l add %p, 4
+	%v2 =w loaduw %p2
+@end
+	retw 0
+}
+
+> After CFG simplification:
+function $f() {
+@start
+	%p =l par
+	%c =w par
+	jnz %c, @true, @false
+@true
+	nop
+	%v1 =w loaduw %p2
+	jmp @end
+@false
+	%p2 =l add %p, 4
+	%v2 =w loaduw %p2
+@end
+	retw 0
+}
+

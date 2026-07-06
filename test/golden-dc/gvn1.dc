@@ -1,0 +1,27 @@
+**** Function test ****
+> Before CFG simplification:
+function $test() {
+@start
+	%p1 =w par
+	%p2 =w par
+	nop
+	nop
+	%t2.2 =w add %p1, %p2
+@entry
+	nop
+@live
+	nop
+	retw %t2.2
+}
+
+> After CFG simplification:
+function $test() {
+@start
+	%p1 =w par
+	%p2 =w par
+	nop
+	nop
+	%t2.2 =w add %p1, %p2
+	retw %t2.2
+}
+

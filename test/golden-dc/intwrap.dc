@@ -1,0 +1,25 @@
+**** Function intwrap ****
+> Before CFG simplification:
+function $intwrap() {
+@s
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	ret0
+}
+
+> After CFG simplification:
+function $intwrap() {
+@s
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	ret0
+}
+

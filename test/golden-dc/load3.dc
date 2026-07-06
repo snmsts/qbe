@@ -1,0 +1,85 @@
+**** Function rand ****
+> Before CFG simplification:
+function $rand() {
+@start
+	retw 0
+}
+
+> After CFG simplification:
+function $rand() {
+@start
+	retw 0
+}
+
+**** Function chk ****
+> Before CFG simplification:
+function $chk() {
+@start
+	%a =w par
+	%b =w par
+	%ok =w ceqw %a, 1
+	%ok1 =w ceqw %b, 0
+	%ok2 =w and %ok, %ok1
+	%ret =w xor %ok2, 1
+	retw %ret
+}
+
+> After CFG simplification:
+function $chk() {
+@start
+	%a =w par
+	%b =w par
+	%ok =w ceqw %a, 1
+	%ok1 =w ceqw %b, 0
+	%ok2 =w and %ok, %ok1
+	%ret =w xor %ok2, 1
+	retw %ret
+}
+
+**** Function main ****
+> Before CFG simplification:
+function $main() {
+@start
+	%s0 =l alloc4 8
+	nop
+	storew 1, %s0
+	%s04 =l add %s0, 4
+	storew 0, %s04
+	%rnd =w call $rand
+	jnz %rnd, @tt, @ff
+@tt
+	jmp @blit
+@ff
+@blit
+	nop
+	nop
+	nop
+	nop
+	nop
+	argw 1
+	argw 0
+	%ret =w call $chk
+	retw %ret
+}
+
+> After CFG simplification:
+function $main() {
+@start
+	%s0 =l alloc4 8
+	nop
+	storew 1, %s0
+	%s04 =l add %s0, 4
+	storew 0, %s04
+	%rnd =w call $rand
+@blit
+	nop
+	nop
+	nop
+	nop
+	nop
+	argw 1
+	argw 0
+	%ret =w call $chk
+	retw %ret
+}
+

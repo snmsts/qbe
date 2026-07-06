@@ -1,0 +1,35 @@
+**** Function main ****
+> Before CFG simplification:
+function $main() {
+@start
+	%a =l alloc4 4
+	%b =l alloc4 4
+	storew 4, %a
+	storew 5, %b
+@loop
+	%mem =l phi @start %a, @loop %b
+	%w =w load %mem
+	%eq5 =w ceqw %w, 5
+	nop
+	jnz %eq5, @exit, @loop
+@exit
+	retw 0
+}
+
+> After CFG simplification:
+function $main() {
+@start
+	%a =l alloc4 4
+	%b =l alloc4 4
+	storew 4, %a
+	storew 5, %b
+@loop
+	%mem =l phi @start %a, @loop %b
+	%w =w load %mem
+	%eq5 =w ceqw %w, 5
+	nop
+	jnz %eq5, @exit, @loop
+@exit
+	retw 0
+}
+

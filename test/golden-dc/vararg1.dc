@@ -1,0 +1,48 @@
+**** Function f ****
+> Before CFG simplification:
+function $f() {
+@start
+	%x =l par
+	%vp =l alloc8 32
+	vastart %vp
+	%i =l vaarg %vp
+	%n =d vaarg %vp
+	retd %n
+}
+
+> After CFG simplification:
+function $f() {
+@start
+	%x =l par
+	%vp =l alloc8 32
+	vastart %vp
+	%i =l vaarg %vp
+	%n =d vaarg %vp
+	retd %n
+}
+
+**** Function g ****
+> Before CFG simplification:
+function $g() {
+@start
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	retw %r
+}
+
+> After CFG simplification:
+function $g() {
+@start
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	retw %r
+}
+

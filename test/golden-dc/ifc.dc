@@ -1,0 +1,421 @@
+**** Function ifc1 ****
+> Before CFG simplification:
+function $ifc1() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%c =w par
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.1 =l phi @false %v0, @true %v1
+	retl %v.1
+}
+
+> After CFG simplification:
+function $ifc1() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%c =w par
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.1 =l phi @false %v0, @true %v1
+	retl %v.1
+}
+
+**** Function ifc2 ****
+> Before CFG simplification:
+function $ifc2() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cnew %p, 42
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.4 =l phi @false %v0, @true %v1
+	retl %v.4
+}
+
+> After CFG simplification:
+function $ifc2() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cnew %p, 42
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.4 =l phi @false %v0, @true %v1
+	retl %v.4
+}
+
+**** Function ifc3 ****
+> Before CFG simplification:
+function $ifc3() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cugtw %p, 42
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.7 =l phi @false %v0, @true %v1
+	retl %v.7
+}
+
+> After CFG simplification:
+function $ifc3() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cugtw %p, 42
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.7 =l phi @false %v0, @true %v1
+	retl %v.7
+}
+
+**** Function ifclts ****
+> Before CFG simplification:
+function $ifclts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w clts %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.10 =l phi @false %v0, @true %v1
+	retl %v.10
+}
+
+> After CFG simplification:
+function $ifclts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w clts %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.10 =l phi @false %v0, @true %v1
+	retl %v.10
+}
+
+**** Function ifcles ****
+> Before CFG simplification:
+function $ifcles() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cles %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.13 =l phi @false %v0, @true %v1
+	retl %v.13
+}
+
+> After CFG simplification:
+function $ifcles() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cles %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.13 =l phi @false %v0, @true %v1
+	retl %v.13
+}
+
+**** Function ifcgts ****
+> Before CFG simplification:
+function $ifcgts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cgts %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.16 =l phi @false %v0, @true %v1
+	retl %v.16
+}
+
+> After CFG simplification:
+function $ifcgts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cgts %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.16 =l phi @false %v0, @true %v1
+	retl %v.16
+}
+
+**** Function ifcges ****
+> Before CFG simplification:
+function $ifcges() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cges %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.19 =l phi @false %v0, @true %v1
+	retl %v.19
+}
+
+> After CFG simplification:
+function $ifcges() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cges %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.19 =l phi @false %v0, @true %v1
+	retl %v.19
+}
+
+**** Function ifceqs ****
+> Before CFG simplification:
+function $ifceqs() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w ceqs %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.22 =l phi @false %v0, @true %v1
+	retl %v.22
+}
+
+> After CFG simplification:
+function $ifceqs() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w ceqs %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.22 =l phi @false %v0, @true %v1
+	retl %v.22
+}
+
+**** Function ifcnes ****
+> Before CFG simplification:
+function $ifcnes() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cnes %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.27 =l phi @false %v0, @true %v1
+	retl %v.27
+}
+
+> After CFG simplification:
+function $ifcnes() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cnes %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.27 =l phi @false %v0, @true %v1
+	retl %v.27
+}
+
+**** Function ifcos ****
+> Before CFG simplification:
+function $ifcos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cos %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.32 =l phi @false %v0, @true %v1
+	retl %v.32
+}
+
+> After CFG simplification:
+function $ifcos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cos %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.32 =l phi @false %v0, @true %v1
+	retl %v.32
+}
+
+**** Function ifcuos ****
+> Before CFG simplification:
+function $ifcuos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cuos %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.35 =l phi @false %v0, @true %v1
+	retl %v.35
+}
+
+> After CFG simplification:
+function $ifcuos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cuos %s0, %s1
+	jnz %c, @true, @false
+@true
+	nop
+	jmp @end
+@false
+	nop
+@end
+	%v.35 =l phi @false %v0, @true %v1
+	retl %v.35
+}
+

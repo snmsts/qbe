@@ -1,0 +1,26 @@
+**** Function test ****
+> Before CFG simplification:
+function $test() {
+@start
+	nop
+	nop
+@left
+	jmp @inloop
+@loop
+	nop
+@inloop
+	nop
+@endloop
+	jmp @loop
+}
+
+> After CFG simplification:
+function $test() {
+@start
+	nop
+	nop
+@inloop
+	nop
+	jmp @inloop
+}
+

@@ -1,0 +1,19 @@
+**** Function test ****
+> Before CFG simplification:
+function $test() {
+@start
+	%x1 =l alloc8 8
+	%x2 =l alloc8 8
+	%r =w cnel %x1, %x2
+	retw %r
+}
+
+> After CFG simplification:
+function $test() {
+@start
+	%x1 =l alloc8 8
+	%x2 =l alloc8 8
+	%r =w cnel %x1, %x2
+	retw %r
+}
+

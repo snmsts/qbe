@@ -1,0 +1,132 @@
+**** Function ifmv ****
+> Before CFG simplification:
+function $ifmv() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%rt.1 =w add %p2, %p3
+	%rf.2 =w sub %p2, %p3
+	jnz %p1, @true, @false
+@true
+	nop
+	jmp @exit
+@false
+	nop
+@exit
+	%r.3 =w phi @false %rf.2, @true %rt.1
+	retw %r.3
+}
+
+> After CFG simplification:
+function $ifmv() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	%rt.1 =w add %p2, %p3
+	%rf.2 =w sub %p2, %p3
+	jnz %p1, @true, @false
+@true
+	nop
+	jmp @exit
+@false
+	nop
+@exit
+	%r.3 =w phi @false %rf.2, @true %rt.1
+	retw %r.3
+}
+
+**** Function hoist1 ****
+> Before CFG simplification:
+function $hoist1() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	nop
+	nop
+	nop
+@entry
+	nop
+	nop
+@loop
+	%i.8 =w phi @entry %p1, @loop %i.11
+	%n.9 =w phi @entry 0, @loop %n.12
+	%base.10 =w add %p2, %p3
+	%i.11 =w sub %i.8, 1
+	%n.12 =w add %n.9, 1
+	jnz %i.11, @loop, @exit
+@exit
+	%r =w add %base.10, %n.12
+	retw %r
+}
+
+> After CFG simplification:
+function $hoist1() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	nop
+	nop
+	nop
+@loop
+	%i.8 =w phi @start %p1, @loop %i.11
+	%n.9 =w phi @start 0, @loop %n.12
+	%base.10 =w add %p2, %p3
+	%i.11 =w sub %i.8, 1
+	%n.12 =w add %n.9, 1
+	jnz %i.11, @loop, @exit
+@exit
+	%r =w add %base.10, %n.12
+	retw %r
+}
+
+**** Function hoist2 ****
+> Before CFG simplification:
+function $hoist2() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	nop
+	nop
+	nop
+@entry
+	nop
+	nop
+@loop
+	%i.15 =w phi @entry %p1, @loop %i.18
+	%n.16 =w phi @entry 0, @loop %n.19
+	%base.17 =w add %p2, %p3
+	%i.18 =w sub %i.15, 1
+	%n.19 =w add %n.16, %base.17
+	jnz %i.18, @loop, @exit
+@exit
+	%r =w add %base.17, %n.19
+	retw %r
+}
+
+> After CFG simplification:
+function $hoist2() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	nop
+	nop
+	nop
+@loop
+	%i.15 =w phi @start %p1, @loop %i.18
+	%n.16 =w phi @start 0, @loop %n.19
+	%base.17 =w add %p2, %p3
+	%i.18 =w sub %i.15, 1
+	%n.19 =w add %n.16, %base.17
+	jnz %i.18, @loop, @exit
+@exit
+	%r =w add %base.17, %n.19
+	retw %r
+}
+

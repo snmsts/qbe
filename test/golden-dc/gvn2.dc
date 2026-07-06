@@ -1,0 +1,35 @@
+**** Function test ****
+> Before CFG simplification:
+function $test() {
+@start
+	%c =w par
+	jnz %c, @yes, @no
+@yes
+	nop
+@yesyes
+	nop
+	jmp @end
+@no
+	nop
+@nono
+	nop
+@end
+	%rc.1 =w phi @nono 0, @yesyes 1
+	retw %rc.1
+}
+
+> After CFG simplification:
+function $test() {
+@start
+	%c =w par
+	jnz %c, @yes, @no
+@yes
+	nop
+	jmp @end
+@no
+	nop
+@end
+	%rc.1 =w phi @no 0, @yes 1
+	retw %rc.1
+}
+

@@ -1,0 +1,51 @@
+**** Function test ****
+> Before CFG simplification:
+function $test() {
+@start
+@loop
+	%n =w phi @start 5, @tloop %n, @yes %n1
+	%p =w phi @start 13, @tloop %p1, @yes %p1
+	%p1 =w add %p, 2
+@tloop
+	%t =w phi @loop 3, @next %t1
+	%r =w rem %p, %t
+	jnz %r, @next, @loop
+@next
+	%t1 =w add %t, 2
+	%tsq =w mul %t1, %t1
+	%c0 =w csgtw %tsq, %p
+	jnz %c0, @yes, @tloop
+@yes
+	%n1 =w add %n, 1
+	%c1 =w ceqw %n1, 10001
+	jnz %c1, @end, @loop
+@end
+	storew %p, $a
+	ret0
+}
+
+> After CFG simplification:
+function $test() {
+@start
+@loop
+	%n =w phi @start 5, @tloop %n, @yes %n1
+	%p =w phi @start 13, @tloop %p1, @yes %p1
+	%p1 =w add %p, 2
+@tloop
+	%t =w phi @loop 3, @next %t1
+	%r =w rem %p, %t
+	jnz %r, @next, @loop
+@next
+	%t1 =w add %t, 2
+	%tsq =w mul %t1, %t1
+	%c0 =w csgtw %tsq, %p
+	jnz %c0, @yes, @tloop
+@yes
+	%n1 =w add %n, 1
+	%c1 =w ceqw %n1, 10001
+	jnz %c1, @end, @loop
+@end
+	storew %p, $a
+	ret0
+}
+

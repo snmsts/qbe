@@ -1,0 +1,60 @@
+**** Function g ****
+> Before CFG simplification:
+function $g() {
+@start
+	ret0
+}
+
+> After CFG simplification:
+function $g() {
+@start
+	ret0
+}
+
+**** Function f ****
+> Before CFG simplification:
+function $f() {
+@start
+	%arg =w par
+	call $g
+@alloc
+	%r =l alloc8 16
+	storel 180388626474, %r
+	%r8 =l add %r, 8
+	storel 180388626474, %r8
+	retw %arg
+}
+
+> After CFG simplification:
+function $f() {
+@start
+	%arg =w par
+	call $g
+	%r =l alloc8 16
+	storel 180388626474, %r
+	%r8 =l add %r, 8
+	storel 180388626474, %r8
+	retw %arg
+}
+
+**** Function main ****
+> Before CFG simplification:
+function $main() {
+@start
+	argw 0
+	%a =w call $f
+	argw 0
+	%b =w call $f
+	retw %a
+}
+
+> After CFG simplification:
+function $main() {
+@start
+	argw 0
+	%a =w call $f
+	argw 0
+	%b =w call $f
+	retw %a
+}
+

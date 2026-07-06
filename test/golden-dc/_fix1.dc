@@ -1,0 +1,34 @@
+**** Function test ****
+> Before CFG simplification:
+function $test() {
+@start
+	nop
+@loop
+	%x.2 =w phi @start 1, @isz 1
+	jnz %x.2, @noz, @isz
+@noz
+	nop
+	jmp @end
+@isz
+	nop
+	jmp @loop
+@end
+	nop
+	ret0
+}
+
+> After CFG simplification:
+function $test() {
+@start
+	nop
+@loop
+	%x.2 =w phi @start 1, @isz 1
+	jnz %x.2, @noz, @isz
+@noz
+	nop
+	ret0
+@isz
+	nop
+	jmp @loop
+}
+

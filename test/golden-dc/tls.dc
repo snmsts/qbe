@@ -1,0 +1,204 @@
+**** Function main ****
+> Before CFG simplification:
+function $main() {
+@start
+	%pthr =l alloc8 8
+	%rval =l alloc8 8
+	argl %pthr
+	argl 0
+	argl $thread
+	argl 0
+	call $pthread_create
+	%t =l load %pthr
+	argl %t
+	argl %rval
+	call $pthread_join
+	%i0 =w loadsw thread $i
+	argl $fmti
+	argv
+	argw 0
+	argw %i0
+	call $printf
+	%i1 =w load %rval
+	argl $fmti
+	argv
+	argw 1
+	argw %i1
+	call $printf
+	%a0 =l call $xaddr
+	%x0 =w load %a0
+	argl $fmtx
+	argv
+	argw 0
+	argw %x0
+	call $printf
+	%a4 =l call $xaddroff4
+	%x4 =w load %a4
+	argl $fmtx
+	argv
+	argw 4
+	argw %x4
+	call $printf
+	argl 8
+	%a8 =l call $xaddroff
+	%x8 =w load %a8
+	argl $fmtx
+	argv
+	argw 8
+	argw %x8
+	call $printf
+	argl 3
+	%xc =l call $xvalcnt
+	argl $fmtx
+	argv
+	argw 12
+	argw %xc
+	call $printf
+	retw 0
+}
+
+> After CFG simplification:
+function $main() {
+@start
+	%pthr =l alloc8 8
+	%rval =l alloc8 8
+	argl %pthr
+	argl 0
+	argl $thread
+	argl 0
+	call $pthread_create
+	%t =l load %pthr
+	argl %t
+	argl %rval
+	call $pthread_join
+	%i0 =w loadsw thread $i
+	argl $fmti
+	argv
+	argw 0
+	argw %i0
+	call $printf
+	%i1 =w load %rval
+	argl $fmti
+	argv
+	argw 1
+	argw %i1
+	call $printf
+	%a0 =l call $xaddr
+	%x0 =w load %a0
+	argl $fmtx
+	argv
+	argw 0
+	argw %x0
+	call $printf
+	%a4 =l call $xaddroff4
+	%x4 =w load %a4
+	argl $fmtx
+	argv
+	argw 4
+	argw %x4
+	call $printf
+	argl 8
+	%a8 =l call $xaddroff
+	%x8 =w load %a8
+	argl $fmtx
+	argv
+	argw 8
+	argw %x8
+	call $printf
+	argl 3
+	%xc =l call $xvalcnt
+	argl $fmtx
+	argv
+	argw 12
+	argw %xc
+	call $printf
+	retw 0
+}
+
+**** Function thread ****
+> Before CFG simplification:
+function $thread() {
+@start
+	%arg =l par
+	nop
+	storeb 24, thread $i+3
+	%ret =l loadsw thread $i
+	retl %ret
+}
+
+> After CFG simplification:
+function $thread() {
+@start
+	%arg =l par
+	nop
+	storeb 24, thread $i+3
+	%ret =l loadsw thread $i
+	retl %ret
+}
+
+**** Function xaddr ****
+> Before CFG simplification:
+function $xaddr() {
+@start
+	retl thread $x
+}
+
+> After CFG simplification:
+function $xaddr() {
+@start
+	retl thread $x
+}
+
+**** Function xaddroff4 ****
+> Before CFG simplification:
+function $xaddroff4() {
+@start
+	nop
+	retl thread $x+4
+}
+
+> After CFG simplification:
+function $xaddroff4() {
+@start
+	nop
+	retl thread $x+4
+}
+
+**** Function xaddroff ****
+> Before CFG simplification:
+function $xaddroff() {
+@start
+	%off =l par
+	%a =l add %off, thread $x
+	retl %a
+}
+
+> After CFG simplification:
+function $xaddroff() {
+@start
+	%off =l par
+	%a =l add %off, thread $x
+	retl %a
+}
+
+**** Function xvalcnt ****
+> Before CFG simplification:
+function $xvalcnt() {
+@start
+	%cnt =l par
+	%o =l mul %cnt, 4
+	%a =l add %o, thread $x
+	%x =w load %a
+	retw %x
+}
+
+> After CFG simplification:
+function $xvalcnt() {
+@start
+	%cnt =l par
+	%o =l mul %cnt, 4
+	%a =l add %o, thread $x
+	%x =w load %a
+	retw %x
+}
+

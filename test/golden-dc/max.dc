@@ -1,0 +1,43 @@
+**** Function test ****
+> Before CFG simplification:
+function $test() {
+@start
+@loop
+	%max =w phi @start -1, @new %byt, @old %max
+	%loc =l phi @start $arr, @new %loc1, @old %loc1
+	%byt =w loadub %loc
+	%loc1 =l add %loc, 1
+	jnz %byt, @iter, @end
+@iter
+	%cmp =w cslew %max, %byt
+	jnz %cmp, @new, @old
+@new
+	jmp @loop
+@old
+	jmp @loop
+@end
+	storew %max, $a
+	ret0
+}
+
+> After CFG simplification:
+function $test() {
+@start
+@loop
+	%max =w phi @start -1, @new %byt, @old %max
+	%loc =l phi @start $arr, @new %loc1, @old %loc1
+	%byt =w loadub %loc
+	%loc1 =l add %loc, 1
+	jnz %byt, @iter, @end
+@iter
+	%cmp =w cslew %max, %byt
+	jnz %cmp, @new, @old
+@new
+	jmp @loop
+@old
+	jmp @loop
+@end
+	storew %max, $a
+	ret0
+}
+

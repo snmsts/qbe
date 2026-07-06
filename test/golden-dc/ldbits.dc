@@ -1,0 +1,61 @@
+**** Function tests ****
+> Before CFG simplification:
+function $tests() {
+@start
+	nop
+	nop
+	nop
+	nop
+	nop
+@test1
+	storew 1, $a
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+@test2
+	storew 2, $a
+	nop
+	nop
+	nop
+@test3
+	storew 3, $a
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+@test4
+@ok
+	storew 0, $a
+@fail
+	ret0
+}
+
+> After CFG simplification:
+function $tests() {
+@start
+	nop
+	nop
+	nop
+	nop
+	nop
+	storew 1, $a
+	storew 2, $a
+	storew 3, $a
+	storew 0, $a
+	ret0
+}
+

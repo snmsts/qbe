@@ -1,0 +1,58 @@
+**** Function func ****
+> Before CFG simplification:
+function $func() {
+@start.0
+	%ret =l alloc4 8
+	nop
+	storew 1, %ret
+	%field =l add %ret, 4
+	nop
+	blit0 %ret, %field
+	blit1 -4
+	storew 2, %ret
+	retc %ret, :t
+}
+
+> After CFG simplification:
+function $func() {
+@start.0
+	%ret =l alloc4 8
+	nop
+	storew 1, %ret
+	%field =l add %ret, 4
+	nop
+	blit0 %ret, %field
+	blit1 -4
+	storew 2, %ret
+	retc %ret, :t
+}
+
+**** Function main ****
+> Before CFG simplification:
+function $main() {
+@start
+	%ret =l call $func, :t
+	%fptr =l add %ret, 4
+	%field =w loaduw %fptr
+	%x =w ceqw %field, 1
+	jnz %x, @passed, @failed
+@failed
+	call $abort
+@passed
+	retw 0
+}
+
+> After CFG simplification:
+function $main() {
+@start
+	%ret =l call $func, :t
+	%fptr =l add %ret, 4
+	%field =w loaduw %fptr
+	%x =w ceqw %field, 1
+	jnz %x, @passed, @failed
+@failed
+	call $abort
+@passed
+	retw 0
+}
+
