@@ -132,6 +132,37 @@
     (setf (ins-arg0 ic) (fixarg (ins-arg0 ic) op (argcls op k 0) fn))
     (setf (ins-arg1 ic) (fixarg (ins-arg1 ic) op (argcls op k 1) fn))))
 
+;; x86 integer division: dividend in RAX, sign/zero-extended into RDX, quotient
+;; back in RAX and remainder in RDX (amd64/isel.c sel Odiv/Orem case).
+(defun sel-divrem (i fn)
+  (let* ((op (ins-op i)) (k (ins-cls i))
+         (signed (member op '(:div :rem)))
+         (quo (member op '(:div :udiv)))
+         (r0 (if quo (rg 1) (rg 3)))          ; result register (RAX / RDX)
+         (r1 (if quo (rg 3) (rg 1)))          ; the other (clobbered) register
+         (divisor (ins-arg1 i)) (dcon (con-p divisor))
+         (dvr (if dcon (newtmp "isel" k fn) divisor)))
+    (emit :copy k (ins-to i) r0 nil)
+    (emit :copy k nil r1 nil)
+    (if signed
+        (progn (emit :xidiv k nil dvr nil)
+               (emit :sign k (rg 3) (rg 1) nil))
+        (progn (emit :xdiv k nil dvr nil)
+               (emit :copy k (rg 3) (getcon 0 fn) nil)))
+    (emit :copy k (rg 1) (ins-arg0 i) nil)
+    (setf (ins-arg0 (car *emitted*)) (fixarg (ins-arg0 (car *emitted*)) :copy k fn))
+    (when dcon (emit :copy k dvr divisor nil))))
+
+;; variable shift amounts must be in CL (RCX) (amd64/isel.c sel Osar/Oshr/Oshl).
+(defun sel-shift (i fn)
+  (let ((k (ins-cls i)) (amt (ins-arg1 i)) (ic (copy-ins i)))
+    (setf (ins-arg1 ic) (rg 2))               ; RCX
+    (emit :copy :w nil (rg 2) nil)            ; clobber RCX
+    (emiti ic)
+    (emit :copy :w (rg 2) amt nil)            ; load the shift amount into RCX
+    (setf (ins-arg0 ic)
+          (fixarg (ins-arg0 ic) (ins-op ic) (argcls (ins-op ic) k 0) fn))))
+
 (defun sel (i fn)
   ;; dead-code elimination: an unused pure result is dropped
   (when (and (tmp-p (ins-to i))
@@ -144,9 +175,10 @@
     (cond
       ((eq op :nop))
       ((member op *sel-passthrough*) (sel-emit i fn))
+      ((member op '(:div :rem :udiv :urem))
+       (if (= (cls-base k) 1) (sel-emit i fn) (sel-divrem i fn)))
       ((member op '(:sar :shr :shl))
-       (if (con-p (ins-arg1 i)) (sel-emit i fn)
-           (abi-unsupported "variable shift")))
+       (if (con-p (ins-arg1 i)) (sel-emit i fn) (sel-shift i fn)))
       ((iscmp op)
        (multiple-value-bind (c kc) (iscmp op)
          (when (member kc '(:s :d)) (abi-unsupported "float comparison"))
@@ -154,7 +186,6 @@
                 (cc (if (= swap 1) (aref *cmpop-swap* c) c)))
            (emit (aref *flag-ops* cc) k (ins-to i) nil nil)
            (selcmp (ins-arg0 i) (ins-arg1 i) kc swap fn))))
-      ((member op '(:div :rem :udiv :urem)) (abi-unsupported "div/rem"))
       ((member op '(:sel0 :sel1)) (abi-unsupported "sel (cmov)"))
       ((isload-op op) (abi-unsupported "load"))
       ((isstore-op op) (abi-unsupported "store"))
