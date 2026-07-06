@@ -188,11 +188,20 @@
        (if (con-p (ins-arg1 i)) (sel-emit i fn) (sel-shift i fn)))
       ((iscmp op)
        (multiple-value-bind (c kc) (iscmp op)
-         (when (member kc '(:s :d)) (abi-unsupported "float comparison"))
-         (let* ((swap (cmpswap c (ins-arg0 i)))
-                (cc (if (= swap 1) (aref *cmpop-swap* c) c)))
-           (emit (aref *flag-ops* cc) k (ins-to i) nil nil)
-           (selcmp (ins-arg0 i) (ins-arg1 i) kc swap fn))))
+         (let ((to (ins-to i)))
+           ;; float eq/ne must also test orderedness (NaN): eq = feq AND fo,
+           ;; ne = fne OR fuo (amd64/isel.c sel cmp case)
+           (cond
+             ((= c 10)
+              (let ((r0 (newtmp "isel" :w fn)) (r1 (newtmp "isel" :w fn)))
+                (emit :and :w to r0 r1) (emit :flagfo k r1 nil nil) (setf to r0)))
+             ((= c 15)
+              (let ((r0 (newtmp "isel" :w fn)) (r1 (newtmp "isel" :w fn)))
+                (emit :or :w to r0 r1) (emit :flagfuo k r1 nil nil) (setf to r0))))
+           (let* ((swap (cmpswap c (ins-arg0 i)))
+                  (cc (if (= swap 1) (aref *cmpop-swap* c) c)))
+             (emit (aref *flag-ops* cc) k to nil nil)
+             (selcmp (ins-arg0 i) (ins-arg1 i) kc swap fn)))))
       ((member op '(:xselieq :xseline :xselisge :xselisgt :xselisle :xselislt
                     :xseliuge :xseliugt :xseliule :xseliult
                     :xselfeq :xselfge :xselfgt :xselfle :xselflt :xselfne
@@ -231,7 +240,6 @@
              ((multiple-value-bind (c kc) (iscmp (ins-op fi))
                 (and c (/= c 10) (/= c 15)   ; not float eq/ne (see sel)
                      (progn
-                       (when (member kc '(:s :d)) (abi-unsupported "float branch"))
                        (let* ((swap (cmpswap c (ins-arg0 fi)))
                               (cc (if (= swap 1) (aref *cmpop-swap* c) c)))
                          (when (= 1 (tmp-nuse tm))
