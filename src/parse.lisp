@@ -150,7 +150,9 @@
 (defun con-key (c)
   (ecase (con-kind c)
     (:bits (list :bits (con-rawbits c)))
-    (:addr (list :addr (con-symname c) (con-symtype c)))))
+    ;; QBE's newcon() dedups CAddr by (sym, bits.i); bits.i is the offset, so
+    ;; two references to the same symbol with different offsets are distinct.
+    (:addr (list :addr (con-symname c) (con-symtype c) (con-off c)))))
 
 ;;; ---------------------------------------------------------------- module
 

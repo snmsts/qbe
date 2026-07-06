@@ -107,6 +107,190 @@
       ((and (eq (ins-cls i) :w) (member op '(:extsw :extuw))) a0)
       (t nil))))
 
+;;; ----------------------------------------------------------- foldref
+;;; fold.c: constant-fold an instruction whose args are all constants into a
+;;; single con.  foldint handles integer arithmetic, ext/conv-from-float, and
+;;; all comparisons (integer AND float — cmps return a w/l result so they go
+;;; through the integer path); foldflt handles float arithmetic + int->float.
+
+(defun newcon (c fn)
+  "Intern a fully-formed con C (newcon(): dedup by con-key, assign idx)."
+  (let ((key (con-key c)))
+    (or (gethash key (fn-cons fn))
+        (progn (setf (con-idx c) (fn-ncon fn)) (incf (fn-ncon fn))
+               (setf (gethash key (fn-cons fn)) c)))))
+
+(defun u32 (x) (logand x #xffffffff))
+(defun u64* (x) (logand x #xffffffffffffffff))
+(defun s32* (x) (let ((v (u32 x))) (if (>= v #x80000000) (- v #x100000000) v)))
+(defun s64* (x) (norm-i64 x))
+
+(defun bits->single (u) (sb-kernel:make-single-float (s32* u)))
+(defun bits->double (u)
+  (sb-kernel:make-double-float (s32* (ash (u64* u) -32)) (u32 u)))
+
+(defun con-ibits (c)
+  "The 64-bit integer union payload bits.i of con C (offset for addr)."
+  (ecase (con-kind c)
+    (:addr (con-off c))
+    (:bits (con-rawbits c))))
+
+(defun symeq (a b)
+  (and (equal (con-symname a) (con-symname b))
+       (equal (con-symtype a) (con-symtype b))))
+
+(defun iscon= (c w k)
+  "Does con C's payload equal K at width W (t=64b / nil=32b)?  (fold.c iscon)"
+  (let ((v (con-ibits c))) (if w (= (u64* v) (u64* k)) (= (u32 v) (u32 k)))))
+
+(defun word-cmp-p (op)
+  (member op '(:ceqw :cnew :csgew :csgtw :cslew :csltw
+               :cugew :cugtw :culew :cultw)))
+(defun int-cmp-p (op)
+  (or (word-cmp-p op)
+      (member op '(:ceql :cnel :csgel :csgtl :cslel :csltl
+                   :cugel :cugtl :culel :cultl))))
+(defun flt-cmp-p (op)
+  (member op '(:ceqs :cges :cgts :cles :clts :cnes :cos :cuos
+               :ceqd :cged :cgtd :cled :cltd :cned :cod :cuod)))
+
+(defun icmp-result (op lu ls ru rs)
+  (if (case op
+        ((:ceqw :ceql) (= lu ru))
+        ((:cnew :cnel) (/= lu ru))
+        ((:csgew :csgel) (>= ls rs))
+        ((:csgtw :csgtl) (> ls rs))
+        ((:cslew :cslel) (<= ls rs))
+        ((:csltw :csltl) (< ls rs))
+        ((:cugew :cugel) (>= lu ru))
+        ((:cugtw :cugtl) (> lu ru))
+        ((:culew :culel) (<= lu ru))
+        ((:cultw :cultl) (< lu ru)))
+      1 0))
+
+(defun fcmp-result (op lf rf)
+  (if (case op
+        ((:ceqs :ceqd) (= lf rf))
+        ((:cnes :cned) (/= lf rf))
+        ((:cges :cged) (>= lf rf))
+        ((:cgts :cgtd) (> lf rf))
+        ((:cles :cled) (<= lf rf))
+        ((:clts :cltd) (< lf rf))
+        ((:cos :cod)   (or (< lf rf) (>= lf rf)))       ; ordered (neither NaN)
+        ((:cuos :cuod) (not (or (< lf rf) (>= lf rf)))))  ; unordered
+      1 0))
+
+(defun foldint (op w cl cr)
+  "Fold integer/compare OP on cons CL,CR.  Returns (values ok x typ sym symt);
+   ok=NIL means non-foldable (address illegality or div-by-zero)."
+  (let ((cladr (eq (con-kind cl) :addr))
+        (cradr (eq (con-kind cr) :addr))
+        (typ :bits) (sym nil) (symt nil))
+    ;; address-arithmetic legality (fold.c head)
+    (cond
+      ((eq op :add)
+       (cond (cladr (when cradr (return-from foldint (values nil)))
+                    (setf typ :addr sym (con-symname cl) symt (con-symtype cl)))
+             (cradr (setf typ :addr sym (con-symname cr) symt (con-symtype cr)))))
+      ((eq op :sub)
+       (cond (cladr (if cradr
+                        (unless (symeq cl cr) (return-from foldint (values nil)))
+                        (setf typ :addr sym (con-symname cl) symt (con-symtype cl))))
+             (cradr (return-from foldint (values nil)))))
+      ((or cladr cradr) (return-from foldint (values nil))))
+    ;; div/rem guards
+    (when (member op '(:div :rem :udiv :urem))
+      (when (iscon= cr w 0) (return-from foldint (values nil)))
+      (when (member op '(:div :rem))
+        (when (and (iscon= cr w -1)
+                   (iscon= cl w (if w #x-8000000000000000 #x-80000000)))
+          (return-from foldint (values nil)))))
+    (let* ((la (con-ibits cl)) (ra (con-ibits cr))
+           (lu (u64* la)) (ru (u64* ra))
+           (ls (s64* la)) (rs (s64* ra))
+           (mask (if w 63 31))
+           (x
+            (cond
+              ((int-cmp-p op)
+               (if (word-cmp-p op)
+                   (icmp-result op (u64* (s32* la)) (s32* la) (u64* (s32* ra)) (s32* ra))
+                   (icmp-result op lu ls ru rs)))
+              ((flt-cmp-p op)
+               (fcmp-result op (con-value cl) (con-value cr)))
+              (t
+               (ecase op
+                 (:add (+ lu ru)) (:sub (- lu ru)) (:neg (- lu))
+                 (:mul (* lu ru)) (:and (logand lu ru))
+                 (:or (logior lu ru)) (:xor (logxor lu ru))
+                 (:div (if w (truncate ls rs) (truncate (s32* la) (s32* ra))))
+                 (:rem (if w (rem ls rs) (rem (s32* la) (s32* ra))))
+                 (:udiv (if w (truncate lu ru) (truncate (u32 la) (u32 ra))))
+                 (:urem (if w (rem lu ru) (rem (u32 la) (u32 ra))))
+                 (:sar (ash (if w ls (s32* la)) (- (logand ru mask))))
+                 (:shr (ash (if w lu (u32 la)) (- (logand ru mask))))
+                 (:shl (ash lu (logand ru mask)))
+                 (:extsb (s32* (logand la #xff)))       ; (int8) then widen
+                 (:extub (logand la #xff))
+                 (:extsh (let ((v (logand la #xffff))) (if (>= v #x8000) (- v #x10000) v)))
+                 (:extuh (logand la #xffff))
+                 (:extsw (s32* la)) (:extuw (u32 la))
+                 (:stosi (truncate (con-value cl))) (:stoui (truncate (con-value cl)))
+                 (:dtosi (truncate (con-value cl))) (:dtoui (truncate (con-value cl)))
+                 (:cast lu))))))
+      (declare (ignorable la ra lu ru ls rs))
+      (values t x typ sym symt))))
+
+(defun foldflt (op w cl cr)
+  "Fold a float-result OP; returns a fresh flt con (W = double)."
+  (if w
+      (let ((ld (con-value cl)) (rd (con-value cr)))
+        (declare (ignorable rd))
+        (make-con :kind :bits :flt 2 :value
+          (ecase op
+            (:add (+ ld rd)) (:sub (- ld rd)) (:neg (- ld))
+            (:div (/ ld rd)) (:mul (* ld rd))
+            (:swtof (coerce (s32* (con-ibits cl)) 'double-float))
+            (:uwtof (coerce (u32 (con-ibits cl)) 'double-float))
+            (:sltof (coerce (s64* (con-ibits cl)) 'double-float))
+            (:ultof (coerce (u64* (con-ibits cl)) 'double-float))
+            (:exts (coerce (con-value cl) 'double-float))
+            (:cast (bits->double (con-ibits cl))))))
+      (let ((ls (con-value cl)) (rs (con-value cr)))
+        (declare (ignorable rs))
+        (make-con :kind :bits :flt 1 :value
+          (coerce
+           (ecase op
+             (:add (+ ls rs)) (:sub (- ls rs)) (:neg (- ls))
+             (:div (/ ls rs)) (:mul (* ls rs))
+             (:swtof (coerce (s32* (con-ibits cl)) 'single-float))
+             (:uwtof (coerce (u32 (con-ibits cl)) 'single-float))
+             (:sltof (coerce (s64* (con-ibits cl)) 'single-float))
+             (:ultof (coerce (u64* (con-ibits cl)) 'single-float))
+             (:truncd (con-value cl))
+             (:cast (bits->single (con-ibits cl))))
+           'single-float)))))
+
+(defun opfold (op cls cl cr fn)
+  "fold.c opfold: fold OP to a con Ref, or NIL if non-foldable."
+  (cond
+    ((member cls '(:w :l))
+     (multiple-value-bind (ok x typ sym symt) (foldint op (eq cls :l) cl cr)
+       (when ok
+         (unless (kwide cls) (setf x (u32 x)))
+         (newcon (if (eq typ :addr)
+                     (make-con :kind :addr :symname sym :symtype symt
+                               :off (norm-i64 x))
+                     (make-con :kind :bits :value (norm-i64 x)))
+                 fn))))
+    (t (newcon (foldflt op (eq cls :d) cl cr) fn))))
+
+(defun foldref (fn i)
+  "GVN constant folding: if all args of I are cons, return the folded con."
+  (when (and (tmp-p (ins-to i)) (op-canfold (ins-op i)) (con-p (ins-arg0 i)))
+    (let ((cr (or (ins-arg1 i) (aref *con01* 0))))
+      (when (con-p cr)
+        (opfold (ins-op i) (ins-cls i) (ins-arg0 i) cr fn)))))
+
 ;;; --------------------------------------------------------- gvndup (CSE)
 (defvar *gvntbl* nil "equal-hash: value-key -> defining ins (CSE table).")
 
@@ -126,16 +310,26 @@
 
 ;;; --------------------------------------------------------- dedup driver
 
+(defun isdivwl (i)
+  "Integer div/rem (Kw/Kl): can trap, so GCM-pinned (gcm.c isdivwl)."
+  (and (member (ins-op i) '(:div :rem :udiv :urem))
+       (= 0 (cls-base (ins-cls i)))))
+
+(defun pinned-ins (i)
+  "gcm.c pinned(): optab pinned flag OR an integer div/rem."
+  (or (op-pinned (ins-op i)) (isdivwl i)))
+
 (defun dedupins (fn b i)
   (declare (ignore b))
   (normins fn i)
-  (when (or (eq (ins-op i) :nop) (op-pinned (ins-op i)))
+  (when (or (eq (ins-op i) :nop) (pinned-ins i))
     (return-from dedupins))
   (let ((r (copyref fn i)))
     (when r (killins fn i r) (return-from dedupins)))
-  ;; foldref (constant folding) deferred to a later slice
+  (let ((r (foldref fn i)))
+    (when r (killins fn i r) (return-from dedupins)))
   (let ((i1 (gvndup i t)))
-    (when i1 (killins fn i i1) (return-from dedupins))))
+    (when i1 (killins fn i (ins-to i1)) (return-from dedupins))))
 
 ;;; ---------------------------------------------------------- dedupphi
 ;;; copy.c phicopyref, core: identical args, or same as an earlier phi.
