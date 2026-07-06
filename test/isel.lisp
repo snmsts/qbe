@@ -82,7 +82,7 @@
   (qbe:gvn fn) (qbe:fill-cfg fn) (qbe:simplcfg fn)
   (qbe:fill-use fn) (qbe:fill-dom fn) (qbe:gcm fn) (qbe:fill-use fn)
   (qbe:ifconvert fn) (qbe:fill-cfg fn) (qbe:fill-use fn) (qbe:fill-dom fn)
-  (qbe:amd64-abi fn) (qbe:fill-cfg fn) (qbe:fill-use fn)
+  (qbe:amd64-abi fn) (qbe:simpl fn) (qbe:fill-cfg fn) (qbe:fill-use fn)
   (qbe:amd64-isel fn)
   (qbe:print-fn-to-string fn))
 

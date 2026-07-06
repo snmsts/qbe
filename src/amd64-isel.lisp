@@ -237,6 +237,27 @@
               (when (= 1 (tmp-nuse tm)) (emit :copy :w nil r nil))
               (setf (blk-jmp-type b) (aref *jf-jumps-vec* +cine+))))))))))
 
+;;; ---------------------------------------------------------------------- simpl
+;;; simpl.c runs between abi1 and isel.  The scalar-relevant transform: an
+;;; unsigned divide/remainder by a constant power of two becomes a shift/mask.
+;;; (blit expansion is deferred — blit isn't in the scalar isel subset.)
+
+(defun ispow2 (v) (and (> v 0) (zerop (logand v (1- v)))))
+(defun ulog2 (v) (1- (integer-length v)))
+
+(defun simpl (fn)
+  (dolist (b (fn-blocks fn))
+    (dolist (i (blk-ins b))
+      (when (and (member (ins-op i) '(:udiv :urem))
+                 (= 0 (cls-base (ins-cls i)))
+                 (con-p (ins-arg1 i)) (eq (con-kind (ins-arg1 i)) :bits)
+                 (null (con-flt (ins-arg1 i)))
+                 (ispow2 (con-value (ins-arg1 i))))
+        (let ((n (ulog2 (con-value (ins-arg1 i)))))
+          (if (eq (ins-op i) :urem)
+              (setf (ins-op i) :and (ins-arg1 i) (getcon (1- (ash 1 n)) fn))
+              (setf (ins-op i) :shr (ins-arg1 i) (getcon n fn))))))))
+
 ;;; --------------------------------------------------------------------- driver
 
 (defun amd64-isel (fn)
