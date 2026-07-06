@@ -151,3 +151,32 @@ drop unreachable blocks from the layout list."
   (dolist (b (fn-blocks fn)) (setf (blk-loop b) 1))
   (loopiter fn (lambda (hd b) (declare (ignore hd))
                  (setf (blk-loop b) (* (blk-loop b) 10)))))
+
+;;; --------------------------------------------------------------- simpljmp
+;;; cfg.c simpljmp (post-rega): merge all returns into one shared block and
+;;; thread empty jmp blocks (union-find), collapsing jnz with equal targets.
+
+(defun uf-find (b uf)
+  "Union-find representative of B following the UF array (keyed by blk-id)."
+  (let ((p (aref uf (blk-id b))))
+    (if p (uf-find p uf) b)))
+
+(defun simpljmp (fn)
+  (let* ((nblk (fn-nblk fn))
+         (ret (make-instance 'blk :name "ret"))
+         (uf (make-array (1+ nblk) :initial-element nil)))
+    (setf (blk-id ret) nblk (fn-nblk fn) (1+ nblk) (blk-jmp-type ret) :ret0)
+    (dolist (b (fn-blocks fn))
+      (when (eq (blk-jmp-type b) :ret0)
+        (setf (blk-jmp-type b) :jmp (blk-s1 b) ret))
+      (when (and (null (blk-ins b)) (eq (blk-jmp-type b) :jmp))
+        (let ((rep (uf-find (blk-s1 b) uf)))
+          (setf (blk-s1 b) rep)
+          (unless (eq rep b) (setf (aref uf (blk-id b)) rep)))))
+    (dolist (b (fn-blocks fn))
+      (when (blk-s1 b) (setf (blk-s1 b) (uf-find (blk-s1 b) uf)))
+      (when (blk-s2 b) (setf (blk-s2 b) (uf-find (blk-s2 b) uf)))
+      (when (and (blk-s1 b) (eq (blk-s1 b) (blk-s2 b)))
+        (setf (blk-jmp-type b) :jmp (blk-s2 b) nil)))
+    (setf (fn-blocks fn) (append (fn-blocks fn) (list ret)))
+    (loop for (b . rest) on (fn-blocks fn) do (setf (blk-link b) (car rest)))))

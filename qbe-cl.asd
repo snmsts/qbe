@@ -27,6 +27,7 @@
                              (:file "backend")
                              (:file "spill")
                              (:file "rega")
+                             (:file "amd64-emit")
                              (:file "driver")))))
 
 (asdf:defsystem "qbe-cl/test"

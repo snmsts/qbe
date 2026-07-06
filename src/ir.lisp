@@ -43,6 +43,8 @@
    (slot     :initform 0   :accessor fn-slot)
    (reg      :initform 0   :accessor fn-reg)
    (mem      :initform nil :accessor fn-mem)
+   (salign   :initform 0   :accessor fn-salign)
+   (dynalloc :initform nil :accessor fn-dynalloc)
    (regs?    :initform nil :accessor fn-regs? :documentation "materialize-regs done?")))
 
 (defun fn-ntmp (fn) (fill-pointer (fn-tmp fn)))
