@@ -170,6 +170,37 @@
     (setf (ins-arg0 ic)
           (fixarg (ins-arg0 ic) (ins-op ic) (argcls (ins-op ic) k 0) fn))))
 
+;; unsigned word -> float: zero-extend to long, then signed long->float.
+(defun sel-uwtof (i fn)
+  (let ((k (ins-cls i)) (r0 (newtmp "utof" :l fn)))
+    (emit :sltof k (ins-to i) r0 nil)
+    (emit :extuw :l r0 (ins-arg0 i) nil)
+    (let ((cur (car *emitted*)))
+      (setf (ins-arg0 cur) (fixarg (ins-arg0 cur) (ins-op cur) k fn)))))
+
+;; unsigned long -> float (amd64/isel.c Oultof): halve-if-big then signed
+;; convert and fix up, so the top bit doesn't misread as a sign.
+(defun sel-ultof (i fn)
+  (let* ((k (ins-cls i)) (r0 (newtmp "utof" k fn))
+         (kc (if (eq k :s) :w :l)) (sh (if (eq k :s) 23 52))
+         (tp (make-array 7)))
+    (dotimes (j 4) (setf (aref tp j) (newtmp "utof" :l fn)))
+    (loop for j from 4 to 6 do (setf (aref tp j) (newtmp "utof" kc fn)))
+    (emit :cast k (ins-to i) (aref tp 6) nil)
+    (emit :add kc (aref tp 6) (aref tp 4) (aref tp 5))
+    (emit :shl kc (aref tp 5) (aref tp 1) (getcon sh fn))
+    (emit :cast kc (aref tp 4) r0 nil)
+    (emit :sltof k r0 (aref tp 3) nil)
+    (emit :or :l (aref tp 3) (aref tp 0) (aref tp 2))
+    (emit :shr :l (aref tp 2) (ins-arg0 i) (aref tp 1))
+    (sel (pop *emitted*) fn)                ; re-select the variable shift
+    (emit :shr :l (aref tp 1) (ins-arg0 i) (getcon 63 fn))
+    (let ((cur (car *emitted*)))
+      (setf (ins-arg0 cur) (fixarg (ins-arg0 cur) :shr :l fn)))
+    (emit :and :l (aref tp 0) (ins-arg0 i) (getcon 1 fn))
+    (let ((cur (car *emitted*)))
+      (setf (ins-arg0 cur) (fixarg (ins-arg0 cur) :and :l fn)))))
+
 (defun sel (i fn)
   ;; dead-code elimination: an unused pure result is dropped
   (when (and (tmp-p (ins-to i))
@@ -211,7 +242,9 @@
       ((isload-op op) (abi-unsupported "load"))
       ((isstore-op op) (abi-unsupported "store"))
       ((member op '(:alloc4 :alloc8 :alloc16)) (abi-unsupported "alloc"))
-      ((member op '(:ultof :uwtof :stoui :dtoui)) (abi-unsupported "unsigned conv"))
+      ((eq op :uwtof) (sel-uwtof i fn))
+      ((eq op :ultof) (sel-ultof i fn))
+      ((member op '(:stoui :dtoui)) (abi-unsupported "float->uint conv"))
       (t (abi-unsupported (format nil "isel op ~a" op))))))
 
 ;;; --------------------------------------------------------------------- seljmp
