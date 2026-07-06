@@ -111,8 +111,8 @@
             (format t "~&~a: norm ~d/~d supported (~d unsupported)~%"
                     (file-namestring p) nm s u)))
       (error (e) (format t "~&~a: ERROR ~a~%" (file-namestring p) e))))
-  (format t "~&=== amd64 abi1 (B1 scalar subset) ===~%")
-  (format t "  supported (scalar, call-free): ~d/~d functions~%" sup tot)
+  (format t "~&=== amd64 abi1 (B2 scalar + register calls) ===~%")
+  (format t "  supported (no structs/stack-args/varargs): ~d/~d functions~%" sup tot)
   (format t "  raw  (byte-exact):   ~d/~d supported~%" raw sup)
   (format t "  norm (structure):    ~d/~d supported~%" norm sup)
   (sb-ext:exit :code (if (= norm sup) 0 1)))
