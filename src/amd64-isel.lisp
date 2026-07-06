@@ -37,6 +37,10 @@
 (defparameter *jf-jumps-vec*
   #(:jfieq :jfine :jfisge :jfisgt :jfisle :jfislt :jfiuge :jfiugt :jfiule :jfiult
     :jffeq :jffge :jffgt :jffle :jfflt :jffne :jffo :jffuo))
+(defparameter *xsel-ops*
+  #(:xselieq :xseline :xselisge :xselisgt :xselisle :xselislt
+    :xseliuge :xseliugt :xseliule :xseliult
+    :xselfeq :xselfge :xselfgt :xselfle :xselflt :xselfne :xselfo :xselfuo))
 
 ;; cmptab[c][1] — comparison code when the two operands are swapped.
 (defparameter *cmpop-swap*
@@ -94,6 +98,9 @@
     ;; floating-point constants must be loaded from memory (later slice)
     ((and (con-p r) (eq (con-kind r) :bits) (con-flt r))
      (abi-unsupported "float constant operand"))
+    ;; a conditional-move (cmov) can't take an immediate operand
+    ((and (con-p r) (find op *xsel-ops*))
+     (let ((tm (newtmp "isel" k fn))) (emit :copy k tm r nil) tm))
     (t r)))
 
 ;;; ------------------------------------------------------------------ compares
@@ -186,7 +193,12 @@
                 (cc (if (= swap 1) (aref *cmpop-swap* c) c)))
            (emit (aref *flag-ops* cc) k (ins-to i) nil nil)
            (selcmp (ins-arg0 i) (ins-arg1 i) kc swap fn))))
-      ((member op '(:sel0 :sel1)) (abi-unsupported "sel (cmov)"))
+      ((member op '(:xselieq :xseline :xselisge :xselisgt :xselisle :xselislt
+                    :xseliuge :xseliugt :xseliule :xseliult
+                    :xselfeq :xselfge :xselfgt :xselfle :xselflt :xselfne
+                    :xselfo :xselfuo))
+       (sel-emit i fn))
+      ((member op '(:sel0 :sel1)) (abi-unsupported "stray sel"))
       ((isload-op op) (abi-unsupported "load"))
       ((isstore-op op) (abi-unsupported "store"))
       ((member op '(:alloc4 :alloc8 :alloc16)) (abi-unsupported "alloc"))
@@ -237,6 +249,46 @@
               (when (= 1 (tmp-nuse tm)) (emit :copy :w nil r nil))
               (setf (blk-jmp-type b) (aref *jf-jumps-vec* +cine+))))))))))
 
+;;; ----------------------------------------------------------------- selsel
+;;; amd64/isel.c selsel: turn an ifconvert sel0/sel1 group into conditional
+;;; moves (xsel<cc>), taking the condition from the flag-setter before sel0.
+
+(defun selsel (fn b vec k)
+  "Lower the sel0/sel1 group ending at VEC[k] (a sel1); return the sel0 index."
+  (declare (ignore b))
+  (let ((i0 k))
+    (loop while (and (> i0 0) (not (eq (ins-op (aref vec i0)) :sel0))) do (decf i0))
+    (let* ((sel0 (aref vec i0))
+           (r (ins-arg0 sel0)) (rt r)
+           (fi (flagi (coerce (subseq vec 0 i0) 'list)))
+           (cr0 nil) (cr1 nil) (gencmp nil) (gencpy nil) (swap 0) (kc :w) (c +cine+))
+      (cond
+        ((or (null fi) (not (eq (ins-to fi) r)))
+         (setf gencmp t cr0 r cr1 (getcon 0 fn)))
+        ((iscmp (ins-op fi))
+         (multiple-value-bind (cc k2) (iscmp (ins-op fi))
+           (if (or (= cc 10) (= cc 15))       ; float eq/ne -> checked with Cine
+               (when (= 1 (tmp-nuse rt)) (setf gencpy t))
+               (progn
+                 (setf swap (cmpswap cc (ins-arg0 fi)))
+                 (setf c (if (= swap 1) (aref *cmpop-swap* cc) cc) kc k2)
+                 (when (= 1 (tmp-nuse rt))
+                   (setf gencmp t cr0 (ins-arg0 fi) cr1 (ins-arg1 fi))
+                   (setf (ins-op fi) :nop (ins-to fi) nil
+                         (ins-arg0 fi) nil (ins-arg1 fi) nil))))))
+        ((and (eq (ins-op fi) :and) (= 1 (tmp-nuse rt))
+              (or (tmp-p (ins-arg0 fi)) (tmp-p (ins-arg1 fi))))
+         (setf (ins-op fi) :xtest (ins-to fi) nil)
+         (when (con-p (ins-arg1 fi)) (rotatef (ins-arg0 fi) (ins-arg1 fi))))
+        (t (when (= 1 (tmp-nuse rt)) (setf gencpy t))))
+      ;; each sel1 (from k down to i0+1) becomes an xsel<c>
+      (loop for j from k downto (1+ i0) do
+        (setf (ins-op (aref vec j)) (aref *xsel-ops* c))
+        (sel (aref vec j) fn))
+      (when gencmp (selcmp cr0 cr1 kc swap fn))
+      (when gencpy (emit :copy :w nil r nil))
+      i0)))
+
 ;;; ---------------------------------------------------------------------- simpl
 ;;; simpl.c runs between abi1 and isel.  The scalar-relevant transform: an
 ;;; unsigned divide/remainder by a constant power of two becomes a shift/mask.
@@ -270,7 +322,10 @@
           (let ((pair (assoc b (phi-args p) :test #'eq)))
             (when pair (setf (cdr pair) (fixarg (cdr pair) :copy (phi-cls p) fn))))))
       (seljmp b fn)
-      (let ((vec (coerce (blk-ins b) 'vector)))
-        (loop for k from (1- (length vec)) downto 0
-              do (sel (aref vec k) fn)))
+      (let* ((vec (coerce (blk-ins b) 'vector)) (k (1- (length vec))))
+        (loop while (>= k 0) do
+          (let ((i (aref vec k)))
+            (if (eq (ins-op i) :sel1)
+                (setf k (1- (selsel fn b vec k)))
+                (progn (sel i fn) (decf k))))))
       (setf (blk-ins b) *emitted*))))
