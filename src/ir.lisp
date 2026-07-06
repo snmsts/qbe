@@ -92,7 +92,8 @@
   (use   nil)               ; list of use-rec
   (phi   nil)               ; phi-class union-find parent (temp id), or NIL
   (width :full)
-  (visit nil))              ; SSA-rename tag: original temp id, or NIL
+  (gcmbid -1)               ; GCM target block rpo id (-1 = NOBID)
+  (visit nil))              ; SSA-rename tag / GCM visited flag
 
 (defstruct (use-rec (:constructor make-use-rec (type bid payload)))
   type                       ; :phi :ins :jmp

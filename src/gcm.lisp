@@ -90,3 +90,203 @@
                 (blk-s1 b) (sjmp-s1 j) (blk-s2 b) (sjmp-s2 j)))))
     ;; 5. prune dead blocks + rebuild cfg
     (fill-cfg fn)))
+
+;;; -------------------------------------------------------------- gcm
+;;; gcm.c global code motion.  STAGE 3: schedearly/schedlate/gcmmove + schedblk
+;;; (intra-block dependency ordering).  `sink` is deferred to stage 4.
+
+(defun isload-op (op)
+  (member op '(:loadsb :loadub :loadsh :loaduh :loadsw :loaduw :load)))
+(defun isalloc-op (op) (member op '(:alloc4 :alloc8 :alloc16)))
+(defun arg-op-p (op) (member op '(:arg :argsb :argub :argsh :arguh :argc :arge :argv)))
+
+(defun canelim (i)
+  "gcm.c canelim: pinned ins removable when unused (load/alloc/int-div)."
+  (or (isload-op (ins-op i)) (isalloc-op (ins-op i)) (isdivwl i)))
+
+(defun copy-ins (i)
+  (make-instance 'ins :op (ins-op i) :cls (ins-cls i) :to (ins-to i)
+                 :arg0 (ins-arg0 i) :arg1 (ins-arg1 i)))
+
+;;; --- schedule early: place each value at its earliest legal (deepest) block
+
+(defun schedearly (fn r)
+  (if (not (tmp-p r))
+      0                                 ; constants/regs available at start
+      (let ((tm r))
+        (if (/= (tmp-gcmbid tm) -1)
+            (tmp-gcmbid tm)
+            (let ((b (aref (fn-rpo fn) (tmp-bid tm))))
+              (if (tmp-def tm)
+                  (progn (setf (tmp-gcmbid tm) 0) ; mark visiting (break cycles)
+                         (setf (tmp-gcmbid tm) (earlyins fn b (tmp-def tm))))
+                  (setf (tmp-gcmbid tm) (tmp-bid tm))) ; phis do not move
+              (tmp-gcmbid tm))))))
+
+(defun earlyins (fn b i)
+  (let ((b0 (schedearly fn (ins-arg0 i)))
+        (b1 (schedearly fn (ins-arg1 i))))
+    (when (< (blk-depth (aref (fn-rpo fn) b0)) (blk-depth (aref (fn-rpo fn) b1)))
+      (setf b0 b1))
+    (if (pinned-ins i) (blk-id b) b0)))
+
+(defun earlyblk (fn bid)
+  (let ((b (aref (fn-rpo fn) bid)))
+    (dolist (p (blk-phis b))
+      (dolist (pa (phi-args p)) (schedearly fn (cdr pa))))
+    (dolist (i (blk-ins b))
+      (when (pinned-ins i)
+        (schedearly fn (ins-arg0 i)) (schedearly fn (ins-arg1 i))))
+    (schedearly fn (blk-jmp-arg b))))
+
+;;; --- schedule late: place each value at the LCA of its uses, then hoist out
+;;;     of loops toward the earliest block along the way
+
+(defun lcabid (fn b1 b2)
+  (cond ((= b1 -1) b2) ((= b2 -1) b1)
+        (t (blk-id (lca (aref (fn-rpo fn) b1) (aref (fn-rpo fn) b2))))))
+
+(defun bestbid (fn earlybid latebid)
+  (if (= latebid -1)
+      -1
+      (let* ((earlyb (aref (fn-rpo fn) earlybid))
+             (bestb (aref (fn-rpo fn) latebid))
+             (curb bestb))
+        (loop until (eq curb earlyb) do
+          (setf curb (blk-idom curb))
+          (when (< (blk-loop curb) (blk-loop bestb)) (setf bestb curb)))
+        (blk-id bestb))))
+
+(defun latephi (fn p r)
+  (if (null (phi-args p))
+      -1
+      (let ((latebid -1))
+        (dolist (pa (phi-args p))
+          (when (eq (cdr pa) r)
+            (setf latebid (lcabid fn latebid (blk-id (car pa))))))
+        latebid)))
+
+(defun latejmp (b r)
+  (declare (ignore r))
+  (if (null (blk-jmp-arg b)) -1 (blk-id b)))
+
+(defun lateins (fn b i r)
+  (declare (ignore r))
+  (let ((latebid (schedlate fn (ins-to i))))
+    (cond ((not (pinned-ins i)) latebid)
+          ((and (= latebid -1) (canelim i)) -1)
+          (t (blk-id b)))))
+
+(defun schedlate (fn r)
+  (if (not (tmp-p r))
+      -1
+      (let ((tm r))
+        (if (tmp-visit tm)
+            (tmp-gcmbid tm)
+            (progn
+              (setf (tmp-visit tm) t)
+              (let ((earlybid (tmp-gcmbid tm)))
+                (if (= earlybid -1)
+                    -1
+                    (let ((latebid -1))
+                      (setf (tmp-gcmbid tm) (tmp-bid tm))
+                      (dolist (u (tmp-use tm))
+                        (let* ((b (aref (fn-rpo fn) (use-rec-bid u)))
+                               (ulb (ecase (use-rec-type u)
+                                      (:phi (latephi fn (use-rec-payload u) r))
+                                      (:ins (lateins fn b (use-rec-payload u) r))
+                                      (:jmp (latejmp b r)))))
+                          (setf latebid (lcabid fn latebid ulb))))
+                      (when (and (tmp-def tm) (not (pinned-ins (tmp-def tm))))
+                        (setf (tmp-gcmbid tm) (bestbid fn earlybid latebid)))
+                      (tmp-gcmbid tm)))))))))
+
+(defun lateblk (fn bid)
+  (let ((b (aref (fn-rpo fn) bid)))
+    (setf (blk-phis b)
+          (remove nil
+                  (mapcar (lambda (p)
+                            (if (= (schedlate fn (phi-to p)) -1)
+                                (progn (setf (phi-args p) nil) nil) ; mark unused + drop
+                                p))
+                          (blk-phis b))))
+    (dolist (i (blk-ins b))
+      (when (pinned-ins i) (schedlate fn (ins-to i))))))
+
+;;; --- move instructions to their chosen block (appended at the end), then
+;;;     reorder each block into dependency (DFS) order.
+
+(defun gcmmove (fn)
+  (let ((vins '()))
+    (dotimes (tid (fn-ntmp fn))
+      (let ((tm (aref (fn-tmp fn) tid)))
+        (when (and (tmp-def tm) (/= (tmp-bid tm) (tmp-gcmbid tm)))
+          (let ((i (tmp-def tm)))
+            (unless (and (pinned-ins i) (not (canelim i)))
+              (when (/= (tmp-gcmbid tm) -1) (push (copy-ins i) vins))
+              (setf (ins-op i) :nop (ins-cls i) :w (ins-to i) nil
+                    (ins-arg0 i) nil (ins-arg1 i) nil))))))
+    ;; addgcmins: append each moved copy to the end of its target block
+    (dolist (i (nreverse vins))
+      (let ((b (aref (fn-rpo fn) (tmp-gcmbid (ins-to i)))))
+        (setf (blk-ins b) (nconc (blk-ins b) (list i)))))))
+
+(defun igroup (vec idx)
+  "Index range [i0,i1) of the instruction group at VEC[idx] (util.c igroup)."
+  (let* ((n (length vec)) (op (ins-op (aref vec idx))))
+    (cond
+      ((eq op :blit0) (values idx (+ idx 2)))
+      ((eq op :blit1) (values (1- idx) (1+ idx)))
+      ((par-op-p op)
+       (let ((lo idx) (hi idx))
+         (loop while (and (> lo 0) (par-op-p (ins-op (aref vec (1- lo))))) do (decf lo))
+         (loop while (and (< hi n) (par-op-p (ins-op (aref vec hi)))) do (incf hi))
+         (values lo hi)))
+      ((or (eq op :call) (arg-op-p op))
+       (let ((lo idx) (hi idx))
+         (loop while (and (> lo 0) (arg-op-p (ins-op (aref vec (1- lo))))) do (decf lo))
+         (loop while (and (< hi n) (not (eq (ins-op (aref vec hi)) :call))) do (incf hi))
+         (values lo (1+ hi))))
+      (t (values idx (1+ idx))))))
+
+(defun schedins (fn b vec idx idxmap emit)
+  (multiple-value-bind (i0 i1) (igroup vec idx)
+    ;; schedule the in-block defs of this group's args first (DFS)
+    (loop for k from i0 below i1 for i = (aref vec k) do
+      (dotimes (n 2)
+        (let ((a (ins-arg i n)))
+          (when (tmp-p a)
+            (let ((tm a))
+              (when (and (= (tmp-bid tm) (blk-id b)) (tmp-def tm))
+                (let ((j (gethash (tmp-def tm) idxmap)))
+                  (when j (schedins fn b vec j idxmap emit)))))))))
+    ;; emit the group (copy + nop original, so re-visits are skipped)
+    (loop for k from i0 below i1 for i = (aref vec k) do
+      (unless (eq (ins-op i) :nop)
+        (funcall emit (copy-ins i))
+        (setf (ins-op i) :nop (ins-to i) nil (ins-arg0 i) nil (ins-arg1 i) nil)))
+    i1))
+
+(defun schedblk (fn)
+  (dolist (b (fn-blocks fn))
+    (let* ((vec (coerce (blk-ins b) 'vector))
+           (idxmap (make-hash-table :test 'eq))
+           (out '()))
+      (dotimes (k (length vec)) (setf (gethash (aref vec k) idxmap) k))
+      (loop with idx = 0 while (< idx (length vec)) do
+        (setf idx (schedins fn b vec idx idxmap (lambda (i) (push i out)))))
+      (setf (blk-ins b) (nreverse out)))))
+
+(defun gcm (fn)
+  "Global code motion (gcm.c).  Requires fill-cfg, fill-use, fill-dom.
+STAGE 3: early/late scheduling + gcmmove + schedblk (sink deferred)."
+  (fill-depth fn)
+  (fill-loop fn)
+  (dotimes (tid (fn-ntmp fn))
+    (let ((tm (aref (fn-tmp fn) tid)))
+      (setf (tmp-visit tm) nil (tmp-gcmbid tm) -1)))
+  (dotimes (bid (fn-nblk fn)) (earlyblk fn bid))
+  (dotimes (bid (fn-nblk fn)) (lateblk fn bid))
+  (gcmmove fn)
+  (fill-use fn)
+  (schedblk fn))
