@@ -355,6 +355,8 @@
   "Full amd64 backend (mirrors main.c for T.cansel=1), through simpljmp."
   (fill-cfg fn) (fill-use fn) (promote fn) (fill-use fn)
   (ssa fn) (fill-use fn)
+  (fill-alias fn) (loadopt fn) (fill-use fn) (fill-alias fn) (coalesce fn)
+  (fill-use fn) (fill-dom fn)
   (gvn fn) (fill-cfg fn) (simplcfg fn)
   (fill-use fn) (fill-dom fn) (gcm fn) (fill-use fn)
   (ifconvert fn) (fill-cfg fn) (fill-use fn) (fill-dom fn)

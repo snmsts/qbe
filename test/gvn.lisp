@@ -70,7 +70,9 @@
 
 (defun our-gvn (fn)
   (qbe:fill-cfg fn) (qbe:fill-use fn) (qbe:promote fn) (qbe:fill-use fn)
-  (qbe:ssa fn) (qbe:fill-use fn) (qbe:gvn fn)
+  (qbe:ssa fn) (qbe:fill-use fn)
+  (qbe:fill-alias fn) (qbe:loadopt fn) (qbe:fill-use fn) (qbe:fill-alias fn) (qbe:coalesce fn) (qbe:fill-use fn) (qbe:fill-dom fn)
+  (qbe:gvn fn)
   (qbe:print-fn-to-string fn))
 
 (defun diff-gvn (ssa-path)
