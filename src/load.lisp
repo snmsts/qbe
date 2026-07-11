@@ -437,3 +437,224 @@
   (ecase op
     (:loadsb :extsb) (:loadub :extub) (:loadsh :extsh) (:loaduh :extuh)
     (:loadsw :extsw) (:loaduw :extuw) (:load :copy)))
+
+;;; ============================================================ coalesce (mem.c)
+;;; Slot coalescing: shrink stack usage by killing dead stores, dropping slots
+;;; that are never live, and fusing slots whose live ranges don't overlap.
+;;; A one-pass linearized liveness assigns each slot a Range over a global
+;;; decreasing instruction pointer.  Oracle: `qbe -dM` "> Slot coalescing:".
+
+(defstruct (crange (:constructor make-crange)) (a 0) (b 0))
+(defun rin (r n) (and (<= (crange-a r) n) (< n (crange-b r))))
+(defun rovlap (r0 r1)
+  (and (/= (crange-b r0) 0) (/= (crange-b r1) 0)
+       (< (crange-a r0) (crange-b r1)) (< (crange-a r1) (crange-b r0))))
+(defun radd (r n)
+  (cond ((zerop (crange-b r)) (setf (crange-a r) n (crange-b r) (1+ n)))
+        ((< n (crange-a r)) (setf (crange-a r) n))
+        ((>= n (crange-b r)) (setf (crange-b r) (1+ n)))))
+
+(defstruct (cslot (:constructor make-cslot)) tid sz (m 0) (l 0) r (s nil) (st nil))
+
+(defun co-slot (r fn sl)
+  "mem.c slot: (values cslot offset) if R aliases a tracked slot, else NIL."
+  (let ((a (getalias r fn)))
+    (when (eq (alias-type a) :loc)
+      (let ((tv (tmp-visit (aref (fn-tmp fn) (alias-base a)))))
+        (when (and tv (>= tv 0))
+          (values (aref sl tv) (alias-offset a)))))))
+
+(defun co-load (r x ip fn sl)
+  (multiple-value-bind (s off) (co-slot r fn sl)
+    (when s
+      (setf (cslot-l s) (logand (logior (cslot-l s) (u64* (ash (u64* x) off))) (cslot-m s)))
+      (unless (zerop (cslot-l s)) (radd (cslot-r s) ip)))))
+
+(defun co-store (r x ip i fn sl)
+  (multiple-value-bind (s off) (co-slot r fn sl)
+    (when s
+      (if (/= 0 (cslot-l s))
+          (progn (radd (cslot-r s) ip)
+                 (setf (cslot-l s) (logand (cslot-l s) (u64* (lognot (u64* (ash (u64* x) off)))))))
+          (push (cons ip i) (cslot-st s))))))
+
+(defun isret-jmp (jt)
+  (member jt '(:retw :retl :rets :retd :retsb :retub :retsh :retuh :retc :ret0)))
+
+(defun coalesce (fn)
+  (let ((tmps (fn-tmp fn)) (sl (make-array 0 :adjustable t :fill-pointer 0))
+        (start-id (blk-id (fn-start fn))) (bl '()))
+    ;; collect coalesceable slots (original allocs in the start block)
+    (dotimes (n (fn-ntmp fn))
+      (let ((tp (aref tmps n)) (a (tmp-alias (aref tmps n))))
+        (setf (tmp-visit tp) -1)
+        (when (and (eq (alias-type a) :loc) (eq (alias-slot a) a)
+                   (= (tmp-bid tp) start-id) (/= (alias-loc-sz a) -1))
+          (setf (tmp-visit tp) (fill-pointer sl))
+          (vector-push-extend
+           (make-cslot :tid n :sz (alias-loc-sz a) :m (alias-loc-m a) :r (make-crange))
+           sl))))
+    (let ((nsl (fill-pointer sl)))
+      (when (zerop nsl) (return-from coalesce (co-debug fn sl 0 0 0 nil)))
+      ;; one-pass liveness over a global decreasing instruction pointer
+      (dolist (b (fn-blocks fn)) (setf (blk-loop b) -1))
+      (loopiter fn (lambda (hd b) (when (< (blk-loop hd) (blk-id b))
+                                    (setf (blk-loop hd) (blk-id b)))))
+      (let ((bra (make-array (fn-nblk fn))) (brb (make-array (fn-nblk fn)))
+            (ip (- 2147483647 1)))
+        (loop for n from (1- (fn-nblk fn)) downto 0
+              for b = (aref (fn-rpo fn) n) do
+          (let ((succ (remove nil (list (blk-s1 b) (blk-s2 b)))))
+            (setf (aref brb n) ip) (decf ip)
+            (dotimes (k nsl)
+              (let ((s (aref sl k)))
+                (setf (cslot-l s) 0)
+                (dolist (ps succ)
+                  (let ((m (blk-id ps)))
+                    (when (and (> m n) (rin (cslot-r s) (aref bra m)))
+                      (setf (cslot-l s) (cslot-m s)) (radd (cslot-r s) ip))))))
+            (when (eq (blk-jmp-type b) :retc)
+              (decf ip) (co-load (blk-jmp-arg b) -1 ip fn sl))
+            (let ((bins (coerce (blk-ins b) 'vector)))
+              (loop for idx from (1- (length bins)) downto 0
+                    for i = (aref bins idx) do
+                (let ((op (ins-op i)))
+                  (cond
+                    ((eq op :argc) (decf ip) (co-load (ins-arg1 i) -1 ip fn sl))
+                    ((isload-op op) (decf ip) (co-load (ins-arg0 i) (1- (ash 1 (loadsz i))) ip fn sl))
+                    ((isstore-op op) (co-store (ins-arg1 i) (1- (ash 1 (storesz i))) ip i fn sl) (decf ip))
+                    ((eq op :blit0)
+                     (let* ((b1 (aref bins (1+ idx))) (sz (abs (ins-arg0 b1)))
+                            (x (if (>= sz +nbit+) -1 (1- (ash 1 sz)))))
+                       (co-store (ins-arg1 i) x ip i fn sl) (decf ip)
+                       (co-load (ins-arg0 i) x ip fn sl)
+                       (push i bl)))))))
+            (dotimes (k nsl)
+              (let ((s (aref sl k)))
+                (unless (zerop (cslot-l s))
+                  (radd (cslot-r s) ip)
+                  (when (/= (blk-loop b) -1)
+                    (radd (cslot-r s) (1- (aref brb (blk-loop b))))))))
+            (setf (aref bra n) ip)))
+
+        ;; kill dead stores (recorded stores that fall outside the live range)
+        (dotimes (k nsl)
+          (let ((s (aref sl k)))
+            (dolist (pr (cslot-st s))
+              (unless (rin (cslot-r s) (car pr))
+                (let ((i (cdr pr)))
+                  (when (eq (ins-op i) :blit0)
+                    (co-nop (nth-ins-after fn i)))
+                  (co-nop i))))))
+
+        ;; kill slots that are never live; cascade through their uses
+        (let ((total 0) (freed 0) (stk '()) (kill-names '()) (kept '()))
+          (dotimes (k nsl)
+            (let ((s (aref sl k)))
+              (incf total (cslot-sz s))
+              (if (zerop (crange-b (cslot-r s)))
+                  (progn (push (cslot-tid s) stk) (incf freed (cslot-sz s))
+                         (push (tmp-name (aref tmps (cslot-tid s))) kill-names))
+                  (push s kept))))
+          (setf kill-names (nreverse kill-names))
+          (loop while stk do
+            (let* ((tid (pop stk)) (tp (aref tmps tid)) (i (tmp-def tp)))
+              (if (isload-op (ins-op i))
+                  (setf (ins-op i) :copy (ins-arg0 i) (make-con :kind :undef :value 0) (ins-arg1 i) nil)
+                  (progn
+                    (co-nop i)
+                    (dolist (u (tmp-use tp))
+                      (case (use-rec-type u)
+                        (:jmp (let ((b (aref (fn-rpo fn) (use-rec-bid u))))
+                                (setf (blk-jmp-type b) :ret0 (blk-jmp-arg b) nil)))
+                        (:ins (let ((iu (use-rec-payload u)))
+                                (cond
+                                  ((ins-to iu) (push (tmp-id (ins-to iu)) stk))
+                                  ((arg-op-p (ins-op iu)) (setf (ins-arg1 iu) (getcon 0 fn)))
+                                  (t (when (eq (ins-op iu) :blit0) (co-nop (nth-ins-after fn iu)))
+                                     (co-nop iu)))))))))))
+          ;; fuse surviving slots by decreasing size, then increasing range start
+          (let* ((surv (stable-sort (nreverse kept)
+                                    (lambda (a b) (if (/= (cslot-sz a) (cslot-sz b))
+                                                      (> (cslot-sz a) (cslot-sz b))
+                                                      (< (crange-a (cslot-r a)) (crange-a (cslot-r b)))))))
+                 (sv (coerce surv 'vector)) (m (length sv)) (fused 0))
+            (dotimes (n m)
+              (let ((s0 (aref sv n)))
+                (unless (cslot-s s0)
+                  (setf (cslot-s s0) s0)
+                  (let ((r (make-crange :a (crange-a (cslot-r s0)) :b (crange-b (cslot-r s0)))))
+                    (loop for j from (1+ n) below m
+                          for s = (aref sv j) do
+                      (block skip
+                        (when (or (cslot-s s) (zerop (crange-b (cslot-r s)))) (return-from skip))
+                        (when (rovlap r (cslot-r s))
+                          (loop for mm from n below j
+                                for sm = (aref sv mm) do
+                            (when (and (eq (cslot-s sm) s0) (rovlap (cslot-r sm) (cslot-r s)))
+                              (return-from skip))))
+                        (radd r (crange-a (cslot-r s)))
+                        (radd r (1- (crange-b (cslot-r s))))
+                        (setf (cslot-s s) s0)
+                        (incf fused (cslot-sz s))))))))
+            ;; substitute fused slots
+            (co-substitute fn sv)
+            ;; fix newly overlapping blits
+            (co-fix-blits fn (nreverse bl) sv)
+            (co-debug fn sv freed fused total kill-names)))))))
+
+(defun co-nop (i)
+  (setf (ins-op i) :nop (ins-to i) nil (ins-arg0 i) nil (ins-arg1 i) nil))
+
+(defun nth-ins-after (fn i)
+  "The instruction immediately following I in its block (the Oblit1 of a blit)."
+  (dolist (b (fn-blocks fn))
+    (let ((tail (member i (blk-ins b) :test #'eq)))
+      (when tail (return (cadr tail))))))
+
+(defun co-substitute (fn sv)
+  "mem.c substitute-fused-slots: redirect each fused slot's uses to its rep,
+   moving the surviving def to the earliest position."
+  (let ((tmps (fn-tmp fn)) (pos (make-hash-table :test 'eq)))
+    (loop for i in (blk-ins (fn-start fn)) for k from 0 do (setf (gethash i pos) k))
+    (loop for k from 0 below (length sv)
+          for s = (aref sv k) do
+      (setf (tmp-visit (aref tmps (cslot-tid s))) k))
+    (loop for k from 0 below (length sv)
+          for s = (aref sv k) do
+      (let ((tp (aref tmps (cslot-tid s))))
+        (unless (eq (cslot-s s) s)
+          (co-nop (tmp-def tp))
+          (let* ((rep (aref tmps (cslot-tid (cslot-s s)))) (td (tmp-def tp)) (rd (tmp-def rep)))
+            (when (< (or (gethash td pos) 0) (or (gethash rd pos) 0))
+              (setf (ins-op td) (ins-op rd) (ins-cls td) (ins-cls rd) (ins-to td) (ins-to rd)
+                    (ins-arg0 td) (ins-arg0 rd) (ins-arg1 td) (ins-arg1 rd))
+              (co-nop rd)
+              (setf (tmp-def rep) td))
+            (dolist (u (tmp-use tp))
+              (case (use-rec-type u)
+                (:jmp (setf (blk-jmp-arg (aref (fn-rpo fn) (use-rec-bid u))) rep))
+                (:ins (let ((iu (use-rec-payload u)))
+                        (when (eq (ins-arg0 iu) tp) (setf (ins-arg0 iu) rep))
+                        (when (eq (ins-arg1 iu) tp) (setf (ins-arg1 iu) rep))))))))))))
+
+(defun co-fix-blits (fn bl sl)
+  (dolist (i bl)
+    (when (eq (ins-op i) :blit0)
+      (multiple-value-bind (s off0) (co-slot (ins-arg0 i) fn sl)
+        (multiple-value-bind (s0 off1) (co-slot (ins-arg1 i) fn sl)
+          (when (and s s0 (eq (cslot-s s) (cslot-s s0)))
+            (let ((b1 (nth-ins-after fn i)))
+              (cond ((< off0 off1) (setf (ins-arg0 b1) (- (ins-arg0 b1))))
+                    ((= off0 off1) (co-nop i) (co-nop b1))))))))))
+
+(defvar *coalesce-debug* nil)
+(defun co-debug (fn sv freed fused total kill-names)
+  (declare (ignorable sv kill-names))
+  (when *coalesce-debug*
+    (format *error-output* "~&> Slot coalescing:~%")
+    (when kill-names
+      (format *error-output* "~ckill [~{ %~a~} ]~%" #\Tab kill-names))
+    (format *error-output* "~csums ~d/~d/~d (killed/fused/total)~%~%~a"
+            #\Tab freed fused total (print-fn-to-string fn)))
+  fn)
