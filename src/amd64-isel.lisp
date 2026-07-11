@@ -85,7 +85,7 @@
 
 (defun rslot (r)
   "The stack slot of R if it is a fast-local temp, else NIL (amd64/isel.c rslot)."
-  (and (tmp-p r) (>= (tmp-slot r) 0) (tmp-slot r)))
+  (and (tmp-p r) (/= (tmp-slot r) -1) (tmp-slot r)))
 
 (defun hascon (r)
   "The con backing operand R (RCon -> itself, RMem -> its offset), else NIL."
@@ -348,12 +348,12 @@
       (setf ri (adisp co tn ri fn s))
       (setf (mem-offset a) co (mem-base a) rb (mem-index a) ri (mem-scale a) s)
       ;; a stack slot can only be the base, and only at scale 1
-      (when (and (tmp-p ri) (>= (tmp-slot ri) 0))
-        (when (or (/= (mem-scale a) 1) (and (tmp-p rb) (>= (tmp-slot rb) 0)))
+      (when (and (tmp-p ri) (/= (tmp-slot ri) -1))
+        (when (or (/= (mem-scale a) 1) (and (tmp-p rb) (/= (tmp-slot rb) -1)))
           (return-from amatch nil))
         (setf (mem-base a) ri (mem-index a) rb))
       (let ((b (mem-base a)))
-        (when (and (tmp-p b) (>= (tmp-slot b) 0))
+        (when (and (tmp-p b) (/= (tmp-slot b) -1))
           (setf (mem-base a) (make-slot-ref (tmp-slot b)))))
       t)))
 
@@ -392,13 +392,13 @@
         (emit :salloc :l rt r0 nil)
         (emit :and :l r0 r1 (getcon -16 fn))
         (emit :add :l r1 rs (getcon 15 fn))
-        (when (and (tmp-p rs) (>= (tmp-slot rs) 0))
+        (when (and (tmp-p rs) (/= (tmp-slot rs) -1))
           (abi-unsupported "unlikely alloc argument")))))
 
 ;;; --------------------------------------------------------------------- sel
 
 (defparameter *sel-passthrough*
-  '(:copy :add :sub :neg :mul :and :or :xor
+  '(:copy :add :sub :neg :mul :and :or :xor :xtest
     :stosi :dtosi :swtof :sltof :exts :truncd :cast
     :extsb :extub :extsh :extuh :extsw :extuw :call :dbgloc :salloc))
 
@@ -657,18 +657,52 @@
 (defun ispow2 (v) (and (> v 0) (zerop (logand v (1- v)))))
 (defun ulog2 (v) (1- (integer-length v)))
 
+(defparameter *blit-tbl*
+  '((:storel :load :l 8) (:storew :load :w 4) (:storeh :loaduh :w 2) (:storeb :loadub :w 1)))
+
+(defun simpl-blit (blit0 sz fn)
+  "simpl.c blit: expand a struct copy of SZ bytes (src=arg0, dst=arg1 of BLIT0)
+   into a descending run of load/store pairs (negative SZ = overlapping/backward)."
+  (let* ((src (ins-arg0 blit0)) (dst (ins-arg1 blit0))
+         (fwd (>= sz 0)) (asz (abs sz)) (off (if fwd asz 0)))
+    (dolist (entry *blit-tbl*)
+      (destructuring-bind (st ld cls n) entry
+        (loop while (>= asz n) do
+          (when fwd (decf off n))
+          (let ((r (newtmp "blt" :l fn)) (r1 (newtmp "blt" :l fn)) (ro (getcon off fn)))
+            (emit st :w nil r r1)
+            (emit :add :l r1 dst ro)
+            (setf r1 (newtmp "blt" :l fn))
+            (emit ld cls r r1 nil)
+            (emit :add :l r1 src ro))
+          (unless fwd (incf off n))
+          (decf asz n))))))
+
 (defun simpl (fn)
+  "simpl.c simpl (backward emit): expand blits into load/store runs and rewrite
+   unsigned div/rem by a power of two into shr/and."
   (dolist (b (fn-blocks fn))
-    (dolist (i (blk-ins b))
-      (when (and (member (ins-op i) '(:udiv :urem))
-                 (= 0 (cls-base (ins-cls i)))
-                 (con-p (ins-arg1 i)) (eq (con-kind (ins-arg1 i)) :bits)
-                 (null (con-flt (ins-arg1 i)))
-                 (ispow2 (con-value (ins-arg1 i))))
-        (let ((n (ulog2 (con-value (ins-arg1 i)))))
-          (if (eq (ins-op i) :urem)
-              (setf (ins-op i) :and (ins-arg1 i) (getcon (1- (ash 1 n)) fn))
-              (setf (ins-op i) :shr (ins-arg1 i) (getcon n fn))))))))
+    (let ((vec (coerce (blk-ins b) 'vector)) (*emitted* nil) (new nil))
+      (let ((k (length vec)))
+        (loop while (> k 0) do
+          (decf k)
+          (let ((i (aref vec k)))
+            (cond
+              ((eq (ins-op i) :blit1)
+               (unless new
+                 (setf *emitted* (coerce (subseq vec (1+ k) (length vec)) 'list) new t))
+               (simpl-blit (aref vec (1- k)) (ins-arg0 i) fn)
+               (decf k))
+              ((and (member (ins-op i) '(:udiv :urem)) (= 0 (cls-base (ins-cls i)))
+                    (con-p (ins-arg1 i)) (eq (con-kind (ins-arg1 i)) :bits)
+                    (null (con-flt (ins-arg1 i))) (ispow2 (con-value (ins-arg1 i))))
+               (let ((n (ulog2 (con-value (ins-arg1 i)))))
+                 (if (eq (ins-op i) :urem)
+                     (setf (ins-op i) :and (ins-arg1 i) (getcon (1- (ash 1 n)) fn))
+                     (setf (ins-op i) :shr (ins-arg1 i) (getcon n fn))))
+               (when new (push i *emitted*)))
+              (t (when new (push i *emitted*)))))))
+      (when new (setf (blk-ins b) *emitted*)))))
 
 ;;; --------------------------------------------------------------------- driver
 

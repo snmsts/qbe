@@ -225,5 +225,25 @@ export function w $main() {
   ret %r
 }" 100)
 
+;; --- abi B2: pass a 16-byte struct by value (2 integer eightbytes) ---
+(check "struct-arg" "type :pair = { l, l }
+export function l $sum(:pair %p) {
+@start
+  %a =l loadl %p
+  %p8 =l add %p, 8
+  %b =l loadl %p8
+  %r =l add %a, %b
+  ret %r
+}
+export function l $main() {
+@start
+  %s =l alloc8 16
+  storel 30, %s
+  %s8 =l add %s, 8
+  storel 12, %s8
+  %r =l call $sum(:pair %s)
+  ret %r
+}" 42)
+
 (format t "~&=== M4 e2e (full backend -> run) ===~%  ~d passed, ~d failed~%" *pass* *fail*)
 (sb-ext:exit :code (if (zerop *fail*) 0 1))
