@@ -76,7 +76,7 @@
       (let ((tm (aref tmps tid)))
         (setf (tmp-def tm) nil (tmp-bid tm) -1 (tmp-ndef tm) 0
               (tmp-nuse tm) 0 (tmp-cls tm) :w (tmp-phi tm) nil
-              (tmp-width tm) :full (tmp-use tm) nil)))
+              (tmp-width tm) 0 (tmp-use tm) nil)))
     (flet ((adduse (tm type b payload)
              (incf (tmp-nuse tm))
              (push (make-use-rec type (blk-id b) payload) (tmp-use tm))))
@@ -100,7 +100,8 @@
               (let* ((tid (tmp-id to)) (tm (aref tmps tid)))
                 (setf (tmp-def tm) i (tmp-bid tm) (blk-id b))
                 (incf (tmp-ndef tm))
-                (setf (tmp-cls tm) (ins-cls i)))))
+                (setf (tmp-cls tm) (ins-cls i))
+                (setf (tmp-width tm) (def-width (ins-op i) (ins-cls i))))))
           (when (tmp-p (ins-arg0 i)) (adduse (aref tmps (tmp-id (ins-arg0 i))) :ins b i))
           (when (tmp-p (ins-arg1 i)) (adduse (aref tmps (tmp-id (ins-arg1 i))) :ins b i)))
         (let ((ja (blk-jmp-arg b)))

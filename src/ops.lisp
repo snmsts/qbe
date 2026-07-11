@@ -273,3 +273,27 @@ pre-isel.)")
   "Class of arg N (0/1) of an OP whose result class is CLS (mirrors argcls())."
   (aref (if (zerop n) (opdesc-argcls0 (opdesc op)) (opdesc-argcls1 (opdesc op)))
         (cls-idx cls)))
+
+;;; ---------------------------------------------------------- width lattice
+;;; copy.c width analysis: a temp's `width` records the narrowest signed/
+;;; unsigned byte/half/word range its definition guarantees.
+;;;   0=WFull 1=Wsb 2=Wub 3=Wsh 4=Wuh 5=Wsw 6=Wuw
+(defparameter *ext-ops*     #(:extsb :extub :extsh :extuh :extsw :extuw))
+(defparameter *load-bh-ops* #(:loadsb :loadub :loadsh :loaduh :loadsw :loaduw))
+(defparameter *par-bh-ops*  #(:parsb :parub :parsh :paruh))
+(defparameter *cmp-ops*
+  '(:ceqw :cnew :csgew :csgtw :cslew :csltw :cugew :cugtw :culew :cultw
+    :ceql :cnel :csgel :csgtl :cslel :csltl :cugel :cugtl :culel :cultl
+    :ceqs :cges :cgts :cles :clts :cnes :cos :cuos
+    :ceqd :cged :cgtd :cled :cltd :cned :cod :cuod))
+(defun iscmp-op (op) (and (member op *cmp-ops*) t))
+
+(defun def-width (op cls)
+  "copy.c filluse: the width class implied by defining OP with result CLS."
+  (let ((w (cond ((position op *par-bh-ops*)  (1+ (position op *par-bh-ops*)))
+                 ((position op *load-bh-ops*) (1+ (position op *load-bh-ops*)))
+                 ((position op *ext-ops*)     (1+ (position op *ext-ops*)))
+                 ((iscmp-op op) 2)             ; Wub
+                 (t 0))))
+    ;; a signed/unsigned WORD range in a Kw result is just full width
+    (if (and (member w '(5 6)) (eq cls :w)) 0 w)))

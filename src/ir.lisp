@@ -85,7 +85,8 @@
 (defclass phi ()
   ((to   :initarg :to   :accessor phi-to)
    (cls  :initarg :cls  :accessor phi-cls)
-   (args :initarg :args :accessor phi-args)))  ; list of (blk . ref)
+   (args :initarg :args :accessor phi-args)   ; list of (blk . ref)
+   (visit :initform 0   :accessor phi-visit))) ; scratch for copy.c width analysis
 
 (defstruct (tmp (:constructor make-tmp (name &optional id)))
   name
@@ -98,7 +99,7 @@
   (nuse  0)
   (use   nil)               ; list of use-rec
   (phi   nil)               ; phi-class union-find parent (temp id), or NIL
-  (width :full)
+  (width 0)                 ; copy.c width lattice: 0=WFull, 1..6=W{s,u}{b,h,w}
   (gcmbid -1)               ; GCM target block rpo id (-1 = NOBID)
   (visit nil)               ; SSA-rename tag / GCM visited flag; rega: reg or -1
   ;; backend (spill/rega): spill cost, stack slot, and register hint

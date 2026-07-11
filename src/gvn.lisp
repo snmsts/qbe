@@ -85,17 +85,99 @@
   (setf (ins-op i) :nop (ins-cls i) :w (ins-to i) nil (ins-arg0 i) nil (ins-arg1 i) nil))
 
 ;;; ----------------------------------------------------------- copyref
-;;; copy.c copyref, core cases (width-analysis/zeroval/and-mask deferred).
+;;; ----------------------------------------------------- copy.c width analysis
+;;; usewidthle: do all uses of R read only its low W bits?  defwidthle: does
+;;; R's definition guarantee only W significant bits?  Both drive copyref's
+;;; extension elision (an ext that re-narrows an already-narrow value is a copy).
+;;; phi.visit is scratch (reset after each query, mirroring copy.c visit()).
+
+(defun bitwidth (v) (integer-length (u64* v)))   ; copy.c bitwidth (unsigned)
+
+(defparameter *ext-descr*    ; per *ext-ops* index: (zext nopw usew)
+  #((0 7 8) (1 8 8) (0 15 16) (1 16 16) (0 31 32) (1 32 32)))
+(defun ext-descr (op)
+  "(values zext nopw usew) if OP is an extension, else NIL."
+  (let ((idx (position op *ext-ops*)))
+    (when idx (values-list (aref *ext-descr* idx)))))
+
+(defparameter *extcpy* (vector 0 42 84 40 80 32 64)
+  "copy.c extcpy: per source width, the set of ext ops (BIT(Wxx)) that are copies.")
+
+(defun phi-visit-reset (fn)
+  (dolist (b (fn-blocks fn)) (dolist (p (blk-phis b)) (setf (phi-visit p) 0))))
+
+(defun uwl (fn r w)
+  "copy.c uwl: recursively, do all uses of temp R read only its low W bits?"
+  (dolist (u (tmp-use r) t)
+    (block cont
+      (case (use-rec-type u)
+        (:phi (let ((p (use-rec-payload u)))
+                (when (or (/= (phi-visit p) 0) (null (phi-to p))) (return-from cont))
+                (setf (phi-visit p) 1)
+                (when (uwl fn (phi-to p) w) (return-from cont))))
+        (:ins (let ((i (use-rec-payload u)))
+                (when (and (eq (ins-op i) :copy) (uwl fn (ins-to i) w)) (return-from cont))
+                (multiple-value-bind (z nopw usew) (ext-descr (ins-op i))
+                  (declare (ignore z nopw))
+                  (when usew
+                    (when (<= usew w) (return-from cont))
+                    (when (uwl fn (ins-to i) w) (return-from cont))))
+                (when (eq (ins-op i) :and)
+                  (let* ((rc (if (eq (ins-arg0 i) r) (ins-arg1 i) (ins-arg0 i)))
+                         (v (isconbits rc)))
+                    (when (and v (<= (bitwidth v) w)) (return-from cont)))))))
+      (return-from uwl nil))))
+
+(defun usewidthle (fn r w)
+  (prog1 (uwl fn r w) (phi-visit-reset fn)))
+
+(defun dwl (fn r w)
+  "copy.c dwl: does R's definition guarantee no more than W significant bits?"
+  (let ((v (isconbits r)))
+    (when (and v (<= (bitwidth v) w)) (return-from dwl t)))
+  (when (<= w 0) (return-from dwl nil))
+  (when (not (tmp-p r)) (return-from dwl nil))
+  (when (not (eq (tmp-cls r) :w)) (return-from dwl nil))
+  (let ((i (tmp-def r)))
+    (if (null i)
+        (let ((p (find r (blk-phis (aref (fn-rpo fn) (tmp-bid r))) :key #'phi-to :test #'eq)))
+          (when (and (/= (phi-visit p) 0) (<= (phi-visit p) w)) (return-from dwl t))
+          (setf (phi-visit p) w)
+          (dolist (pa (phi-args p) t)
+            (unless (dwl fn (cdr pa) w) (return-from dwl nil))))
+        (let ((op (ins-op i)) (a0 (ins-arg0 i)) (a1 (ins-arg1 i)))
+          (cond
+            ((eq op :copy) (dwl fn a0 w))
+            ((member op '(:shr :sar))
+             (let ((sv (isconbits a1)))
+               (when (and sv (< 0 sv) (<= sv 32))
+                 (when (and (eq op :shr) (>= (+ w sv) 32)) (return-from dwl t))
+                 (when (< w 32)
+                   (setf w (if (eq op :sar) (min 31 (+ w sv)) (min 32 (+ w sv)))))))
+             (dwl fn a0 w))
+            ((iscmp-op op) (>= w 1))
+            ((eq op :and) (or (dwl fn a0 w) (dwl fn a1 w)))
+            ((member op '(:or :xor)) (and (dwl fn a0 w) (dwl fn a1 w)))
+            (t (multiple-value-bind (z nopw usew) (ext-descr op)
+                 (cond ((null usew) nil)
+                       ((and (= z 1) (<= usew w)) t)
+                       (t (dwl fn a0 (min w nopw)))))))))))
+
+(defun defwidthle (fn r w)
+  (prog1 (dwl fn r w) (phi-visit-reset fn)))
+
+(defun isw1 (fn r) (defwidthle fn r 1))
+
+;;; copy.c copyref: identity/idempotent/cmp folds + extension elision.
 
 (defun copyref (fn b i)
   (let ((op (ins-op i)) (a0 (ins-arg0 i)) (a1 (ins-arg1 i)) (cls (ins-cls i)))
     (block nil
       (when (eq op :copy) (return a0))
-      ;; op identity value: x+0, x*1, x|0, ...  (integer only; the cmpeqwl `x==1`
-      ;; case needs isw1 width analysis, deferred — skip it here)
+      ;; op identity value: x+0, x*1, x|0, ... (cmpeq/ne `x==1` needs isw1)
       (when (and (op-hasid op) (= (cls-base cls) 0)
                  (eq a1 (aref *con01* (op-idval op)))
-                 (not (op-cmpeqwl op)))
+                 (or (not (op-cmpeqwl op)) (isw1 fn a0)))
         (return a0))
       ;; idempotent with identical args: x&x, x|x
       (when (and (op-idemp op) (eq a0 a1)) (return a0))
@@ -106,8 +188,27 @@
       (when (and (op-cmpeqwl op) (eq a1 (aref *con01* 0)))
         (multiple-value-bind (found z) (zeroval fn b a0 (argcls op cls 0))
           (when found (return (aref *con01* (logxor (op-eqval op) z 1))))))
+      ;; redundant and-mask: x & (2^k - 1) when x is already <= k bits
+      (let ((v (isconbits a1)))
+        (when (and (eq op :and) v (> v 0) (zerop (logand (1+ v) v))
+                   (defwidthle fn a0 (bitwidth v)))
+          (return a0)))
       ;; extsw/extuw producing a w result is a copy
       (when (and (eq cls :w) (member op '(:extsw :extuw))) (return a0))
+      ;; extension elision (the byte/half case): an ext of an already-extended
+      ;; value, or one whose result/arg widths make it a no-op
+      (multiple-value-bind (z nopw usew) (ext-descr op)
+        (declare (ignore z))
+        (when (and usew (tmp-p a0))
+          (when (> (if (kwide cls) 1 0) (if (kwide (tmp-cls a0)) 1 0))
+            (return nil))
+          (let ((w (1+ (position op *ext-ops*))))
+            (when (logtest (ash 1 w) (aref *extcpy* (tmp-width a0)))
+              (return a0)))
+          (when (and (or (null (tmp-def a0)) (not (par-op-p (ins-op (tmp-def a0)))))
+                     (usewidthle fn (ins-to i) usew))
+            (return a0))
+          (when (defwidthle fn a0 nopw) (return a0))))
       nil)))
 
 ;;; ----------------------------------------------------------- foldref
@@ -390,9 +491,19 @@
         (if (and (null rest) (par-op-p (ins-op i))) (push i pars) (push i rest)))
       (setf pars (nreverse pars) rest (nreverse rest))
       (when pars
-        (let ((slots (mapcar (lambda (i) (declare (ignore i))
-                               (make-instance 'ins :op :nop))
-                             pars)))
+        ;; a Kw param used only in its low 16 (or 8) bits gets an early extuh/
+        ;; extub, so extensions inside loops become redundant (copy.c narrowpars)
+        (let ((slots (mapcar
+                      (lambda (i)
+                        (if (and (eq (ins-cls i) :w) (usewidthle fn (ins-to i) 16))
+                            (let* ((op (if (usewidthle fn (ins-to i) 8) :extub :extuh))
+                                   (r (newtmp "vw" (ins-cls i) fn))
+                                   (ext (make-instance 'ins :op op :cls (ins-cls i)
+                                                       :to (ins-to i) :arg0 r :arg1 nil)))
+                              (setf (ins-to i) r)
+                              ext)
+                            (make-instance 'ins :op :nop)))
+                      pars)))
           (setf (blk-ins start) (append pars slots rest)))))))
 
 ;;; ---------------------------------------------------------- dedupjmp
