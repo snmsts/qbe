@@ -423,10 +423,54 @@
   "gcm.c pinned(): optab pinned flag OR an integer div/rem."
   (or (op-pinned (ins-op i)) (isdivwl i)))
 
+;;; gvn.c assoccon: reassociate `(x op c2) op c1` into `x op (c1 fold c2)` for
+;;; an associative integer op (sub normalized to add), folding the two constants.
+;;; The inner op becomes dead (removed by later DCE); a following copyref turns
+;;; a resulting `x + 0` into a plain copy.
+
+(defun negcon (w c)
+  "0 - C via foldint; returns the negated con, or NIL if it cannot fold."
+  (multiple-value-bind (ok x typ sym symt)
+      (foldint :sub w (make-con :kind :bits :value 0) c)
+    (when ok
+      (if (eq typ :addr)
+          (make-con :kind :addr :symname sym :symtype symt :off (norm-i64 x))
+          (make-con :kind :bits :value (norm-i64 x))))))
+
+(defun assoccon (fn b i1)
+  (let ((op (ins-op i1)))
+    (when (eq op :sub) (setf op :add))
+    (when (and (op-assoc op) (= (cls-base (ins-cls i1)) 0)
+               (tmp-p (ins-arg0 i1)) (con-p (ins-arg1 i1)))
+      (let* ((c1 (ins-arg1 i1)) (i2 (tmp-def (ins-arg0 i1))) (w (kwide (ins-cls i1))))
+        (when (and i2 (con-p (ins-arg1 i2))
+                   (eq op (if (eq (ins-op i2) :sub) :add (ins-op i2))))
+          (let ((c2 (ins-arg1 i2)))
+            (when (eq (ins-op i1) :sub)
+              (setf c1 (negcon w c1)) (unless c1 (return-from assoccon)))
+            (when (eq (ins-op i2) :sub)
+              (setf c2 (negcon w c2)) (unless c2 (return-from assoccon)))
+            (multiple-value-bind (ok x typ sym symt) (foldint op w c1 c2)
+              (unless ok (return-from assoccon))
+              (let ((cc (if (eq typ :addr)
+                            (make-con :kind :addr :symname sym :symtype symt :off (norm-i64 x))
+                            (make-con :kind :bits :value (norm-i64 x)))))
+                (when (and (eq op :add) (eq typ :bits)
+                           (< (if w (s64* x) (s32* x)) 0))
+                  (setf cc (negcon w cc) op :sub))
+                (setf (ins-op i1) op
+                      (ins-arg0 i1) (ins-arg0 i2)
+                      (ins-arg1 i1) (newcon cc fn))
+                (when (tmp-p (ins-arg0 i1))
+                  (incf (tmp-nuse (ins-arg0 i1)))
+                  (push (make-use-rec :ins (blk-id b) i1)
+                        (tmp-use (ins-arg0 i1))))))))))))
+
 (defun dedupins (fn b i)
   (normins fn i)
   (when (or (eq (ins-op i) :nop) (pinned-ins i))
     (return-from dedupins))
+  (assoccon fn b i)
   (let ((r (copyref fn b i)))
     (when r (killins fn i r) (return-from dedupins)))
   (let ((r (foldref fn i)))
