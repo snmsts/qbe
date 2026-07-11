@@ -330,8 +330,91 @@
         (logior fa (ash (* s 4) 12))))))
 
 
+;;; ------------------------------------------------------------------ vararg
+;;; sysv.c split/chpred/selvastart/selvaarg: lower va_start and va_arg.  va_arg
+;;; splits its block into a register-save-area path and an overflow path joined
+;;; by a phi (`split` flushes the current emit buffer into a fresh block).
+
+(defun abi-chpred (b bp bp1)
+  "sysv.c chpred: rename predecessor BP to BP1 in B's phis."
+  (dolist (p (blk-phis b))
+    (let ((cell (assoc bp (phi-args p) :test #'eq)))
+      (when cell (setf (car cell) bp1)))))
+
+(defun abi-split (fn b)
+  "sysv.c split: make the current emit buffer a fresh block linked after B."
+  (incf (fn-nblk fn))
+  (let ((bn (make-instance 'blk)))
+    (setf (blk-ins bn) *emitted* *emitted* nil)
+    (incf (blk-visit b))
+    (setf (blk-visit bn) (blk-visit b)
+          (blk-name bn) (format nil "~a.~d" (blk-name b) (blk-visit b))
+          (blk-loop bn) (blk-loop b)
+          (blk-link bn) (blk-link b) (blk-link b) bn)
+    (let ((cell (member b (fn-blocks fn) :test #'eq)))
+      (setf (cdr cell) (cons bn (cdr cell))))
+    bn))
+
+(defun sel-vastart (fn fa ap)
+  "sysv.c selvastart: initialise the va_list at AP (gp/fp/overflow pointers)."
+  (let ((gp (* (logand (ash fa -4) 15) 8))
+        (fp (+ 48 (* (logand (ash fa -8) 15) 16)))
+        (sp (ash fa -12)))
+    (let ((r0 (newtmp "abi" :l fn)) (r1 (newtmp "abi" :l fn)))
+      (emit :storel :w nil r1 r0)
+      (emit :add :l r1 (rg 15) (getcon -176 fn))     ; RBP - 176 (reg save area)
+      (emit :add :l r0 ap (getcon 16 fn)))
+    (let ((r0 (newtmp "abi" :l fn)) (r1 (newtmp "abi" :l fn)))
+      (emit :storel :w nil r1 r0)
+      (emit :add :l r1 (rg 15) (getcon sp fn))
+      (emit :add :l r0 ap (getcon 8 fn)))
+    (let ((r0 (newtmp "abi" :l fn)))
+      (emit :storew :w nil (getcon fp fn) r0)
+      (emit :add :l r0 ap (getcon 4 fn)))
+    (emit :storew :w nil (getcon gp fn) ap)))
+
+(defun sel-vaarg (fn b i)
+  "sysv.c selvaarg: lower va_arg, splitting B into reg/stack paths + a phi."
+  (let* ((ap (ins-arg0 i)) (isint (= (cls-base (ins-cls i)) 0))
+         (c4 (getcon 4 fn)) (c8 (getcon 8 fn)) (c16 (getcon 16 fn))
+         (z (getcon 0 fn)) (loc (newtmp "abi" :l fn)))
+    (emit :load (ins-cls i) (ins-to i) loc nil)
+    (let ((b0 (abi-split fn b)))
+      (setf (blk-jmp-type b0) (blk-jmp-type b) (blk-jmp-arg b0) (blk-jmp-arg b)
+            (blk-s1 b0) (blk-s1 b) (blk-s2 b0) (blk-s2 b))
+      (when (blk-s1 b) (abi-chpred (blk-s1 b) b b0))
+      (when (and (blk-s2 b) (not (eq (blk-s2 b) (blk-s1 b)))) (abi-chpred (blk-s2 b) b b0))
+      (let ((lreg (newtmp "abi" :l fn)) (nr (newtmp "abi" :l fn))
+            (r0 (newtmp "abi" :w fn)) (r1 (newtmp "abi" :l fn)))
+        (emit :storew :w nil r0 r1)
+        (emit :add :l r1 ap (if isint z c4))
+        (emit :add :w r0 nr (if isint c8 c16))
+        (let ((r0b (newtmp "abi" :l fn)) (r1b (newtmp "abi" :l fn)))
+          (emit :add :l lreg r1b nr)
+          (emit :load :l r1b r0b nil)
+          (emit :add :l r0b ap c16))
+        (let ((breg (abi-split fn b)))
+          (setf (blk-jmp-type breg) :jmp (blk-s1 breg) b0 (blk-s2 breg) nil)
+          (let ((lstk (newtmp "abi" :l fn)) (r0 (newtmp "abi" :l fn)) (r1 (newtmp "abi" :l fn)))
+            (emit :storel :w nil r1 r0)
+            (emit :add :l r1 lstk c8)
+            (emit :load :l lstk r0 nil)
+            (emit :add :l r0 ap c8)
+            (let ((bstk (abi-split fn b)))
+              (setf (blk-jmp-type bstk) :jmp (blk-s1 bstk) b0 (blk-s2 bstk) nil)
+              (setf (blk-phis b0)
+                    (list (make-instance 'phi :to loc :cls :l
+                                         :args (list (cons bstk lstk) (cons breg lreg)))))
+              (let ((r0 (newtmp "abi" :l fn)) (r1 (newtmp "abi" :w fn)))
+                (setf (blk-jmp-type b) :jnz (blk-jmp-arg b) r1
+                      (blk-s1 b) breg (blk-s2 b) bstk)
+                (emit :cultw :w r1 nr (getcon (if isint 48 176) fn))
+                (emit :loadsw :l nr r0 nil)
+                (emit :add :l r0 ap (if isint z c4))))))))))
+
 (defun amd64-abi (fn)
-  "amd64 SysV abi1 (B2: register + stack + struct + env).  Rewrites FN."
+  "amd64 SysV abi1 (B2: register + stack + struct + env + vararg).  Rewrites FN."
+  (dolist (b (fn-blocks fn)) (setf (blk-visit b) 0))
   (let ((*abi-ral* nil) (*abi-fa* 0))
     ;; 1. lower parameters
     (let* ((start (fn-start fn)) (pars '()) (rest nil))
@@ -356,8 +439,8 @@
                    (loop while (and (> i0 0) (arg-op-p (ins-op (aref vec (1- i0))))) do (decf i0))
                    (sel-call fn (coerce (subseq vec i0 k) 'list) i)
                    (setf k i0)))
-                ((eq (ins-op i) :vastart) (abi-unsupported "vararg vastart"))
-                ((eq (ins-op i) :vaarg) (abi-unsupported "vararg vaarg"))
+                ((eq (ins-op i) :vastart) (sel-vastart fn *abi-fa* (ins-arg0 i)))
+                ((eq (ins-op i) :vaarg) (sel-vaarg fn b i))
                 (t (push i *emitted*)))))
           (when (eq b start)
             (dolist (ra *abi-ral*) (push ra *emitted*)))
