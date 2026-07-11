@@ -29,6 +29,8 @@
    #:promote
    ;; gvn (M2/C3)
    #:gvn #:normins #:getcon #:isconbits
+   ;; load elimination + alias analysis (C1)
+   #:fill-alias #:loadopt
    ;; amd64 abi lowering (M3/B1)
    #:amd64-abi #:amd64-isel #:simpl #:reg #:reg-p #:reg-id #:call-ref #:call-ref-p #:slot-ref-p
    ;; backend (M4): register materialization, liveness, spill costs

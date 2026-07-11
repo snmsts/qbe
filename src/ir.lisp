@@ -106,7 +106,8 @@
   (slot -1)                 ; assigned stack slot, -1 = unset
   (hint-r -1)               ; preferred register, -1 = none
   (hint-w 0)                ; hint weight (loop level of last set)
-  (hint-m 0))               ; bitmask of registers to avoid
+  (hint-m 0)                ; bitmask of registers to avoid
+  (alias nil))              ; alias analysis (alias.c); filled by fill-alias
 
 (defstruct (use-rec (:constructor make-use-rec (type bid payload)))
   type                       ; :phi :ins :jmp
