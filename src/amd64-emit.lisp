@@ -146,7 +146,9 @@
                    (+ (* 4 (- s)) -8 (es-fsz e) (* (es-nclob e) 8))
                    (* 4 (- s))))
       ((= (es-fp e) +rsp+) (+ (* 4 s) (* (es-nclob e) 8)))
-      ((fn-vararg fn) (* -4 (- (fn-slot fn) s)))
+      ;; vararg frames put the 176-byte register-save area below rbp, so locals
+      ;; sit below that (emit.c slot: -176 + -4*(slot-s))
+      ((fn-vararg fn) (+ -176 (* -4 (- (fn-slot fn) s))))
       (t (* -4 (- (fn-slot fn) s))))))
 
 (defparameter *clstoa* #("l" "q" "ss" "sd"))   ; %k by cls w/l/s/d
