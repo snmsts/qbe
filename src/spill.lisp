@@ -67,8 +67,10 @@ spill the rest (spill.c limit)."
         (if (null f)
             (setf tarr (stable-sort tarr #'tcmp0-lt))
             (progn (setf *sp-fst* f) (setf tarr (stable-sort tarr #'tcmp1-lt)))))
-      (loop for j from 0 below (min k nt) do (bs-set bs (aref tarr j)))
-      (loop for j from (min k nt) below nt do (sp-slot (aref tarr j))))))
+      ;; k may be negative (n-(l-j) at a loop header): spill everything then.
+      (let ((lim (max 0 (min k nt))))
+        (loop for j from 0 below lim do (bs-set bs (aref tarr j)))
+        (loop for j from lim below nt do (sp-slot (aref tarr j)))))))
 
 (defun sp-limit2 (b1 k1 k2 f)
   "spill.c limit2: split B1 by class, limit gp to ngpr-k1 and fp to nfpr-k2."
