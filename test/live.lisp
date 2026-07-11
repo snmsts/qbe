@@ -102,11 +102,15 @@ here, mirroring QBE which dumps -dL inside filllive)."
         (format s "~C          live: ~d ~d~%" #\Tab (first nl) (second nl))))))
 
 (defun our-ds-costs (fn)
-  "Reproduce -dS's `> Spill costs:` body for FN (user temps, id order)."
+  "Reproduce -dS's `> Spill costs:` body for FN (user temps, id order).  QBE's
+   Tmp.cost is a uint32 printed with %d, so a cost that overflows 2^32 (deeply
+   nested loops: 10^depth) wraps; mirror that at display (our cost is a bignum)."
   (with-output-to-string (s)
     (loop for tid from qbe:+tmp0+ below (qbe:fn-ntmp fn)
           for tm = (aref (qbe:fn-tmp fn) tid)
-          do (format s "~C~10A ~d~%" #\Tab (qbe:tmp-name tm) (qbe::tmp-cost tm)))))
+          for c = (logand (qbe::tmp-cost tm) #xffffffff)
+          do (format s "~C~10A ~d~%" #\Tab (qbe:tmp-name tm)
+                     (if (>= c #x80000000) (- c #x100000000) c)))))
 
 (defun diff-file (ssa-path)
   "(values dl-raw dl-norm ds-raw ds-norm supported unsupported total)."
