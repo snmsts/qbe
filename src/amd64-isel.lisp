@@ -116,12 +116,13 @@
       ;; [D] load a fast local's address into a temporary right before the use
       (s
        (let ((tm (newtmp "isel" :l fn))) (emit :addr :l tm (make-slot-ref s) nil) tm))
-      ;; [E] extern / thread-local symbols need GOT/TLS access (later slice)
+      ;; [E] extern symbols need GOT access (sysv: only SExt; thread-local
+      ;; SThr falls through to [F] and is relocated at emit time).  No corpus
+      ;; function uses extern *data*, so the GOT lowering itself is deferred.
       ((and (not (eq op :call)) (hascon r)
             (eq (con-kind (hascon r)) :addr)
-            (or (member :ext (con-symtype (hascon r)))
-                (member :thr (con-symtype (hascon r)))))
-       (abi-unsupported "extern/thread-local address operand"))
+            (member :ext (con-symtype (hascon r))))
+       (abi-unsupported "extern (GOT) address operand"))
       ;; [F] turn a (local) address operand into an lea/mov into a temporary
       ((and (con-p r) (eq (con-kind r) :addr)
             (not (eq op :call)) (not (isload-op op))
