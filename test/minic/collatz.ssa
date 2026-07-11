@@ -1,0 +1,86 @@
+export function w $main() {
+@l0
+	%n =l alloc4 4
+	%nv =l alloc4 4
+	%c =l alloc4 4
+	%cmax =l alloc4 4
+	%mem =l alloc8 8
+	%t2 =w mul 4, 4000
+	%t1 =l call $malloc(w %t2, ...)
+	storel %t1, %mem
+	storew 0, %cmax
+	storew 1, %nv
+@l1
+	%t10 =w loadw %nv
+	%t9 =w csltw %t10, 1000
+	jnz %t9, @l2, @l3
+@l2
+	%t13 =w loadw %nv
+	storew %t13, %n
+	storew 0, %c
+@l4
+	%t17 =w loadw %n
+	%t16 =w cnew %t17, 1
+	jnz %t16, @l5, @l6
+@l5
+	%t20 =w loadw %n
+	%t21 =w loadw %nv
+	%t19 =w csltw %t20, %t21
+	jnz %t19, @l7, @l8
+@l7
+	%t24 =w loadw %c
+	%t27 =l loadl %mem
+	%t28 =w loadw %n
+	%t29 =l extsw %t28
+	%t30 =l mul 4, %t29
+	%t26 =l add %t27, %t30
+	%t25 =w loadw %t26
+	%t23 =w add %t24, %t25
+	storew %t23, %c
+	jmp @l6
+@l8
+	%t32 =w loadw %n
+	%t31 =w and %t32, 1
+	jnz %t31, @l10, @l11
+@l10
+	%t38 =w loadw %n
+	%t36 =w mul 3, %t38
+	%t35 =w add %t36, 1
+	storew %t35, %n
+	jmp @l12
+@l11
+	%t42 =w loadw %n
+	%t41 =w div %t42, 2
+	storew %t41, %n
+@l12
+	%t45 =w loadw %c
+	%t44 =w add %t45, 1
+	storew %t44, %c
+	jmp @l4
+@l6
+	%t47 =w loadw %c
+	%t49 =l loadl %mem
+	%t50 =w loadw %nv
+	%t51 =l extsw %t50
+	%t52 =l mul 4, %t51
+	%t48 =l add %t49, %t52
+	storew %t47, %t48
+	%t54 =w loadw %cmax
+	%t55 =w loadw %c
+	%t53 =w csltw %t54, %t55
+	jnz %t53, @l13, @l14
+@l13
+	%t57 =w loadw %c
+	storew %t57, %cmax
+@l14
+	%t59 =w loadw %nv
+	%t58 =w add %t59, 1
+	storew %t58, %nv
+	jmp @l1
+@l3
+	%t62 =w loadw %cmax
+	%t60 =w call $printf(l $glo1, w %t62, ...)
+	ret 0
+}
+
+data $glo1 = { b "should print 178: %d\n", b 0 }
