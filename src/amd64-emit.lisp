@@ -93,7 +93,7 @@
 
 (defun be-emitcon (con e)
   (ecase (con-kind con)
-    (:bits (es-out e "~d" (con-value con)))
+    (:bits (es-out e "~d" (con-rawbits con)))   ; raw bits (a stored fp const)
     (:addr (write-string (con-symname con) (es-stream e))
            (unless (zerop (con-off con)) (es-out e "~@d" (con-off con))))))
 
@@ -197,6 +197,9 @@
       ((eq op :neg) (be-emit-neg i e))
       ((eq op :div) (be-emit-div i e))
       ((eq op :call) (be-emit-call i e))
+      ((eq op :salloc)                    ; dynamic stack alloc: rsp -= size
+       (be-emitf "subq %L0, %%rsp" i e)
+       (when (ins-to i) (be-emitcopy (ins-to i) (rg +rsp+) :l e)))
       ((eq op :swap) (be-emit-swap i e))
       ((find op *xsel-ops*) (be-emit-xsel i e))
       ((gethash op *flag-op-code*)
@@ -293,6 +296,10 @@
 
 (defun be-emit-epilogue (e)
   (let ((s (es-stream e)) (fn (es-fn e)))
+    ;; a dynalloc function moved rsp; restore it to the fixed frame before leave
+    (when (fn-dynalloc fn)
+      (format s "~Cmovq %rbp, %rsp~%~Csubq $~d, %rsp~%" #\Tab #\Tab
+              (+ (es-fsz e) (* (es-nclob e) 8))))
     (loop for k from (1- (length *rclob*)) downto 0
           for rc = (aref *rclob* k)
           when (logbitp rc (fn-reg fn))
@@ -392,6 +399,26 @@
               (3 (format stream "~%~c.quad ~d~%~%" #\Tab (car b)))
               (2 (format stream "~%~c.int ~d~%~%" #\Tab (s32* (car b)))))))))))
 
+(defun be-emit-data (d s)
+  "Emit one data definition (emit.c emitdat / emitlnk), everything to .data."
+  (format s (if (dat-thread d) ".section .tdata,\"awT\",@progbits~%" ".data~%"))
+  (format s ".balign ~d~%" (dat-align d))
+  (when (dat-export d) (format s ".globl ~a~%" (dat-name d)))
+  (format s "~a:~%" (dat-name d))
+  (dolist (it (dat-items d))
+    (ecase (first it)
+      (:int (destructuring-bind (size value) (rest it)
+              (let ((decl (ecase size (1 ".byte") (2 ".short") (4 ".int") (8 ".quad")))
+                    (v (if (= size 8) (norm-i64 value)
+                           (logand value (1- (ash 1 (* 8 size)))))))
+                (format s "~C~a ~d~%" #\Tab decl v))))
+      (:str (format s "~C.ascii ~a~%" #\Tab (second it)))
+      (:ref (destructuring-bind (size name off) (rest it)
+              (format s "~C~a ~a~@[~a~]~%" #\Tab (if (= size 8) ".quad" ".int") name
+                      (unless (zerop off) (format nil "~@d" off)))))
+      (:zero (format s "~C.zero ~d~%" #\Tab (second it)))))
+  (format s "~%"))
+
 (defun be-emit-module (module)
   "Run the backend per function and return the module's amd64 assembly string."
   (let ((s (make-string-output-stream)) (id0 0))
@@ -400,6 +427,7 @@
     (dolist (fn (module-funcs module))
       (be-backend-pipeline fn)
       (setf id0 (be-emit-fn fn s id0)))
+    (dolist (d (module-data module)) (be-emit-data d s))
     (emit-fin s)
     (format s ".section .note.GNU-stack,\"\",@progbits~%")
     (get-output-stream-string s)))

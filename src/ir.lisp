@@ -17,7 +17,14 @@
   ((funcs :initform nil :accessor module-funcs
           :documentation "Functions, in source order.")
    (types :initform (make-hash-table :test 'equal) :accessor module-types
-          :documentation "Aggregate type name -> typ.")))
+          :documentation "Aggregate type name -> typ.")
+   (data  :initform nil :accessor module-data
+          :documentation "Data definitions, in source order.")))
+
+;;; A `data $name = [align N] { items }` definition (parse.c Dat).  Each item is
+;;; a list: (:int size value) | (:str "quoted") | (:ref size name off) | (:zero n).
+(defstruct (dat (:constructor make-dat))
+  name export thread (align 8) items)
 
 (defclass typ ()
   ((name    :initarg :name :accessor typ-name)

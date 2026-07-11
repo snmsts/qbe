@@ -164,17 +164,19 @@
   (let ((l (make-lexer text))
         (mod (make-instance 'module)))
     (loop
-      (let ((export nil) tok)
+      (let ((export nil) (thread nil) tok)
         ;; leading linkage
         (loop
           (setf tok (lx-pop-nn l))
           (cond
             ((eq (car tok) :eof) (return-from parse-string
                                    (progn (setf (module-funcs mod)
-                                                (nreverse (module-funcs mod)))
+                                                (nreverse (module-funcs mod))
+                                                (module-data mod)
+                                                (nreverse (module-data mod)))
                                           mod)))
             ((word= tok "export") (setf export t))
-            ((word= tok "thread"))        ; linkage flags we don't model at M0
+            ((word= tok "thread") (setf thread t))
             ((word= tok "common"))
             ((word= tok "section")        ; section "name" ["flags"]
              (expect l :str)
@@ -185,7 +187,7 @@
           ((word= tok "function")
            (push (parse-fn l mod export) (module-funcs mod)))
           ((word= tok "type")  (parse-type l mod))
-          ((word= tok "data")  (skip-braced l))
+          ((word= tok "data")  (parse-data l mod export thread))
           ((word= tok "dbgfile") (expect l :str))
           (t (error "qbe: top-level definition expected, got ~s" tok)))))))
 
@@ -263,6 +265,44 @@
          (setf (typ-fields ty) (vector (parse-fields l mod ty))
                (typ-nunion ty) 1))))
     ty))
+
+(defun single->bits (f) (ldb (byte 32 0) (sb-kernel:single-float-bits f)))
+
+(defun parse-data (l mod export thread)
+  "data $NAME = [align N] { items }  (parse.c parsedat)."
+  (let ((name (cdr (expect l :glo))) (align 8) (items '()))
+    (expect l :eq)
+    (let ((tok (lx-pop-nn l)))
+      (when (word= tok "align") (setf align (cdr (expect l :int)) tok (lx-pop-nn l)))
+      (unless (eq (car tok) :lbrace) (error "qbe: data { expected, got ~s" tok)))
+    (block done
+      (loop
+        (let ((sz-tok (lx-pop-nn l)))
+          (when (eq (car sz-tok) :rbrace) (return-from done))
+          (let ((size (cond ((or (word= sz-tok "l") (word= sz-tok "d")) 8)
+                            ((or (word= sz-tok "w") (word= sz-tok "s")) 4)
+                            ((word= sz-tok "h") 2) ((word= sz-tok "b") 1)
+                            ((word= sz-tok "z") :z)
+                            (t (error "qbe: data size spec expected, got ~s" sz-tok))))
+                (t2 (lx-pop-nn l)))
+            (loop
+              (case (car t2)
+                (:int (push (if (eq size :z) (list :zero (cdr t2)) (list :int size (cdr t2))) items))
+                (:flts (push (list :int size (single->bits (cdr t2))) items))
+                (:fltd (push (list :int size (double-bits (cdr t2))) items))
+                (:str  (push (list :str (cdr t2)) items))
+                (:glo  (let ((rn (cdr t2)) (off 0))
+                         (when (eq (car (lx-peek l)) :plus)
+                           (lx-pop l) (setf off (cdr (expect l :int))))
+                         (push (list :ref size rn off) items)))
+                (t (return)))
+              (setf t2 (lx-pop-nn l)))
+            (cond ((eq (car t2) :rbrace) (return-from done))
+                  ((eq (car t2) :comma))
+                  (t (error "qbe: , or } expected in data, got ~s" t2)))))))
+    (push (make-dat :name name :export export :thread thread :align align
+                    :items (nreverse items))
+          (module-data mod))))
 
 (defun skip-braced (l)
   "Consume tokens up to and including the matching closing brace of the
