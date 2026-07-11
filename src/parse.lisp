@@ -191,12 +191,78 @@
 
 (defun word= (tok str) (and (eq (car tok) :word) (string= (cdr tok) str)))
 
+(defun align-log2 (n)
+  "parsetyp: an alignment N (power of two) as its log2 (parse.c `/=2` loop)."
+  (integer-length (1- n)))
+
+(defun member-spec (tok mod)
+  "Map a field-member token to (values ftype size align typ-or-nil)."
+  (cond
+    ((eq (car tok) :typ)
+     (let ((ty (intern-type mod (cdr tok))))
+       (values :typ (typ-size ty) (typ-align ty) ty)))
+    ((word= tok "d") (values :d 8 3 nil))
+    ((word= tok "l") (values :l 8 3 nil))
+    ((word= tok "s") (values :s 4 2 nil))
+    ((word= tok "w") (values :w 4 2 nil))
+    ((word= tok "h") (values :h 2 1 nil))
+    ((word= tok "b") (values :b 1 0 nil))
+    (t (error "qbe: invalid type member specifier ~s" tok))))
+
+(defun parse-fields (l mod ty)
+  "parse.c parsefields: one union variant's field list; updates TY size/align.
+   Returns the variant as a vector of (ftype . len)."
+  (let ((flds '()) (sz 0) (al (typ-align ty)))
+    (loop
+      (when (eq (car (lx-peek-nn l)) :rbrace) (lx-pop-nn l) (return))
+      (multiple-value-bind (ftype s a ty1) (member-spec (lx-pop-nn l) mod)
+        (when (> a al) (setf al a))
+        ;; padding to the member's alignment
+        (let* ((am (1- (ash 1 a))) (pad (- (logand (+ sz am) (lognot am)) sz)))
+          (when (> pad 0) (push (cons :pad pad) flds))
+          (let ((c 1))
+            (when (eq (car (lx-peek-nn l)) :int) (setf c (cdr (lx-pop-nn l))))
+            (incf sz (+ pad (* c s)))
+            (dotimes (j c) (push (cons ftype (if (eq ftype :typ) ty1 s)) flds)))))
+      (let ((nxt (lx-peek-nn l)))
+        (cond ((eq (car nxt) :comma) (lx-pop-nn l))
+              ((eq (car nxt) :rbrace) (lx-pop-nn l) (return))
+              (t (error "qbe: , or } expected in type, got ~s" nxt)))))
+    (let ((a (ash 1 al)))
+      (when (< sz (typ-size ty)) (setf sz (typ-size ty)))
+      (setf (typ-size ty) (logand (+ sz a -1) (- a)) (typ-align ty) al))
+    (coerce (nreverse flds) 'vector)))
+
 (defun parse-type (l mod)
-  ;; type :NAME = [align N] { ... }
-  (let ((nm (expect l :typ)))
-    (intern-type mod (cdr nm))
+  "type :NAME = [align N] { ... }  (parse.c parsetyp)."
+  (let* ((nm (expect l :typ)) (ty (intern-type mod (cdr nm))))
+    (setf (typ-align ty) -1 (typ-size ty) 0 (typ-isdark ty) nil (typ-isunion ty) nil)
     (expect l :eq)
-    (skip-braced l)))
+    (let ((tok (lx-pop-nn l)))
+      (when (word= tok "align")
+        (let ((n (expect l :int))) (setf (typ-align ty) (align-log2 (cdr n))))
+        (setf tok (lx-pop-nn l)))
+      (unless (eq (car tok) :lbrace) (error "qbe: type body must start with {")))
+    (let ((nxt (lx-peek-nn l)))
+      (cond
+        ((eq (car nxt) :int)                     ; dark (opaque) type: { SIZE }
+         (setf (typ-isdark ty) t (typ-size ty) (cdr (lx-pop-nn l)))
+         (when (= (typ-align ty) -1) (error "qbe: dark types need alignment"))
+         (unless (eq (car (lx-pop-nn l)) :rbrace) (error "qbe: } expected")))
+        ((eq (car nxt) :lbrace)                  ; union of variants
+         (setf (typ-isunion ty) t)
+         (let ((variants '()))
+           (loop
+             (unless (eq (car (lx-peek-nn l)) :lbrace) (return))
+             (lx-pop-nn l)
+             (push (parse-fields l mod ty) variants)
+             (when (eq (car (lx-peek-nn l)) :rbrace) (lx-pop-nn l) (return)))
+           (setf (typ-fields ty) (coerce (nreverse variants) 'vector)
+                 (typ-nunion ty) (length variants))))
+        (t                                       ; single struct variant
+         (setf (typ-fields ty) (vector (parse-fields l mod ty))
+               (typ-nunion ty) 1))))
+    ty))
 
 (defun skip-braced (l)
   "Consume tokens up to and including the matching closing brace of the

@@ -20,7 +20,17 @@
           :documentation "Aggregate type name -> typ.")))
 
 (defclass typ ()
-  ((name :initarg :name :accessor typ-name)))
+  ((name    :initarg :name :accessor typ-name)
+   ;; aggregate layout (parse.c parsetyp), needed by the amd64 SysV classifier.
+   (isdark  :initform nil :accessor typ-isdark)   ; opaque (size only)
+   (isunion :initform nil :accessor typ-isunion)
+   (align   :initform -1  :accessor typ-align)    ; log2 alignment
+   (size    :initform 0   :accessor typ-size)
+   (nunion  :initform 0   :accessor typ-nunion)
+   ;; fields: vector of NUNION variants; each variant a vector of (ftype . len)
+   ;; where ftype is :b/:h/:w/:l/:s/:d/:pad/:typ and len is a byte count (or the
+   ;; referenced typ object for :typ).
+   (fields  :initform nil :accessor typ-fields)))
 
 (defclass fn ()
   ((name     :initarg :name     :accessor fn-name)

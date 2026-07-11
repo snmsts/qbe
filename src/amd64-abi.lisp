@@ -73,6 +73,44 @@
 (defun abi-unsupported (what)
   (error "qbe amd64 abi (M3/B1): unsupported ~a" what))
 
+;;; ---------------------------------------------- SysV aggregate classification
+;;; amd64/sysv.c AClass/typclass/classify: split an aggregate into up to two
+;;; eightbytes, each classified INTEGER (:l) or SSE (:d), or force it in memory.
+
+(defstruct (aclass (:constructor make-aclass))
+  type (inmem 0) (align 0) (size 0)
+  (cls (vector :x :x))            ; per-eightbyte class (:l / :d / :x empty)
+  (ref (vector nil nil)))         ; abi-generated refs (selcall/selpar/selret)
+
+(defun classify-into (a ty s)
+  "sysv.c classify: fold TY's members (at byte offset S) into A's eightbytes."
+  (dotimes (n (typ-nunion ty))
+    (let ((s2 s))
+      (loop for f across (aref (typ-fields ty) n) do
+        (let ((ftype (car f)) (len (cdr f)))
+          (ecase ftype
+            (:pad (incf s2 len))
+            ((:s :d)
+             (when (eq (aref (aclass-cls a) (floor s2 8)) :x)
+               (setf (aref (aclass-cls a) (floor s2 8)) :d))
+             (incf s2 len))
+            ((:b :h :w :l)
+             (setf (aref (aclass-cls a) (floor s2 8)) :l)
+             (incf s2 len))
+            (:typ (classify-into a len s2) (incf s2 (typ-size len)))))))))
+
+(defun typclass (ty)
+  "sysv.c typclass: the AClass of aggregate type TY."
+  (let* ((a (make-aclass :type ty :align (typ-align ty)))
+         (al (max 8 (ash 1 (typ-align ty))))
+         (sz (logand (+ (typ-size ty) al -1) (- al))))
+    (setf (aclass-size a) sz)
+    (if (or (typ-isdark ty) (> sz 16) (= sz 0))
+        (setf (aclass-inmem a) 1)
+        (progn (setf (aclass-inmem a) 0)
+               (classify-into a ty 0)))
+    a))
+
 (defun sel-par (fn)
   "Lower the leading `par` instructions of the start block into copies from
 argument registers.  Returns the list of copy instructions, in order."
