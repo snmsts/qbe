@@ -245,5 +245,43 @@ export function l $main() {
   ret %r
 }" 42)
 
+;; --- abi B2: return a small struct by value (one integer eightbyte) ---
+(check "struct-ret" "type :pt = { w, w }
+export function :pt $mk(w %a, w %b) {
+@start
+  %p =l alloc4 8
+  storew %a, %p
+  %p4 =l add %p, 4
+  storew %b, %p4
+  ret %p
+}
+export function w $main() {
+@start
+  %r =:pt call $mk(w 30, w 12)
+  %a =w loadw %r
+  %r4 =l add %r, 4
+  %b =w loadw %r4
+  %s =w add %a, %b
+  ret %s
+}" 42)
+
+;; --- abi B2: variadic call + va_start + va_arg ---
+(check "vararg" "export function w $sum3(w %cnt, ...) {
+@start
+  %ap =l alloc8 24
+  vastart %ap
+  %a =w vaarg %ap
+  %b =w vaarg %ap
+  %c =w vaarg %ap
+  %s1 =w add %a, %b
+  %s =w add %s1, %c
+  ret %s
+}
+export function w $main() {
+@start
+  %r =w call $sum3(w 3, ..., w 20, w 15, w 7)
+  ret %r
+}" 42)
+
 (format t "~&=== M4 e2e (full backend -> run) ===~%  ~d passed, ~d failed~%" *pass* *fail*)
 (sb-ext:exit :code (if (zerop *fail*) 0 1))

@@ -334,6 +334,16 @@
         (setf (es-fp e) +rsp+))
     (be-framesz e)
     (when (> (es-fsz e) 0) (format stream "~Csubq $~d, %rsp~%" #\Tab (es-fsz e)))
+    ;; variadic: save the argument registers into the register-save area
+    ;; (amd64/emit.c: RDI..R9 at -176(%rbp), XMM0..7 above them)
+    (when (fn-vararg fn)
+      (let ((o -176))
+        (dolist (rid (list +rdi+ +rsi+ +rdx+ +rcx+ +r8+ +r9+))
+          (format stream "~Cmovq %~a, ~d(%rbp)~%" #\Tab (regtoa rid +slong+) o)
+          (incf o 8))
+        (dotimes (n 8)
+          (format stream "~Cmovaps %xmm~d, ~d(%rbp)~%" #\Tab n o)
+          (incf o 16))))
     (loop for rc across *rclob*
           when (logbitp rc (fn-reg fn))
           do (format stream "~Cpushq %~a~%" #\Tab (regtoa rc +slong+))
