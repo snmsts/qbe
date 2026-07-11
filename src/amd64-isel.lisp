@@ -100,9 +100,13 @@
   (let ((s (rslot r)))
     (cond
       ((null r) r)
-      ;; [A] floating-point constants must be loaded from memory (later slice)
-      ((and (con-p r) (eq (con-kind r) :bits) (con-flt r))
-       (abi-unsupported "float constant operand"))
+      ;; [A] a constant in a float-class slot is loaded from a .Lfp memory slot
+      ;; (x86 has no fp immediates); stash its bits and address them rip-relative
+      ((and (con-p r) (= (cls-base k) 1))
+       (let ((n (stashbits (con-rawbits r) (if (kwide k) 8 4))))
+         (make-mem :offset (make-con :kind :addr :symname (format nil "\".Lfp~d\"" n)
+                                     :symtype nil :off 0)
+                   :base nil :index nil :scale 0)))
       ;; [B] a constant (non-address) call target becomes an indirect call
       ((and (eq op :call) (eql argn 0) (con-p r) (not (eq (con-kind r) :addr)))
        (let ((tm (newtmp "isel" :l fn))) (emit :copy :l tm r nil) tm))
@@ -488,6 +492,34 @@
     (let ((cur (car *emitted*)))
       (setf (ins-arg0 cur) (fixarg (ins-arg0 cur) :and :l fn)))))
 
+;; float -> unsigned int (amd64/isel.c Ostoui/Odtoui): x86 only has signed
+;; float->int, so subtract 2^63 (a magic fp const), convert, and fix up the
+;; sign.  A word result just converts as long then truncates.
+(defun sel-ftoui (i fn)
+  (let* ((op (ins-op i)) (k (ins-cls i)) (a0 (ins-arg0 i))
+         (kc (if (eq op :stoui) :s :d))
+         (sop (if (eq op :stoui) :stosi :dtosi))
+         (magic (getcon (if (eq op :stoui) #xdf000000 #xc3e0000000000000) fn)))
+    (if (eq k :w)
+        (let ((r0 (newtmp "ftou" :l fn)))
+          (emit :copy :w (ins-to i) r0 nil)
+          (emit sop :l r0 a0 nil)
+          (let ((cur (car *emitted*)))
+            (setf (ins-arg0 cur) (fixarg (ins-arg0 cur) sop (argcls sop :l 0) fn 0 :l))))
+        (let ((r0 (newtmp "ftou" kc fn)) (tp (make-array 4)))
+          (dotimes (j 4) (setf (aref tp j) (newtmp "ftou" :l fn)))
+          (emit :or :l (ins-to i) (aref tp 0) (aref tp 3))
+          (emit :and :l (aref tp 3) (aref tp 2) (aref tp 1))
+          (emit sop :l (aref tp 2) r0 nil)
+          (emit :add kc r0 magic a0)
+          (let ((cur (car *emitted*)))
+            (setf (ins-arg0 cur) (fixarg (ins-arg0 cur) :add kc fn 0 kc))
+            (setf (ins-arg1 cur) (fixarg (ins-arg1 cur) :add kc fn 1 kc)))
+          (emit :sar :l (aref tp 1) (aref tp 0) (getcon 63 fn))
+          (emit sop :l (aref tp 0) a0 nil)
+          (let ((cur (car *emitted*)))
+            (setf (ins-arg0 cur) (fixarg (ins-arg0 cur) sop :l fn 0 :l)))))))
+
 (defun sel (i fn)
   ;; dead-code elimination: an unused pure result is dropped
   (when (and (tmp-p (ins-to i))
@@ -531,7 +563,7 @@
       ((member op '(:alloc4 :alloc8 :alloc16)) (salloc (ins-to i) (ins-arg0 i) fn))
       ((eq op :uwtof) (sel-uwtof i fn))
       ((eq op :ultof) (sel-ultof i fn))
-      ((member op '(:stoui :dtoui)) (abi-unsupported "float->uint conv"))
+      ((member op '(:stoui :dtoui)) (sel-ftoui i fn))
       (t (abi-unsupported (format nil "isel op ~a" op))))))
 
 ;;; --------------------------------------------------------------------- seljmp

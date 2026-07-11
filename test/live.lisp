@@ -114,7 +114,7 @@ here, mirroring QBE which dumps -dL inside filllive)."
          (gdl (fn-sections (golden-of ssa-path "dl" "test/golden-dl/") "> Liveness analysis:"))
          (gds (fn-sections (golden-of ssa-path "ds" "test/golden-ds/") "> Spill costs:"))
          (dlr 0) (dln 0) (dsr 0) (dsn 0) (sup 0) (unsup 0) (total 0))
-    (setf qbe::*tmp-counter* 0)
+    (setf qbe::*tmp-counter* 0) (qbe::reset-stash)
     (dolist (fn (qbe:module-funcs mod))
       (incf total)
       (handler-case

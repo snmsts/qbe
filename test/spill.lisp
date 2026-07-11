@@ -81,7 +81,7 @@
   (let* ((mod (qbe:parse-file ssa-path))
          (golden (spill-sections (ds-dump ssa-path)))
          (raw 0) (norm 0) (sup 0) (unsup 0) (total 0))
-    (setf qbe::*tmp-counter* 0)
+    (setf qbe::*tmp-counter* 0) (qbe::reset-stash)
     (dolist (fn (qbe:module-funcs mod))
       (incf total)
       (handler-case

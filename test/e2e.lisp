@@ -208,5 +208,22 @@ export function w $main() {
   ret %s
 }" 60)
 
+;; --- slice e-2b: float constants (stashed .Lfp slots) + dtosi ---
+(check "float-arith" "export function w $main() {
+@start
+  %a =d add d_1.5, d_2.5    # 4.0
+  %b =d mul %a, d_10.0      # 40.0
+  %r =w dtosi %b            # 40
+  ret %r
+}" 40)
+
+;; --- slice e-2b: float -> unsigned long (the magic-constant sequence) ---
+(check "ftoui" "export function l $main() {
+@start
+  %a =d add d_0.0, d_100.0
+  %r =l dtoui %a
+  ret %r
+}" 100)
+
 (format t "~&=== M4 e2e (full backend -> run) ===~%  ~d passed, ~d failed~%" *pass* *fail*)
 (sb-ext:exit :code (if (zerop *fail*) 0 1))

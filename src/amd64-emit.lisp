@@ -367,12 +367,29 @@
   (spill fn) (rega fn)
   (fill-cfg fn) (simpljmp fn) (fill-cfg fn))
 
+(defun emit-fin (stream)
+  "emit.c emitfin (elf): the .rodata pool of stashed fp constants, grouped by
+   size (16/8/4) but labelled by insertion index."
+  (when (> (fill-pointer *stash*) 0)
+    (format stream "/* floating point constants */~%")
+    (loop for lg from 4 downto 2 do
+      (dotimes (i (fill-pointer *stash*))
+        (let ((b (aref *stash* i)))
+          (when (= (cdr b) (ash 1 lg))
+            (format stream ".section .rodata~%.p2align ~d~%.Lfp~d:" lg i)
+            (ecase lg
+              (4 (format stream "~%~c.quad ~d~%~c.quad 0~%~%" #\Tab (car b) #\Tab))
+              (3 (format stream "~%~c.quad ~d~%~%" #\Tab (car b)))
+              (2 (format stream "~%~c.int ~d~%~%" #\Tab (s32* (car b)))))))))))
+
 (defun be-emit-module (module)
   "Run the backend per function and return the module's amd64 assembly string."
   (let ((s (make-string-output-stream)) (id0 0))
     (setf *tmp-counter* 0)
+    (reset-stash)
     (dolist (fn (module-funcs module))
       (be-backend-pipeline fn)
       (setf id0 (be-emit-fn fn s id0)))
+    (emit-fin s)
     (format s ".section .note.GNU-stack,\"\",@progbits~%")
     (get-output-stream-string s)))

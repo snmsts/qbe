@@ -54,6 +54,20 @@
 (defun emit (op cls to a0 a1)
   (push (make-instance 'ins :op op :cls cls :to to :arg0 a0 :arg1 a1) *emitted*))
 
+;;; ------------------------------------------------------- float-constant pool
+;;; emit.c stashbits: floating-point constants can't be x86 immediates, so isel
+;;; interns their bit patterns into a run-global (per-module) pool referenced by
+;;; the local symbol `.LfpN`, emitted into .rodata by the module driver.
+(defvar *stash* (make-array 0 :adjustable t :fill-pointer 0))
+(defun reset-stash () (setf *stash* (make-array 0 :adjustable t :fill-pointer 0)))
+(defun stashbits (n size)
+  "Intern bit-pattern N at SIZE (4/8) into the fp pool; return its index."
+  (dotimes (i (fill-pointer *stash*))
+    (let ((b (aref *stash* i)))
+      (when (and (<= size (cdr b)) (= (car b) n)) (return-from stashbits i))))
+  (vector-push-extend (cons n size) *stash*)
+  (1- (fill-pointer *stash*)))
+
 ;;; ---------------------------------------------------------------- abi1
 
 (defun abi-unsupported (what)
