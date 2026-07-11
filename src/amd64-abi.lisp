@@ -111,125 +111,254 @@
                (classify-into a ty 0)))
     a))
 
-(defun sel-par (fn)
-  "Lower the leading `par` instructions of the start block into copies from
-argument registers.  Returns the list of copy instructions, in order."
-  (let ((*emitted* nil) (ni 0) (ns 0) (pars '()))
-    ;; collect leading par instructions
-    (dolist (i (blk-ins (fn-start fn)))
-      (if (member (ins-op i) '(:par :parc :pare :parsb :parub :parsh :paruh))
-          (push i pars)
-          (return)))
-    (setf pars (nreverse pars))
-    (dolist (i pars)
-      (case (ins-op i)
-        (:par
-         (if (= (cls-base (ins-cls i)) 0)
-             (if (< ni *sysv-nint*)
-                 (emit :copy (ins-cls i) (ins-to i) (rg (aref *sysv-int-args* ni)) nil)
-                 (abi-unsupported "stack (inmem) integer parameter"))
-             (if (< ns *sysv-nsse*)
-                 (emit :copy (ins-cls i) (ins-to i) (rg (+ +xmm0+ ns)) nil)
-                 (abi-unsupported "stack (inmem) sse parameter")))
-         (if (= (cls-base (ins-cls i)) 0) (incf ni) (incf ns)))
-        (:pare (abi-unsupported "env parameter"))
-        (t (abi-unsupported "sub-word or aggregate parameter"))))
-    ;; fn->reg = argregs consumed by params (sysv.c: fn->reg = argregs(fa)); the
-    ;; registers params arrive in, needed by spill's start-block invariant + emit.
-    (setf (fn-reg fn)
-          (logior (loop for j below ni sum (ash 1 (aref *sysv-int-args* j)))
-                  (loop for j below ns sum (ash 1 (+ +xmm0+ j)))))
-    ;; *emitted* read left-to-right already equals QBE's forward emit order
-    ;; (push == QBE's prepend-at-\-\-curi), so no reversal.
-    *emitted*))
+;;; ------------------------------------------------------------------ abi1
+;;; amd64/sysv.c selpar/selcall/selret + rarg/argsclass/retr, faithful port:
+;;; register + stack(overflow) + struct(by-reg/by-mem) params/args/returns +
+;;; env.  Vararg (vastart/vaarg) is a later slice.  QBE emits backward; `emit`
+;;; here pushes, so emitting in QBE's order yields QBE's final order.
+
+(defvar *abi-ral* nil "Struct-return pad allocs, hoisted into the start block.")
+(defvar *abi-fa* 0     "selpar's frame/arg descriptor (for a later vararg slice).")
+
+(defun ispar-op (op) (member op '(:par :parc :pare :parsb :parub :parsh :paruh)))
+
+(defun abi-rarg (k nins)
+  "sysv.c rarg: next arg register for class K (NINS = #(ni ns), mutated)."
+  (if (= (cls-base k) 0)
+      (prog1 (rg (aref *sysv-int-args* (aref nins 0))) (incf (aref nins 0)))
+      (prog1 (rg (+ +xmm0+ (aref nins 1))) (incf (aref nins 1)))))
+
+(defun abi-retr (aret)
+  "sysv.c retr: (values ca reg-vector) for aggregate return ARET."
+  (let ((retreg #(#(1 3) #(17 18))) (nr (vector 0 0)) (ca 0) (regs (vector nil nil)))
+    (loop for n from 0 while (< (* n 8) (aclass-size aret)) do
+      (let ((k (cls-base (aref (aclass-cls aret) n))))
+        (setf (aref regs n) (rg (aref (aref retreg k) (aref nr k))))
+        (incf (aref nr k)) (incf ca (ash 1 (* 2 k)))))
+    (values ca regs)))
+
+(defun abi-argsclass (args aret parp)
+  "sysv.c argsclass.  ARGS = arg/par ins list; ARET = aclass or NIL; PARP = t
+   for parameters.  Returns (values ca aclass-vector env)."
+  (let ((nint (if (and aret (= 1 (aclass-inmem aret))) 5 6))
+        (nsse 8) (varc 0) (envc 0) (env nil) (acs (make-array (length args))))
+    (loop for i in args for idx from 0 do
+      (let ((op (ins-op i)))
+        (cond
+          ((member op '(:arg :par))
+           (let ((a (make-aclass :align 3 :size 8)) (int (= (cls-base (ins-cls i)) 0)))
+             (if (> (if int nint nsse) 0)
+                 (progn (if int (decf nint) (decf nsse)) (setf (aclass-inmem a) 0))
+                 (setf (aclass-inmem a) 2))
+             (setf (aref (aclass-cls a) 0) (ins-cls i) (aref acs idx) a)))
+          ((member op '(:argc :parc))
+           (let ((a (typclass (ins-arg0 i))))
+             (setf (aref acs idx) a)
+             (unless (= 1 (aclass-inmem a))
+               (let ((ni 0) (ns 0))
+                 (loop for n from 0 while (< (* n 8) (aclass-size a)) do
+                   (if (= (cls-base (aref (aclass-cls a) n)) 0) (incf ni) (incf ns)))
+                 (if (and (>= nint ni) (>= nsse ns))
+                     (progn (decf nint ni) (decf nsse ns))
+                     (setf (aclass-inmem a) 1))))))
+          ((member op '(:arge :pare))
+           (setf envc 1 env (if parp (ins-to i) (ins-arg0 i)) (aref acs idx) (make-aclass)))
+          ((eq op :argv) (setf varc 1 (aref acs idx) (make-aclass)))
+          (t (abi-unsupported (format nil "abi arg op ~a" op))))))
+    (when (and (= varc 1) (= envc 1)) (abi-unsupported "variadic env call"))
+    (values (logior (ash (logior varc envc) 12) (ash (- 6 nint) 4) (ash (- 8 nsse) 8))
+            acs env)))
+
+(defun abi-alloc-op (al)
+  (if (<= 0 al 2) (aref #(:alloc4 :alloc8 :alloc16) al) (abi-unsupported "alloc align")))
 
 (defun sel-ret (b fn)
-  "Lower B's return terminator, emitting the return-register copy and setting
-the ret0 mask.  Pushes onto *emitted* (called first, so copies land last)."
-  (declare (ignore fn))
-  (let ((jt (blk-jmp-type b)))
-    (when (and (member jt '(:retw :retl :rets :retd :retsb :retub :retsh :retuh :retc))
-               (not (eq jt :ret0)))
-      (let ((r0 (blk-jmp-arg b)))
+  "sysv.c selret: lower B's return terminator (scalar + aggregate)."
+  (let ((j (blk-jmp-type b)))
+    (when (and (isret-jmp j) (not (eq j :ret0)))
+      (let ((r0 (blk-jmp-arg b)) (ca 0))
         (setf (blk-jmp-type b) :ret0)
-        (case jt
-          (:retc (abi-unsupported "aggregate return"))
-          ((:retsb :retub :retsh :retuh) (abi-unsupported "sub-word return"))
-          (t
-           (let ((k (ecase jt (:retw :w) (:retl :l) (:rets :s) (:retd :d))))
-             (if (= (cls-base k) 0)
-                 (progn (emit :copy k (rg +rax+) r0 nil)
-                        (setf (blk-jmp-arg b) (make-call-ref 1)))
-                 (progn (emit :copy k (rg +xmm0+) r0 nil)
-                        (setf (blk-jmp-arg b) (make-call-ref (ash 1 2))))))))))))
-
-;;; -------------------------------------------------------------- calls
-;;; amd64/sysv.c selcall + argsclass + rarg, scalar path: register-passed
-;;; integer/sse args (<=6 int, <=8 sse), scalar/void return.  Struct args/
-;;; returns, stack-passed (overflow) args, env, and varargs are unsupported.
-
-(defun argsclass-scalar (args)
-  "Classify scalar call ARGS; return (values ca inmem-flags).  CA is the
-argsclass mask (passed-reg counts), inmem-flags a per-arg list (0=reg, 2=stack)."
-  (let ((nint *sysv-nint*) (nsse *sysv-nsse*) (ac '()))
-    (dolist (i args)
-      (unless (eq (ins-op i) :arg)
-        (abi-unsupported "aggregate/env/vararg call argument"))
-      (if (= (cls-base (ins-cls i)) 0)
-          (if (> nint 0) (progn (decf nint) (push 0 ac)) (push 2 ac))
-          (if (> nsse 0) (progn (decf nsse) (push 0 ac)) (push 2 ac))))
-    (values (logior (ash (- *sysv-nint* nint) 4) (ash (- *sysv-nsse* nsse) 8))
-            (nreverse ac))))
+        (if (eq j :retc)
+            (let ((aret (typclass (fn-rettyp fn))))
+              (if (= 1 (aclass-inmem aret))
+                  (progn
+                    (emit :copy :l (rg +rax+) (fn-retr fn) nil)
+                    (emit :blit1 :w nil (typ-size (aclass-type aret)) nil)
+                    (emit :blit0 :w nil r0 (fn-retr fn))
+                    (setf ca 1))
+                  (multiple-value-bind (c regs) (abi-retr aret)
+                    (setf ca c)
+                    (when (> (aclass-size aret) 8)
+                      (let ((r (newtmp "abi" :l fn)))
+                        (emit :load :l (aref regs 1) r nil)
+                        (emit :add :l r r0 (getcon 8 fn))))
+                    (emit :load :l (aref regs 0) r0 nil))))
+            (let ((k (ecase j (:retw :w) (:retl :l) (:rets :s) (:retd :d))))
+              (if (= (cls-base k) 0)
+                  (progn (emit :copy k (rg +rax+) r0 nil) (setf ca 1))
+                  (progn (emit :copy k (rg +xmm0+) r0 nil) (setf ca (ash 1 2))))))
+        (setf (blk-jmp-arg b) (make-call-ref ca))))))
 
 (defun sel-call (fn args call)
-  "Lower a scalar CALL (with ARGS the preceding arg instructions), emitting the
-arg-register copies, the call, and the result copy (amd64/sysv.c selcall)."
-  (declare (ignore fn))
-  (unless (null (ins-arg1 call)) (abi-unsupported "aggregate (struct) return"))
-  (multiple-value-bind (ca ac) (argsclass-scalar args)
-    (when (member 2 ac) (abi-unsupported "stack (inmem) call argument"))
-    ;; result register copy (emitted first, so it lands after the call)
-    (let ((cls (ins-cls call)))
-      (if (= (cls-base cls) 0)
-          (progn (emit :copy cls (ins-to call) (rg +rax+) nil) (incf ca 1))
-          (progn (emit :copy cls (ins-to call) (rg +xmm0+) nil) (incf ca (ash 1 2)))))
-    ;; the call itself
+  "sysv.c selcall: lower CALL with its preceding ARGS (source order)."
+  (let* ((aret (and (ins-arg1 call) (typclass (ins-arg1 call))))
+         (cae (multiple-value-list (abi-argsclass args aret nil)))
+         (ca (first cae)) (acs (second cae)) (env (third cae))
+         (argl (coerce args 'vector)) (stk 0) (hidden nil))
+    ;; stack size for inmem args
+    (loop for idx from (1- (length argl)) downto 0
+          for a = (aref acs idx) do
+      (when (/= 0 (aclass-inmem a))
+        (when (> (aclass-align a) 4) (abi-unsupported "alignment > 16"))
+        (incf stk (aclass-size a))
+        (when (= (aclass-align a) 4) (incf stk (logand stk 15)))))
+    (incf stk (logand stk 15))
+    (when (/= stk 0) (emit :salloc :l nil (getcon (- stk) fn) nil))
+    ;; return handling
+    (if aret
+        (if (= 1 (aclass-inmem aret))
+            ;; inmem: caller allocates the return pad (a fresh temp), passes its
+            ;; address as a hidden arg, and reads the returned pointer from RAX.
+            (let ((r1 (newtmp "abi" :l fn)))
+              (emit :copy :l (ins-to call) (rg +rax+) nil) (incf ca 1)
+              (setf hidden r1) (abi-push-ral fn aret r1))
+            (progn
+              (when (> (aclass-size aret) 8)
+                (let ((r (newtmp "abi" :l fn)))
+                  (setf (aref (aclass-ref aret) 1) (newtmp "abi" (aref (aclass-cls aret) 1) fn))
+                  (emit :storel :w nil (aref (aclass-ref aret) 1) r)
+                  (emit :add :l r (ins-to call) (getcon 8 fn))))
+              (setf (aref (aclass-ref aret) 0) (newtmp "abi" (aref (aclass-cls aret) 0) fn))
+              (emit :storel :w nil (aref (aclass-ref aret) 0) (ins-to call))
+              (multiple-value-bind (c regs) (abi-retr aret)
+                (incf ca c)
+                (when (> (aclass-size aret) 8)
+                  (emit :copy (aref (aclass-cls aret) 1) (aref (aclass-ref aret) 1) (aref regs 1) nil))
+                (emit :copy (aref (aclass-cls aret) 0) (aref (aclass-ref aret) 0) (aref regs 0) nil))
+              (abi-push-ral fn aret (ins-to call))))
+        (if (= (cls-base (ins-cls call)) 0)
+            (progn (emit :copy (ins-cls call) (ins-to call) (rg +rax+) nil) (incf ca 1))
+            (progn (emit :copy (ins-cls call) (ins-to call) (rg +xmm0+) nil) (incf ca (ash 1 2)))))
     (emit :call (ins-cls call) nil (ins-arg0 call) (make-call-ref ca))
-    ;; argument register copies, in source order (rarg register sequence)
-    (let ((ni 0) (ns 0))
-      (dolist (i args)
-        (if (= (cls-base (ins-cls i)) 0)
-            (progn (emit :copy (ins-cls i) (rg (aref *sysv-int-args* ni)) (ins-arg0 i) nil)
-                   (incf ni))
-            (progn (emit :copy (ins-cls i) (rg (+ +xmm0+ ns)) (ins-arg0 i) nil)
-                   (incf ns)))))))
+    (cond
+      (env (emit :copy :l (rg +rax+) env nil))
+      ((= 1 (logand (ash ca -12) 1))
+       (emit :copy :w (rg +rax+) (getcon (logand (ash ca -8) 15) fn) nil)))
+    (let ((nins (vector 0 0)))
+      (when (and aret (= 1 (aclass-inmem aret)))
+        (emit :copy :l (abi-rarg :l nins) hidden nil))
+      (dotimes (idx (length argl))
+        (let ((i (aref argl idx)) (a (aref acs idx)))
+          (unless (or (member (ins-op i) '(:arge :argv)) (/= 0 (aclass-inmem a)))
+            (let ((r1 (abi-rarg (aref (aclass-cls a) 0) nins)))
+              (if (eq (ins-op i) :argc)
+                  (progn
+                    (when (> (aclass-size a) 8)
+                      (let ((r2 (abi-rarg (aref (aclass-cls a) 1) nins)) (r (newtmp "abi" :l fn)))
+                        (emit :load (aref (aclass-cls a) 1) r2 r nil)
+                        (emit :add :l r (ins-arg1 i) (getcon 8 fn))))
+                    (emit :load (aref (aclass-cls a) 0) r1 (ins-arg1 i) nil))
+                  (emit :copy (ins-cls i) r1 (ins-arg0 i) nil)))))))
+    (when (/= stk 0)
+      (let ((r (newtmp "abi" :l fn)) (off 0))
+        (dotimes (idx (length argl))
+          (let ((i (aref argl idx)) (a (aref acs idx)))
+            (when (and (not (member (ins-op i) '(:arge :argv))) (/= 0 (aclass-inmem a)))
+              (let ((r1 (newtmp "abi" :l fn)))
+                (if (eq (ins-op i) :argc)
+                    (progn
+                      (when (= (aclass-align a) 4) (incf off (logand off 15)))
+                      (emit :blit1 :w nil (typ-size (aclass-type a)) nil)
+                      (emit :blit0 :w nil (ins-arg1 i) r1))
+                    (emit :storel :w nil (ins-arg0 i) r1))
+                (emit :add :l r1 r (getcon off fn))
+                (incf off (aclass-size a))))))
+        (emit :salloc :l r (getcon stk fn) nil)))))
+
+(defun abi-push-ral (fn aret loc)
+  "sysv.c RAlloc: stash a struct-return pad alloc (to LOC) for the start block."
+  (let ((al (if (>= (aclass-align aret) 2) (- (aclass-align aret) 2) 0)))
+    (push (make-instance 'ins :op (abi-alloc-op al) :cls :l :to loc
+                         :arg0 (getcon (aclass-size aret) fn) :arg1 nil)
+          *abi-ral*)))
+
+(defun sel-par (fn pars)
+  "sysv.c selpar: lower PARS (the leading par ins); returns the fa descriptor."
+  (let* ((aret (and (fn-rettyp fn) (typclass (fn-rettyp fn))))
+         (nins (vector 0 0)))
+    (multiple-value-bind (fa acs env) (abi-argsclass pars aret t)
+      (setf (fn-reg fn)
+            (let ((m 0)) (dolist (r (sysv-argregs fa) m) (setf m (logior m (ash 1 r))))))
+      ;; aggregate params passed in registers: alloc a slot + store the halves
+      (loop for i in pars for idx from 0
+            for a = (aref acs idx) do
+        (when (and (eq (ins-op i) :parc) (= 0 (aclass-inmem a)))
+          (when (> (aclass-size a) 8)
+            (let ((r (newtmp "abi" :l fn)))
+              (setf (aref (aclass-ref a) 1) (newtmp "abi" :l fn))
+              (emit :storel :w nil (aref (aclass-ref a) 1) r)
+              (emit :add :l r (ins-to i) (getcon 8 fn))))
+          (setf (aref (aclass-ref a) 0) (newtmp "abi" :l fn))
+          (emit :storel :w nil (aref (aclass-ref a) 0) (ins-to i))
+          (let ((al (if (>= (aclass-align a) 2) (- (aclass-align a) 2) 0)))
+            (emit (abi-alloc-op al) :l (ins-to i) (getcon (aclass-size a) fn) nil))))
+      (when (and aret (= 1 (aclass-inmem aret)))
+        (let ((r (newtmp "abi" :l fn)))
+          (emit :copy :l r (abi-rarg :l nins) nil)
+          (setf (fn-retr fn) r)))
+      (let ((s 4))
+        (loop for i in pars for idx from 0
+              for a = (aref acs idx) do
+          (case (aclass-inmem a)
+            (1 (when (> (aclass-align a) 4) (abi-unsupported "alignment > 16"))
+               (when (= (aclass-align a) 4) (setf s (logand (+ s 3) -4)))
+               (setf (tmp-slot (ins-to i)) (- s))
+               (incf s (floor (aclass-size a) 4)))
+            (2 (emit :load (ins-cls i) (ins-to i) (make-slot-ref (- s)) nil)
+               (incf s 2))
+            (t
+             (unless (eq (ins-op i) :pare)
+               (let ((r (abi-rarg (aref (aclass-cls a) 0) nins)))
+                 (if (eq (ins-op i) :parc)
+                     (progn
+                       (emit :copy (aref (aclass-cls a) 0) (aref (aclass-ref a) 0) r nil)
+                       (when (> (aclass-size a) 8)
+                         (emit :copy (aref (aclass-cls a) 1) (aref (aclass-ref a) 1)
+                               (abi-rarg (aref (aclass-cls a) 1) nins) nil)))
+                     (emit :copy (ins-cls i) (ins-to i) r nil)))))))
+        (when env (emit :copy :l env (rg +rax+) nil))
+        (logior fa (ash (* s 4) 12))))))
+
 
 (defun amd64-abi (fn)
-  "amd64 SysV abi1 (B2 scalar + calls).  Rewrites FN in place."
-  ;; 1. lower parameters: splice the arg-register copies before the rest.
-  (let* ((start (fn-start fn))
-         (par-copies (sel-par fn))
-         (rest (member-if-not
-                (lambda (i) (member (ins-op i)
-                                    '(:par :parc :pare :parsb :parub :parsh :paruh)))
-                (blk-ins start))))
-    (setf (blk-ins start) (append par-copies rest)))
-  ;; 2. lower returns and calls per block (backward, mirroring the emit buffer).
-  (dolist (b (fn-blocks fn))
-    (let ((*emitted* nil)
-          (vec (coerce (blk-ins b) 'vector)))
-      (sel-ret b fn)
-      (loop with k = (length vec) while (> k 0) do
-        (decf k)
-        (let ((i (aref vec k)))
-          (cond
-            ((eq (ins-op i) :call)
-             (let ((i0 k))
-               (loop while (and (> i0 0) (arg-op-p (ins-op (aref vec (1- i0)))))
-                     do (decf i0))
-               (sel-call fn (coerce (subseq vec i0 k) 'list) i)
-               (setf k i0)))
-            ((member (ins-op i) '(:vastart :vaarg))
-             (abi-unsupported "vararg instruction"))
-            (t (push i *emitted*)))))
-      (setf (blk-ins b) *emitted*))))
+  "amd64 SysV abi1 (B2: register + stack + struct + env).  Rewrites FN."
+  (let ((*abi-ral* nil) (*abi-fa* 0))
+    ;; 1. lower parameters
+    (let* ((start (fn-start fn)) (pars '()) (rest nil))
+      (dolist (i (blk-ins start))
+        (if (and (null rest) (ispar-op (ins-op i))) (push i pars) (push i rest)))
+      (setf pars (nreverse pars) rest (nreverse rest))
+      (let ((*emitted* nil))
+        (setf *abi-fa* (sel-par fn pars))
+        (setf (blk-ins start) (append *emitted* rest))))
+    ;; 2. lower returns, calls (and later varargs); start block processed LAST so
+    ;; the accumulated struct-return pad allocs land at its head.
+    (let* ((blocks (fn-blocks fn)) (start (car blocks)))
+      (dolist (b (append (cdr blocks) (list start)))
+        (let ((*emitted* nil) (vec (coerce (blk-ins b) 'vector)))
+          (sel-ret b fn)
+          (loop with k = (length vec) while (> k 0) do
+            (decf k)
+            (let ((i (aref vec k)))
+              (cond
+                ((eq (ins-op i) :call)
+                 (let ((i0 k))
+                   (loop while (and (> i0 0) (arg-op-p (ins-op (aref vec (1- i0))))) do (decf i0))
+                   (sel-call fn (coerce (subseq vec i0 k) 'list) i)
+                   (setf k i0)))
+                ((eq (ins-op i) :vastart) (abi-unsupported "vararg vastart"))
+                ((eq (ins-op i) :vaarg) (abi-unsupported "vararg vaarg"))
+                (t (push i *emitted*)))))
+          (when (eq b start)
+            (dolist (ra *abi-ral*) (push ra *emitted*)))
+          (setf (blk-ins b) *emitted*))))))

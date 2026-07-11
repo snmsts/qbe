@@ -55,6 +55,7 @@
    (mem      :initform nil :accessor fn-mem)
    (salign   :initform 0   :accessor fn-salign)
    (dynalloc :initform nil :accessor fn-dynalloc)
+   (retr     :initform nil :accessor fn-retr)   ; hidden struct-return pointer (abi)
    (regs?    :initform nil :accessor fn-regs? :documentation "materialize-regs done?")))
 
 (defun fn-ntmp (fn) (fill-pointer (fn-tmp fn)))
