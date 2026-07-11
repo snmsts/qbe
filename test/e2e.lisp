@@ -172,5 +172,41 @@ export function w $main() {
   ret %acc
 }" 56)
 
+;; --- slice d: a fast-local alloc + store + load ---
+(check "local-mem" "export function w $main() {
+@start
+  %p =l alloc4 4
+  storew 42, %p
+  %v =w loadw %p
+  ret %v
+}" 42)
+
+;; --- slice d: base + scale*index addressing over a summed local array ---
+(check "array-sum" "export function w $main() {
+@start
+  %p =l alloc4 16
+  storew 10, %p
+  %p1 =l add %p, 4
+  storew 20, %p1
+  %p2 =l add %p, 8
+  storew 30, %p2
+  jmp @loop
+@loop
+  %i =w phi @start 0, @body %i2
+  %s =w phi @start 0, @body %s2
+  %c =w csltw %i, 3
+  jnz %c, @body, @end
+@body
+  %io =l extsw %i
+  %o =l mul %io, 4
+  %e =l add %p, %o     # exercises [S0 + 4 * %io]
+  %v =w loadw %e
+  %s2 =w add %s, %v
+  %i2 =w add %i, 1
+  jmp @loop
+@end
+  ret %s
+}" 60)
+
 (format t "~&=== M4 e2e (full backend -> run) ===~%  ~d passed, ~d failed~%" *pass* *fail*)
 (sb-ext:exit :code (if (zerop *fail*) 0 1))

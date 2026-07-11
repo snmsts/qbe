@@ -106,11 +106,13 @@
   "The operand denoting temp id TID: a reg struct for a register, else the tmp."
   (if (< tid +tmp0+) (rg tid) (aref (fn-tmp fn) tid)))
 
-;; RMem addressing mode (isel slice d) is not implemented yet, so no operand
-;; here is ever an RMem; these stubs keep filllive/fillcost future-ready.
-(defun mem-ref-p (x) (declare (ignore x)) nil)
-(defun mem-ref-base (x) (declare (ignore x)) nil)
-(defun mem-ref-index (x) (declare (ignore x)) nil)
+;; RMem addressing mode (isel slice d): an operand may be a `mem` struct whose
+;; base and index are the live temps contributing to the address.
+(defun mem-ref-p (x) (mem-p x))
+(defun mem-ref-base (x) (mem-base x))
+(defun mem-ref-index (x) (mem-index x))
+(defun (setf mem-ref-base) (v x) (setf (mem-base x) v))
+(defun (setf mem-ref-index) (v x) (setf (mem-index x) v))
 
 ;;; ----------------------------------------------------------- materialize-regs
 

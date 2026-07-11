@@ -123,6 +123,14 @@
 (defstruct (call-ref (:constructor make-call-ref (val))) val)  ; RCall bitmask
 (defstruct (slot-ref (:constructor make-slot-ref (n))) n)      ; RSlot
 
+;;; RMem: an amd64 addressing mode `[offset + base + scale*index]` (Addr in
+;;; all.h), introduced by isel's seladdr.  offset is a con (or NIL = CUndef),
+;;; base/index are refs (tmp/reg/slot-ref, or NIL = R), scale an integer.
+;;; The struct is itself used as the operand (like con/tmp/reg), so QBE's
+;;; `fn->mem` index array is unnecessary.
+(defstruct (mem (:constructor make-mem (&key offset base index (scale 1))))
+  offset base index (scale 1))
+
 ;;; kind: :bits | :addr | :undef
 ;;;   :bits -> value is an integer (flt NIL) or float; flt is NIL/1/2 (s/d).
 ;;;   :addr -> symname string, symtype a list of (:ext :thr), off integer.

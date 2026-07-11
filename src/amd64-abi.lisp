@@ -44,7 +44,7 @@
 (defparameter *sysv-nint* 6)
 (defparameter *sysv-nsse* 8)
 
-(defun cls-base (k) (if (member k '(:w :l)) 0 1))  ; KBASE
+(defun cls-base (k) (if (member k '(:w :l :m)) 0 1))  ; KBASE (Km == Kl)
 
 ;;; ------------------------------------------------------------ emission
 ;;; A tiny backward-emit reproduction: EMIT pushes onto *emitted*, so

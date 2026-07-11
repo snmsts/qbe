@@ -100,17 +100,38 @@
 (defun getarg (ch i)
   (ecase ch (#\0 (ins-arg0 i)) (#\1 (ins-arg1 i)) (#\= (ins-to i))))
 
+(defun emit-addr (m e)
+  "Render an RMem addressing mode `disp(%base, %index, scale)` (emit.c Mem).
+   A slot base folds into the frame-pointer-relative displacement."
+  (when (slot-ref-p (mem-base m))
+    (let ((offc (mem-offset m)))
+      (unless (and offc (not (eq (con-kind offc) :undef)))
+        (setf offc (make-con :kind :undef :value 0) (mem-offset m) offc))
+      (addcon offc (make-con :kind :bits :value (be-slot (mem-base m) e)) 1)
+      (setf (mem-base m) (rg (es-fp e)))))
+  (let ((off (mem-offset m)))
+    (when (and off (not (eq (con-kind off) :undef))) (be-emitcon off e)))
+  (write-char #\( (es-stream e))
+  (cond ((mem-base m) (es-out e "%~a" (regtoa (reg-id (mem-base m)) +slong+)))
+        ((let ((o (mem-offset m))) (and o (eq (con-kind o) :addr)))
+         (es-out e "%~a" "rip")))
+  (when (mem-index m)
+    (es-out e ", %~a, ~d" (regtoa (reg-id (mem-index m)) +slong+) (mem-scale m)))
+  (write-char #\) (es-stream e)))
+
 (defun emit-ref (ref sz e)
   "Print operand REF at size SZ (emit.c emitf Ref case)."
   (cond
     ((reg-p ref) (es-out e "%~a" (regtoa (reg-id ref) sz)))
     ((slot-ref-p ref) (es-out e "~d(%~a)" (be-slot ref e) (regtoa (es-fp e) +slong+)))
+    ((mem-p ref) (emit-addr ref e))
     ((con-p ref) (write-char #\$ (es-stream e)) (be-emitcon ref e))
     (t (error "emit-ref: unhandled ~s" ref))))
 
 (defun emit-mem (ref e)
-  "Print a memory operand (%M spec): RSlot, RCon (rip-relative), or reg base."
+  "Print a memory operand (%M spec): RMem, RSlot, RCon (rip-relative), or reg."
   (cond
+    ((mem-p ref) (emit-addr ref e))
     ((slot-ref-p ref) (es-out e "~d(%~a)" (be-slot ref e) (regtoa (es-fp e) +slong+)))
     ((con-p ref) (be-emitcon ref e)
      (when (eq (con-kind ref) :addr) (es-out e "(%~a)" "rip")))
