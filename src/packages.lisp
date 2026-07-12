@@ -46,4 +46,6 @@
    ;; arm64 isel + target instance (G3)
    #:arm64-isel #:*arm64-apple-target* #:arm64-logimm
    ;; arm64 emit + backend driver (G4)
-   #:a64-be-emit-fn #:a64-emit-fin #:a64-backend-pipeline #:a64-be-emit-module))
+   #:a64-be-emit-fn #:a64-emit-fin #:a64-backend-pipeline #:a64-be-emit-module
+   ;; arm64 machine-code encoder (G6)
+   #:aenc-fn))
