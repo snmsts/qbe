@@ -34,6 +34,8 @@
                              (:file "amd64-encode")
                              (:file "arm64")
                              (:file "arm64-abi")
+                             (:file "arm64-isel")
+                             (:file "arm64-targ")
                              (:file "driver")))))
 
 (asdf:defsystem "qbe-cl/test"

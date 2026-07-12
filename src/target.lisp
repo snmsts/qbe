@@ -70,6 +70,9 @@
 (defun tg-rclob () (target-rclob *target*))
 (defun tg-rsave-mask () (target-rsave-mask *target*))
 
+(defun tg-apple () (target-apple *target*))
+(defun tg-asloc () (target-asloc *target*))
+
 (defun tg-rg (id) (aref (target-regs *target*) id))
 (defun tg-retregs (mask) (funcall (target-retregs *target*) mask))
 (defun tg-argregs (mask) (funcall (target-argregs *target*) mask))
