@@ -8,7 +8,7 @@
 ;;;; and register R<id> refs are per-function and stable).  Unsupported functions
 ;;;; (structs/stack-args/varargs/loads) error in abi/isel and are skipped.
 (require :asdf)
-(push (truename #p"/home/snmsts/work/qbe/") asdf:*central-registry*)
+(push (truename (merge-pathnames "../" (directory-namestring *load-pathname*))) asdf:*central-registry*)
 (handler-bind ((warning #'muffle-warning))
   (asdf:load-system "qbe-cl/test" :verbose nil))
 (in-package #:qbe-test)

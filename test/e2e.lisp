@@ -9,7 +9,7 @@
 ;;;; live phis, param coalescing, nested control) to arbitrate that those
 ;;;; divergences are functionally correct, not miscompiles.
 (require :asdf)
-(push (truename #p"/home/snmsts/work/qbe/") asdf:*central-registry*)
+(push (truename (merge-pathnames "../" (directory-namestring *load-pathname*))) asdf:*central-registry*)
 (handler-bind ((warning #'muffle-warning))
   (asdf:load-system "qbe-cl" :verbose nil))
 (defpackage #:qbe-e2e (:use #:cl)) (in-package #:qbe-e2e)

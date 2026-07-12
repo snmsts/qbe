@@ -1,7 +1,7 @@
 ;;;; dom.lisp --- A1 oracle: our dominator tree vs `qbe -dN`'s "> Dominators:".
 ;;;; usage: QBE_BIN=/path/to/qbe ros -Q run -- --script test/dom.lisp
 (require :asdf)
-(push (truename #p"/home/snmsts/work/qbe/") asdf:*central-registry*)
+(push (truename (merge-pathnames "../" (directory-namestring *load-pathname*))) asdf:*central-registry*)
 (handler-bind ((warning #'muffle-warning))
   (asdf:load-system "qbe-cl/test" :verbose nil))
 (in-package #:qbe-test)

@@ -8,7 +8,7 @@
 ;;;; The oracle QBE binary is found via the QBE_BIN env var (see harness.lisp).
 ;;;; Exit code is 0 iff every compared function matched.
 (require :asdf)
-(push (truename #p"/home/snmsts/work/qbe/") asdf:*central-registry*)
+(push (truename (merge-pathnames "../" (directory-namestring *load-pathname*))) asdf:*central-registry*)
 (handler-bind ((warning #'muffle-warning))
   (asdf:load-system "qbe-cl/test" :verbose nil))
 

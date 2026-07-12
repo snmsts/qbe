@@ -13,9 +13,10 @@
 (in-package #:qbe-test)
 
 (defparameter *qbe-path*
-  (or (uiop:getenv "QBE_BIN")
-      "/tmp/claude-1000/-home-snmsts-work-qbe/61e011fb-27ff-4947-b4b6-005c7811bcf9/scratchpad/qbe/qbe")
-  "Reference QBE binary (oracle). Override with the QBE_BIN env var.")
+  (or (uiop:getenv "QBE_BIN") "qbe")
+  "Reference QBE binary (oracle).  Defaults to `qbe` on PATH; override with the
+QBE_BIN env var.  Only needed for live-oracle mode / capturing goldens; the
+committed goldens let the suite run without it.")
 
 (defun project-dir ()
   (asdf:system-relative-pathname "qbe-cl" ""))

@@ -8,7 +8,7 @@
 ;;;;
 ;;;; Run: ros -Q run --non-interactive --load test/encode-corpus.lisp  (repo root)
 
-(push (truename "./") asdf:*central-registry*)
+(push (truename (merge-pathnames "../" (directory-namestring *load-pathname*))) asdf:*central-registry*)
 (ql:quickload :qbe-cl :silent t)              ; amd64-encode is part of the system
 (in-package #:qbe)
 
@@ -37,7 +37,8 @@
         finally (return (if (= (length a) (length b)) nil (list (length a) (length b))))))
 
 (let ((pass 0) (fails '()))
-  (dolist (f (directory (merge-pathnames "test/corpus/*.ssa" (truename "./"))))
+  (dolist (f (directory (merge-pathnames "test/corpus/*.ssa"
+                          (truename (merge-pathnames "../" (directory-namestring *load-pathname*))))))
     (handler-case
         (dolist (fn (module-funcs (parse-file (namestring f))))
           (handler-case

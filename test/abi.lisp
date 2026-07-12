@@ -12,7 +12,7 @@
 ;;;; the mid-end opts (loadopt/gvn/gcm) being no-ops for a function, since
 ;;;; those run before abi1 in QBE but are not implemented yet.
 (require :asdf)
-(push (truename #p"/home/snmsts/work/qbe/") asdf:*central-registry*)
+(push (truename (merge-pathnames "../" (directory-namestring *load-pathname*))) asdf:*central-registry*)
 (handler-bind ((warning #'muffle-warning))
   (asdf:load-system "qbe-cl/test" :verbose nil))
 (in-package #:qbe-test)

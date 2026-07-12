@@ -7,7 +7,7 @@
 ;;;; counter offset as every other backend oracle; `norm` (temp suffixes
 ;;;; canonicalized) is the structural signal.
 (require :asdf)
-(push (truename #p"/home/snmsts/work/qbe/") asdf:*central-registry*)
+(push (truename (merge-pathnames "../" (directory-namestring *load-pathname*))) asdf:*central-registry*)
 (handler-bind ((warning #'muffle-warning))
   (asdf:load-system "qbe-cl/test" :verbose nil))
 (in-package #:qbe-test)

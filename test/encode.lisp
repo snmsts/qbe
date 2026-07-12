@@ -5,7 +5,7 @@
 ;;;;
 ;;;; Run: ros -Q run --non-interactive --load test/encode.lisp   (from repo root)
 
-(push (truename "./") asdf:*central-registry*)
+(push (truename (merge-pathnames "../" (directory-namestring *load-pathname*))) asdf:*central-registry*)
 (ql:quickload :qbe-cl :silent t)              ; amd64-encode is part of the system
 
 (in-package #:qbe)
