@@ -78,7 +78,39 @@
           "subi"  "export function w $subi(w %a) { @s %c =w sub %a, 5 ret %c }"
           "mulr"  "export function w $mulr(w %a, w %b) { @s %c =w mul %a, %b ret %c }"
           "addli" "export function l $addli(l %a) { @s %c =l add %a, 5 ret %c }"
-          "movbig" "export function l $movbig() { @s ret 180388626474 }")))
+          "movbig" "export function l $movbig() { @s ret 180388626474 }"
+          ;; loads / stores through a pointer + sign/zero extends
+          "ldw"  "export function w $ldw(l %p) { @s %v =w loadw %p ret %v }"
+          "ldl"  "export function l $ldl(l %p) { @s %v =l loadl %p ret %v }"
+          "ldsb" "export function w $ldsb(l %p) { @s %v =w loadsb %p ret %v }"
+          "ldsw" "export function l $ldsw(l %p) { @s %v =l loadsw %p ret %v }"
+          "stw"  "export function w $stw(l %p, w %v) { @s storew %v, %p ret %v }"
+          "stb"  "export function w $stb(l %p, w %v) { @s storeb %v, %p ret %v }"
+          "extsb" "export function l $extsb(w %a) { @s %c =l extsb %a ret %c }"
+          "extuw" "export function l $extuw(w %a) { @s %c =l extuw %a ret %c }"
+          ;; compares -> cset (register + immediate)
+          "ltw"  "export function w $ltw(w %a, w %b) { @s %c =w csltw %a, %b ret %c }"
+          "cmpi" "export function w $cmpi(w %a) { @s %c =w csgtw %a, 5 ret %c }"
+          ;; multi-block branches + backward loop (relaxed label offsets)
+          "maxw" "export function w $maxw(w %a, w %b) {
+@s %c =w csgtw %a, %b jnz %c, @yes, @no
+@yes ret %a
+@no ret %b }"
+          "loopsum" "export function w $loopsum(w %n) {
+@start %i =w copy 0 %s =w copy 0
+@loop %c =w csltw %i, %n jnz %c, @body, @end
+@body %s =w add %s, %i %i =w add %i, 1 jmp @loop
+@end ret %s }"
+          ;; calls + relocs: bl -> BRANCH26, adrp/add @page -> PAGE21/PAGEOFF12
+          "callext" "export function w $callext(w %x) { @s %r =w call $abs(w %x) ret %r }"
+          "gload"   "data $g = { w 42 } export function w $gload() { @s %v =w loadw $g ret %v }"
+          "gaddr"   "data $g = { w 42 } export function l $gaddr() { @s ret $g }"
+          ;; floats: fp binary ops + fp load/store + fp copy
+          "faddd" "export function d $faddd(d %x, d %y) { @s %z =d add %x, %y ret %z }"
+          "fsubs" "export function s $fsubs(s %x, s %y) { @s %z =s sub %x, %y ret %z }"
+          "fmuld" "export function d $fmuld(d %x, d %y) { @s %z =d mul %x, %y ret %z }"
+          "fldd"  "export function d $fldd(l %p) { @s %v =d loadd %p ret %v }"
+          "fstd"  "export function d $fstd(l %p, d %v) { @s stored %v, %p ret %v }")))
   (dolist (kv cases)
     (case (oracle-check (car kv) (cdr kv))
       ((t) (incf pass)) ((:skip) (incf skip)) (t (incf fail))))
