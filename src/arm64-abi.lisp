@@ -455,6 +455,28 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
         (values (a64-align off 8)
                 (logand (ash cty -5) 15) (logand (ash cty -9) 15))))))
 
+;;; ------------------------------------------------------------ abi1: vararg
+;;; Apple's va_list is a single pointer into the on-stack overflow area (there
+;;; is no register-save area), so apple_selvaarg / apple_selvastart need no
+;;; block splitting — unlike the Linux arm64_selva* (deferred, error-stub).
+
+(defun a64-apple-selvastart (fn stk ap)
+  "arm64/abi.c apple_selvastart: init the va_list at AP to point past STK."
+  (let ((off (getcon stk fn))
+        (s (newtmp "abi" :l fn)) (arg (newtmp "abi" :l fn)))
+    (emit :storel :w nil arg ap)                     ; storel arg, ap
+    (emit :add :l arg s off)                         ; arg = add stk, off
+    (emit :addr :l s (make-slot-ref -1) nil)))       ; stk = addr S-1
+
+(defun a64-apple-selvaarg (fn i)
+  "arm64/abi.c apple_selvaarg: load the next arg from AP, bump AP by 8."
+  (let ((ap (ins-arg0 i)) (c8 (getcon 8 fn))
+        (stk8 (newtmp "abi" :l fn)) (stk (newtmp "abi" :l fn)))
+    (emit :storel :w nil stk8 ap)                    ; storel stk8, ap
+    (emit :add :l stk8 stk c8)                        ; stk8 = add stk, 8
+    (emit :load (ins-cls i) (ins-to i) stk nil)      ; i->to = load stk
+    (emit :load :l stk ap nil)))                     ; stk = loadl ap
+
 ;;; ------------------------------------------------------------ abi1: driver
 (defun ispar-a64 (op) (member op '(:par :parc :pare :parsb :parub :parsh :paruh)))
 
@@ -462,14 +484,14 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
   "arm64/abi.c arm64_abi (abi1): lower params, returns, calls.  Rewrites FN."
   (dolist (b (fn-blocks fn)) (setf (blk-visit b) 0))
   (let ((il (make-array 1 :initial-element nil))   ; shared Insl (stkblob) list
-        (*a64-par-tmps* nil))
+        (*a64-par-tmps* nil) (pstk 0))              ; pstk = Params.stk for vastart
     ;; 1. lower parameters (leading par run of the start block)
     (let* ((start (fn-start fn)) (pars '()) (rest nil))
       (dolist (i (blk-ins start))
         (if (and (null rest) (ispar-a64 (ins-op i))) (push i pars) (push i rest)))
       (setf pars (nreverse pars) rest (nreverse rest))
       (let ((*emitted* nil))
-        (a64-selpar fn pars)
+        (setf pstk (a64-selpar fn pars))
         (setf (blk-ins start) (append *emitted* rest))))
     ;; 2. lower returns / calls / varargs; start block LAST, then flush `il`.
     (let* ((blocks (fn-blocks fn)) (start (car blocks)))
@@ -485,8 +507,8 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
                    (loop while (and (> i0 0) (arg-op-p (ins-op (aref vec (1- i0))))) do (decf i0))
                    (a64-selcall fn (coerce (subseq vec i0 k) 'list) i il)
                    (setf k i0)))
-                ((eq (ins-op i) :vastart) (abi-unsupported "arm64 vastart (stage 3)"))
-                ((eq (ins-op i) :vaarg) (abi-unsupported "arm64 vaarg (stage 3)"))
+                ((eq (ins-op i) :vastart) (a64-apple-selvastart fn pstk (ins-arg0 i)))
+                ((eq (ins-op i) :vaarg) (a64-apple-selvaarg fn i))
                 (t (push i *emitted*)))))
           ;; start block is processed last: flush accumulated stkblob allocs.
           ;; QBE iterates the Insl list head-first (newest blob first); each
