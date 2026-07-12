@@ -95,48 +95,177 @@
 (defun a64-gpreg (n) (a64rg (+ +a64-r0+ n)))    ; nth GP arg register R<n>
 (defun a64-fpreg (n) (a64rg (+ +a64-v0+ n)))    ; nth FP arg register V<n>
 
-;;; ---------------------------------------------------- abi1: scalar classes
-;;; STAGE 1: scalars only.  A Class records how one par/arg travels: in a
-;;; register (reg + cls) or on the stack (Cstk).  Aggregates (Oparc/Oargc),
-;;; large-struct pointers (Cptr), and HFA are not handled yet (abi-unsupported).
+;;; -------------------------------------------------------- abi1: classes
+;;; A Class records how one par/arg travels: in registers (reg[]/cls[] + nreg),
+;;; on the stack (Cstk), or replaced by a pointer (Cptr).  arm64 aggregate
+;;; classification is HFA-or-integer-eightbytes, NOT SysV eightbyte, and Apple
+;;; passes non-KWIDE scalars in a 4-byte slot.
 
-(defconstant +a64-cstk+ 1)
-(defconstant +a64-cptr+ 2)
+(defconstant +a64-cstk+ 1)   ; pass on the stack
+(defconstant +a64-cptr+ 2)   ; replaced by a pointer to caller memory
 
 (defstruct a64class
-  (class 0) (size 8) (align 8) reg cls)   ; reg/cls: chosen register id + class
+  (class 0) ishfa (hfa-base :x) (hfa-size 0)
+  (size 8) (align 8) ty
+  (nreg 0) (ngp 0) (nfp 0)
+  (reg (make-array 4 :initial-element nil))   ; chosen register ids
+  (cls (make-array 4 :initial-element :x)))   ; per-register class
+
+;;; --------------------------------------------------- aggregate: isfloatv/typclass
+
+(defun a64-isfloatv (ty base-cell)
+  "arm64/abi.c isfloatv: t if TY is all-float with a single base class (Ks or
+Kd), accumulated into BASE-CELL (a 1-element vector).  0 (nil) otherwise."
+  (dotimes (n (typ-nunion ty) t)
+    (loop for f across (aref (typ-fields ty) n) do
+      (let ((ftype (car f)) (len (cdr f)))
+        (case ftype
+          (:pad nil)
+          (:s (when (eq (aref base-cell 0) :d) (return-from a64-isfloatv nil))
+              (setf (aref base-cell 0) :s))
+          (:d (when (eq (aref base-cell 0) :s) (return-from a64-isfloatv nil))
+              (setf (aref base-cell 0) :d))
+          (:typ (unless (a64-isfloatv len base-cell)
+                  (return-from a64-isfloatv nil)))
+          (t (return-from a64-isfloatv nil)))))))
+
+(defun a64-typclass (c ty gp0 fp0)
+  "arm64/abi.c typclass: classify aggregate TY into C.  GP0/FP0 are the next
+gp/fp arg-register indices; C's reg ids are assigned from there.  Does NOT
+advance any shared counter — argsclass advances only when the aggregate fits
+(mirroring the by-value pointer pass in C)."
+  (let* ((sz (logand (+ (typ-size ty) 7) -8))
+         (base (make-array 1 :initial-element :x)))
+    (setf (a64class-ty c) ty (a64class-class c) 0
+          (a64class-ngp c) 0 (a64class-nfp c) 0 (a64class-align c) 8)
+    (when (> (typ-align ty) 3)
+      (abi-unsupported "arm64 alignments larger than 8"))
+    (setf (a64class-size c) sz)
+    (let* ((ishfa (a64-isfloatv ty base))
+           (hb (aref base 0))
+           (hfasz (floor (typ-size ty) (if (kwide hb) 8 4))))
+      (setf (a64class-hfa-base c) hb
+            (a64class-ishfa c) (and ishfa (not (typ-isdark ty)) (<= hfasz 4))
+            (a64class-hfa-size c) hfasz)
+      (cond
+        ((a64class-ishfa c)
+         (dotimes (n hfasz)
+           (setf (aref (a64class-reg c) n) (+ +a64-v0+ fp0 n)
+                 (aref (a64class-cls c) n) hb)
+           (incf (a64class-nfp c)))
+         (setf (a64class-nreg c) hfasz))
+        ((or (typ-isdark ty) (> sz 16) (= sz 0))
+         ;; large structs: replaced by a pointer to caller-allocated memory
+         (setf (a64class-class c) (logior (a64class-class c) +a64-cptr+)
+               (a64class-size c) 8 (a64class-ngp c) 1
+               (aref (a64class-reg c) 0) (+ +a64-r0+ gp0)
+               (aref (a64class-cls c) 0) :l))
+        (t
+         (dotimes (n (floor sz 8))
+           (setf (aref (a64class-reg c) n) (+ +a64-r0+ gp0 n)
+                 (aref (a64class-cls c) n) :l)
+           (incf (a64class-ngp c)))
+         (setf (a64class-nreg c) (floor sz 8)))))))
+
+;;; ---------------------------------------------------- aggregate: sttmps/ldregs
+
+(defparameter *a64-store*
+  (let ((v (make-array 4)))
+    (setf (aref v (cls-code :w)) :storew (aref v (cls-code :l)) :storel
+          (aref v (cls-code :s)) :stores (aref v (cls-code :d)) :stored)
+    v)
+  "arm64/abi.c store[]: class -> store op.")
+
+(defun a64-sttmps (nreg cls-vec mem fn)
+  "arm64/abi.c sttmps: emit stores of NREG fresh temps into MEM[0,8,..].
+Returns the vector of fresh temps."
+  (let ((tmp (make-array nreg)) (off 0))
+    (dotimes (n nreg)
+      (let ((tn (newtmp "abi" (aref cls-vec n) fn)) (r (newtmp "abi" :l fn)))
+        (setf (aref tmp n) tn)
+        (emit (aref *a64-store* (cls-code (aref cls-vec n))) :w nil tn r)
+        (emit :add :l r mem (getcon off fn))
+        (incf off (if (kwide (aref cls-vec n)) 8 4))))
+    tmp))
+
+(defun a64-ldregs (reg-vec cls-vec n mem fn)
+  "arm64/abi.c ldregs: emit loads of MEM[0,8,..] into registers REG-VEC[0..n)."
+  (let ((off 0))
+    (dotimes (i n)
+      (let ((r (newtmp "abi" :l fn)))
+        (emit :load (aref cls-vec i) (a64rg (aref reg-vec i)) r nil)
+        (emit :add :l r mem (getcon off fn))
+        (incf off (if (kwide (aref cls-vec i)) 8 4))))))
+
+(defun a64-stkblob (r c fn)
+  "arm64/abi.c stkblob: an alloc ins reserving C's stack blob, defining R.
+Returns the ins (caller hoists it into the start block, QBE's Insl list)."
+  (let* ((al (max 0 (- (typ-align (a64class-ty c)) 2)))   ; NAlign == 3
+         (sz (if (logtest (a64class-class c) +a64-cptr+)
+                 (typ-size (a64class-ty c)) (a64class-size c))))
+    (make-instance 'ins :op (a64-alloc-op al) :cls :l :to r
+                   :arg0 (getcon sz fn) :arg1 nil)))
+
+(defun a64-alloc-op (al)
+  (if (<= 0 al 2) (aref #(:alloc4 :alloc8 :alloc16) al)
+      (abi-unsupported "arm64 alloc align")))
+
+(defun a64-align (x al) (logand (+ x al -1) (- al)))
+
+;;; ----------------------------------------------------------- argsclass
 
 (defun a64-argsclass (ins-list)
-  "arm64/abi.c argsclass (scalar subset).  INS-LIST = par/arg ins.  Returns
-(values cty class-vector env va).  Signals abi-unsupported for aggregates."
-  (let ((ngp 8) (nfp 8) (gpn 0) (fpn 0) (va nil) (envc 0) (env nil)
+  "arm64/abi.c argsclass.  INS-LIST = par/arg ins.  Returns
+(values cty class-vector env va)."
+  (let ((ngp 8) (nfp 8) (gp (make-array 1 :initial-element 0))
+        (fp (make-array 1 :initial-element 0))
+        (va nil) (envc 0) (env nil)
         (cs (make-array (length ins-list))))
     (loop for i in ins-list for idx from 0 do
       (let* ((op (ins-op i)) (c (make-a64class)))
         (setf (aref cs idx) c)
         (flet ((scalar (size cls)
                  (setf (a64class-size c) size (a64class-align c) size
-                       (a64class-cls c) cls)
+                       (aref (a64class-cls c) 0) cls)
                  (cond
                    (va (setf (a64class-class c) +a64-cstk+
                              (a64class-size c) 8 (a64class-align c) 8))
                    ((and (= (cls-base cls) 0) (> ngp 0))
-                    (decf ngp) (setf (a64class-reg c) (+ +a64-r0+ gpn)) (incf gpn))
+                    (decf ngp)
+                    (setf (aref (a64class-reg c) 0) (+ +a64-r0+ (aref gp 0)))
+                    (incf (aref gp 0)))
                    ((and (= (cls-base cls) 1) (> nfp 0))
-                    (decf nfp) (setf (a64class-reg c) (+ +a64-v0+ fpn)) (incf fpn))
+                    (decf nfp)
+                    (setf (aref (a64class-reg c) 0) (+ +a64-v0+ (aref fp 0)))
+                    (incf (aref fp 0)))
                    (t (setf (a64class-class c) +a64-cstk+)))))
           (case op
             ((:argsb :argub :parsb :parub) (scalar 1 :w))
             ((:argsh :arguh :parsh :paruh) (scalar 2 :w))
             ((:par :arg)
              (scalar (if (kwide (ins-cls i)) 8 4) (ins-cls i)))  ; apple: size 4 for non-wide
-            ((:argc :parc) (abi-unsupported "arm64 aggregate arg/par (stage 2)"))
+            ((:argc :parc)
+             (a64-typclass c (ins-arg0 i) (aref gp 0) (aref fp 0))
+             (cond
+               ((<= (a64class-ngp c) ngp)
+                (cond
+                  ((<= (a64class-nfp c) nfp)
+                   (decf ngp (a64class-ngp c)) (decf nfp (a64class-nfp c))
+                   (incf (aref gp 0) (a64class-ngp c))
+                   (incf (aref fp 0) (a64class-nfp c)))
+                  (t (setf nfp 0
+                           (a64class-class c) (logior (a64class-class c) +a64-cstk+)))))
+               (t (setf ngp 0
+                        (a64class-class c) (logior (a64class-class c) +a64-cstk+)))))
             ((:arge :pare)
-             (setf (a64class-reg c) +a64-r9+ (a64class-cls c) :l
-                   envc 1 env (if (member op '(:pare)) (ins-to i) (ins-arg0 i))))
+             (setf (aref (a64class-reg c) 0) +a64-r9+ (aref (a64class-cls c) 0) :l
+                   envc 1 env (if (eq op :pare) (ins-to i) (ins-arg0 i))))
             ((:argv) (setf va t))
             (t (abi-unsupported (format nil "arm64 arg op ~a" op)))))))
-    (values (logior (ash envc 14) (ash gpn 5) (ash fpn 9)) cs env va)))
+    ;; NB: QBE recomputes gp/fp deltas from pointer arithmetic; ngp/nfp above only
+    ;; track *remaining* capacity, so cty uses the consumed counts (aref gp/fp 0).
+    (values (logior (ash envc 14) (ash (aref gp 0) 5) (ash (aref fp 0) 9))
+            cs env va)))
 
 ;;; RCall mask decoders (arm64/abi.c retregs/argregs); (values reg-ids ngp nfp).
 (defun arm64-retregs (mask)
@@ -154,15 +283,29 @@
     (when (= x9 1) (push +a64-r9+ regs))
     (values (nreverse regs) (+ ngp x8 x9) nfp)))
 
+;;; isargbh / isparbh (arm64/abi.c uses these to pick store/load widths).
+(defun a64-isargbh (op) (member op '(:argsb :argub :argsh :arguh)))
+(defun a64-isparbh (op) (member op '(:parsb :parub :parsh :paruh)))
+
 ;;; ------------------------------------------------------------ abi1: selret
 (defun a64-selret (b fn)
-  "arm64/abi.c selret (scalar subset)."
+  "arm64/abi.c selret: lower B's return terminator (scalar + aggregate)."
   (let ((j (blk-jmp-type b)))
     (when (and (isret-jmp j) (not (eq j :ret0)))
       (let ((r (blk-jmp-arg b)) (cty 0))
         (setf (blk-jmp-type b) :ret0)
         (if (eq j :retc)
-            (abi-unsupported "arm64 struct return (stage 2)")
+            (let ((cr (make-a64class)))
+              (a64-typclass cr (fn-rettyp fn) 0 0)
+              (if (logtest (a64class-class cr) +a64-cptr+)
+                  (progn                         ; large struct: blit into retr
+                    (emit :blit1 :w nil (typ-size (a64class-ty cr)) nil)
+                    (emit :blit0 :w nil r (fn-retr fn))
+                    (setf cty 0))
+                  (progn                         ; small struct: load into regs
+                    (a64-ldregs (a64class-reg cr) (a64class-cls cr)
+                                (a64class-nreg cr) r fn)
+                    (setf cty (logior (ash (a64class-nfp cr) 2) (a64class-ngp cr))))))
             (let ((k (ecase j (:retw :w) (:retl :l) (:rets :s) (:retd :d))))
               (if (= (cls-base k) 0)
                   (progn (emit :copy k (a64rg +a64-r0+) r nil) (setf cty 1))
@@ -170,76 +313,184 @@
         (setf (blk-jmp-arg b) (make-call-ref cty))))))
 
 ;;; ------------------------------------------------------------ abi1: selcall
-(defun a64-selcall (fn args call)
-  "arm64/abi.c selcall (scalar subset: register args + env, scalar return)."
-  (when (ins-arg1 call) (abi-unsupported "arm64 struct return (stage 2)"))
+(defun a64-selcall (fn args call ilp)
+  "arm64/abi.c selcall: lower CALL with preceding ARGS.  Struct blobs (allocs)
+are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
   (multiple-value-bind (cty cs env va) (a64-argsclass args)
-    (declare (ignore va))
-    (let ((argl (coerce args 'vector)))
-      ;; any stack arg -> stage 2
-      (loop for c across cs when (logtest (a64class-class c) +a64-cstk+)
-            do (abi-unsupported "arm64 stack call args (stage 2)"))
-      ;; scalar return in R0/V0
-      (if (= (cls-base (ins-cls call)) 0)
-          (progn (emit :copy (ins-cls call) (ins-to call) (a64rg +a64-r0+) nil)
-                 (setf cty (logior cty 1)))
-          (progn (emit :copy (ins-cls call) (ins-to call) (a64rg +a64-v0+) nil)
-                 (setf cty (logior cty (ash 1 2)))))
-      (emit :call (ins-cls call) nil (ins-arg0 call) (make-call-ref cty))
-      ;; copy each register arg into its parameter register (QBE order)
+    (declare (ignore env va))
+    (let ((argl (coerce args 'vector)) (stk 0))
+      ;; Cptr args: replace with a pointer to a fresh stack blob; sum stack size.
       (dotimes (idx (length argl))
         (let ((i (aref argl idx)) (c (aref cs idx)))
-          (when (and (a64class-reg c)
-                     (member (ins-op i) '(:arg :arge :argsb :argub :argsh :arguh)))
-            (emit :copy (a64class-cls c) (a64rg (a64class-reg c)) (ins-arg0 i) nil)))))))
+          (when (logtest (a64class-class c) +a64-cptr+)
+            (setf (ins-arg0 i) (newtmp "abi" :l fn))
+            (push (a64-stkblob (ins-arg0 i) c fn) (aref ilp 0))
+            (setf (ins-op i) :arg))
+          (when (logtest (a64class-class c) +a64-cstk+)
+            (setf stk (a64-align stk (a64class-align c)))
+            (incf stk (a64class-size c)))))
+      (setf stk (a64-align stk 16))
+      (let ((rstk (getcon stk fn)))
+        (when (/= stk 0) (emit :add :l (a64rg +a64-sp+) (a64rg +a64-sp+) rstk))
+        ;; return handling
+        (if (ins-arg1 call)
+            (let ((cr (make-a64class)))
+              (a64-typclass cr (ins-arg1 call) 0 0)
+              (push (a64-stkblob (ins-to call) cr fn) (aref ilp 0))
+              (setf cty (logior cty (ash (a64class-nfp cr) 2) (a64class-ngp cr)))
+              (if (logtest (a64class-class cr) +a64-cptr+)
+                  (progn                         ; dummy copy so spill/rega see it
+                    (setf cty (logior cty (ash 1 13) 1))
+                    (emit :copy :w nil (a64rg +a64-r0+) nil))
+                  (let ((tmp (a64-sttmps (a64class-nreg cr) (a64class-cls cr)
+                                         (ins-to call) fn)))
+                    (dotimes (n (a64class-nreg cr))
+                      (emit :copy (aref (a64class-cls cr) n) (aref tmp n)
+                            (a64rg (aref (a64class-reg cr) n)) nil)))))
+            (if (= (cls-base (ins-cls call)) 0)
+                (progn (emit :copy (ins-cls call) (ins-to call) (a64rg +a64-r0+) nil)
+                       (setf cty (logior cty 1)))
+                (progn (emit :copy (ins-cls call) (ins-to call) (a64rg +a64-v0+) nil)
+                       (setf cty (logior cty (ash 1 2))))))
+        (emit :call :w nil (ins-arg0 call) (make-call-ref cty))
+        (when (logtest cty (ash 1 13))           ; struct return argument in R8
+          (emit :copy :l (a64rg +a64-r8+) (ins-to call) nil))
+        ;; register args: copy each into its parameter register
+        (dotimes (idx (length argl))
+          (let ((i (aref argl idx)) (c (aref cs idx)))
+            (unless (logtest (a64class-class c) +a64-cstk+)
+              (when (or (member (ins-op i) '(:arg :arge)) (a64-isargbh (ins-op i)))
+                (emit :copy (aref (a64class-cls c) 0) (a64rg (aref (a64class-reg c) 0))
+                      (ins-arg0 i) nil))
+              (when (eq (ins-op i) :argc)
+                (a64-ldregs (a64class-reg c) (a64class-cls c) (a64class-nreg c)
+                            (ins-arg1 i) fn)))))
+        ;; populate the stack (Cstk args)
+        (let ((off 0))
+          (dotimes (idx (length argl))
+            (let ((i (aref argl idx)) (c (aref cs idx)))
+              (when (logtest (a64class-class c) +a64-cstk+)
+                (setf off (a64-align off (a64class-align c)))
+                (let ((r (newtmp "abi" :l fn)))
+                  (if (or (eq (ins-op i) :arg) (a64-isargbh (ins-op i)))
+                      (let ((op (case (a64class-size c)
+                                  (1 :storeb) (2 :storeh)
+                                  ((4 8) (aref *a64-store* (cls-code (aref (a64class-cls c) 0))))
+                                  (t (abi-unsupported "arm64 stack arg size")))))
+                        (emit op :w nil (ins-arg0 i) r))
+                      (progn                     ; :argc — blit the struct onto the stack
+                        (emit :blit1 :w nil (a64class-size c) nil)
+                        (emit :blit0 :w nil (ins-arg1 i) r)))
+                  (emit :add :l r (a64rg +a64-sp+) (getcon off fn))
+                  (incf off (a64class-size c)))))))
+        (when (/= stk 0) (emit :sub :l (a64rg +a64-sp+) (a64rg +a64-sp+) rstk))
+        ;; Cptr args: blit caller value into the pointed-to blob
+        (dotimes (idx (length argl))
+          (let ((i (aref argl idx)) (c (aref cs idx)))
+            (when (logtest (a64class-class c) +a64-cptr+)
+              (emit :blit1 :w nil (typ-size (a64class-ty c)) nil)
+              (emit :blit0 :w nil (ins-arg1 i) (ins-arg0 i)))))))))
+
+;;; selpar's register-struct handling consumes sttmps' fresh temps in a second
+;;; pass (QBE keeps them in a `tmp[]` array indexed by `t`).  We stash them on a
+;;; FIFO produced by a64-sttmps-par (first pass) and drain it via a64-par-tmp
+;;; (second pass); arm64-abi rebinds it per function.
+(defvar *a64-par-tmps* nil "FIFO of sttmps-produced temps for register structs.")
+(defun a64-sttmps-par (nreg cls-vec mem fn)
+  (let ((tmp (a64-sttmps nreg cls-vec mem fn)))
+    (dotimes (n nreg) (setf *a64-par-tmps* (nconc *a64-par-tmps* (list (aref tmp n)))))))
+(defun a64-par-tmp () (pop *a64-par-tmps*))
 
 ;;; ------------------------------------------------------------ abi1: selpar
 (defun a64-selpar (fn pars)
-  "arm64/abi.c selpar (scalar subset).  Returns (values stk ngp nfp)."
+  "arm64/abi.c selpar: lower PARS (leading par run).  Returns (values stk ngp nfp)."
   (multiple-value-bind (cty cs env va) (a64-argsclass pars)
     (declare (ignore env va))
     (setf (fn-reg fn) (let ((m 0))
                         (dolist (rid (arm64-argregs cty) m)
                           (setf m (logior m (ash 1 rid))))))
-    (when (fn-rettyp fn) (abi-unsupported "arm64 struct return param (stage 2)"))
-    (let ((parl (coerce pars 'vector)))
+    (let ((parl (coerce pars 'vector)) (il '()))
+      ;; register-passed struct params: stash the reg halves into a fresh slot
       (dotimes (idx (length parl))
         (let ((i (aref parl idx)) (c (aref cs idx)))
-          (when (logtest (a64class-class c) +a64-cstk+)
-            (abi-unsupported "arm64 stack params (stage 2)"))
-          (when (eq (ins-op i) :parc) (abi-unsupported "arm64 aggregate param (stage 2)"))
-          (emit :copy (a64class-cls c) (ins-to i) (a64rg (a64class-reg c)) nil))))
-    (values 0 (logand (ash cty -5) 15) (logand (ash cty -9) 15))))
+          (when (and (eq (ins-op i) :parc)
+                     (not (logtest (a64class-class c) (logior +a64-cptr+ +a64-cstk+))))
+            (a64-sttmps-par (a64class-nreg c) (a64class-cls c) (ins-to i) fn)
+            (push (a64-stkblob (ins-to i) c fn) il))))
+      ;; hoist the struct-param allocs (QBE flushes the Insl list here, head
+      ;; first — i.e. newest blob first, exactly as accumulated).
+      (dolist (ins il) (push ins *emitted*))
+      ;; struct return by pointer: caller passed the address in R8
+      (when (fn-rettyp fn)
+        (let ((cr (make-a64class)))
+          (a64-typclass cr (fn-rettyp fn) 0 0)
+          (when (logtest (a64class-class cr) +a64-cptr+)
+            (setf (fn-retr fn) (newtmp "abi" :l fn))
+            (emit :copy :l (fn-retr fn) (a64rg +a64-r8+) nil)
+            (setf (fn-reg fn) (logior (fn-reg fn) (ash 1 +a64-r8+))))))
+      (let ((off 0))
+        (dotimes (idx (length parl))
+          (let ((i (aref parl idx)) (c (aref cs idx)))
+            (cond
+              ((and (eq (ins-op i) :parc)
+                    (not (logtest (a64class-class c) +a64-cptr+)))
+               (if (logtest (a64class-class c) +a64-cstk+)
+                   (progn (setf off (a64-align off (a64class-align c)))
+                          (setf (tmp-slot (ins-to i)) (- (+ off 2)))
+                          (incf off (a64class-size c)))
+                   (dotimes (n (a64class-nreg c))
+                     (emit :copy (aref (a64class-cls c) n) (a64-par-tmp)
+                           (a64rg (aref (a64class-reg c) n)) nil))))
+              ((logtest (a64class-class c) +a64-cstk+)
+               (setf off (a64-align off (a64class-align c)))
+               (let ((op (if (a64-isparbh (ins-op i))
+                             (aref #(:loadsb :loadub :loadsh :loaduh)
+                                   (position (ins-op i) #(:parsb :parub :parsh :paruh)))
+                             :load)))
+                 (emit op (aref (a64class-cls c) 0) (ins-to i)
+                       (make-slot-ref (- (+ off 2))) nil))
+               (incf off (a64class-size c)))
+              (t (emit :copy (aref (a64class-cls c) 0) (ins-to i)
+                       (a64rg (aref (a64class-reg c) 0)) nil)))))
+        (values (a64-align off 8)
+                (logand (ash cty -5) 15) (logand (ash cty -9) 15))))))
 
 ;;; ------------------------------------------------------------ abi1: driver
 (defun ispar-a64 (op) (member op '(:par :parc :pare :parsb :parub :parsh :paruh)))
 
 (defun arm64-abi (fn)
-  "arm64/abi.c arm64_abi (abi1, stage 1: scalars).  Rewrites FN."
+  "arm64/abi.c arm64_abi (abi1): lower params, returns, calls.  Rewrites FN."
   (dolist (b (fn-blocks fn)) (setf (blk-visit b) 0))
-  ;; 1. lower parameters (leading par run of the start block)
-  (let* ((start (fn-start fn)) (pars '()) (rest nil))
-    (dolist (i (blk-ins start))
-      (if (and (null rest) (ispar-a64 (ins-op i))) (push i pars) (push i rest)))
-    (setf pars (nreverse pars) rest (nreverse rest))
-    (let ((*emitted* nil))
-      (a64-selpar fn pars)
-      (setf (blk-ins start) (append *emitted* rest))))
-  ;; 2. lower returns / calls / varargs; start block LAST
-  (let* ((blocks (fn-blocks fn)) (start (car blocks)))
-    (dolist (b (append (cdr blocks) (list start)))
-      (let ((*emitted* nil) (vec (coerce (blk-ins b) 'vector)))
-        (a64-selret b fn)
-        (loop with k = (length vec) while (> k 0) do
-          (decf k)
-          (let ((i (aref vec k)))
-            (cond
-              ((eq (ins-op i) :call)
-               (let ((i0 k))
-                 (loop while (and (> i0 0) (arg-op-p (ins-op (aref vec (1- i0))))) do (decf i0))
-                 (a64-selcall fn (coerce (subseq vec i0 k) 'list) i)
-                 (setf k i0)))
-              ((eq (ins-op i) :vastart) (abi-unsupported "arm64 vastart (stage 3)"))
-              ((eq (ins-op i) :vaarg) (abi-unsupported "arm64 vaarg (stage 3)"))
-              (t (push i *emitted*)))))
-        (setf (blk-ins b) *emitted*)))))
+  (let ((il (make-array 1 :initial-element nil))   ; shared Insl (stkblob) list
+        (*a64-par-tmps* nil))
+    ;; 1. lower parameters (leading par run of the start block)
+    (let* ((start (fn-start fn)) (pars '()) (rest nil))
+      (dolist (i (blk-ins start))
+        (if (and (null rest) (ispar-a64 (ins-op i))) (push i pars) (push i rest)))
+      (setf pars (nreverse pars) rest (nreverse rest))
+      (let ((*emitted* nil))
+        (a64-selpar fn pars)
+        (setf (blk-ins start) (append *emitted* rest))))
+    ;; 2. lower returns / calls / varargs; start block LAST, then flush `il`.
+    (let* ((blocks (fn-blocks fn)) (start (car blocks)))
+      (dolist (b (append (cdr blocks) (list start)))
+        (let ((*emitted* nil) (vec (coerce (blk-ins b) 'vector)))
+          (a64-selret b fn)
+          (loop with k = (length vec) while (> k 0) do
+            (decf k)
+            (let ((i (aref vec k)))
+              (cond
+                ((eq (ins-op i) :call)
+                 (let ((i0 k))
+                   (loop while (and (> i0 0) (arg-op-p (ins-op (aref vec (1- i0))))) do (decf i0))
+                   (a64-selcall fn (coerce (subseq vec i0 k) 'list) i il)
+                   (setf k i0)))
+                ((eq (ins-op i) :vastart) (abi-unsupported "arm64 vastart (stage 3)"))
+                ((eq (ins-op i) :vaarg) (abi-unsupported "arm64 vaarg (stage 3)"))
+                (t (push i *emitted*)))))
+          ;; start block is processed last: flush accumulated stkblob allocs.
+          ;; QBE iterates the Insl list head-first (newest blob first); each
+          ;; emiti = push, so the list-head order is preserved verbatim.
+          (when (eq b start)
+            (dolist (ins (aref il 0)) (push ins *emitted*)))
+          (setf (blk-ins b) *emitted*))))))

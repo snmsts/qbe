@@ -42,7 +42,7 @@
     ((typep r 'typ)   (format stream ":~a" (typ-name r)))
     ((integerp r)     (format stream "~d" r))
     ((reg-p r)        (format stream "R~d" (reg-id r)))
-    ((call-ref-p r)   (format stream "~4,'0x" (call-ref-val r)))
+    ((call-ref-p r)   (format stream "~(~4,'0x~)" (call-ref-val r)))  ; %04x (lowercase)
     ((slot-ref-p r)   (format stream "S~d" (slot-ref-n r)))
     ((mem-p r)        (print-mem r stream))
     (t (error "qbe: cannot print ref ~s" r))))
