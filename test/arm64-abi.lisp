@@ -77,6 +77,36 @@ pre-ABI:\") for each function in DUMP."
   (qbe:a64-apple-extsb fn)
   (qbe:print-fn-to-string fn))
 
+(defun our-a64-abi (fn)
+  "Full arm64 pre-abi1 pipeline (main.c func for T.cansel=0, so NO ifconvert):
+abi0, SSA, mid-end (loadopt/coalesce/gvn/simplcfg/gcm), then abi1."
+  (qbe:a64-apple-extsb fn)
+  (qbe:fill-cfg fn) (qbe:fill-use fn) (qbe:promote fn) (qbe:fill-use fn)
+  (qbe:ssa fn) (qbe:fill-use fn)
+  (qbe:fill-alias fn) (qbe:loadopt fn) (qbe:fill-use fn) (qbe:fill-alias fn)
+  (qbe:coalesce fn) (qbe:fill-use fn) (qbe:fill-dom fn)
+  (qbe:gvn fn) (qbe:fill-cfg fn) (qbe:simplcfg fn)
+  (qbe:fill-use fn) (qbe:fill-dom fn) (qbe:gcm fn) (qbe:fill-use fn)
+  (qbe:arm64-abi fn)
+  (qbe:print-fn-to-string fn))
+
+(defun diff-abi1 (ssa-path)
+  "(values raw-ok norm-ok supported unsupported total) for the ABI-lowering dump."
+  (let* ((mod (qbe:parse-file ssa-path))
+         (golden (a64da-sections (a64da-dump ssa-path) "> After ABI lowering:"))
+         (raw 0) (norm 0) (sup 0) (unsup 0) (total 0))
+    (setf qbe::*tmp-counter* 0) (qbe::reset-stash)
+    (dolist (fn (qbe:module-funcs mod))
+      (incf total)
+      (handler-case
+          (let ((mine (our-a64-abi fn))
+                (ref (or (cdr (assoc (qbe:fn-name fn) golden :test #'string=)) "")))
+            (incf sup)
+            (when (string= mine ref) (incf raw))
+            (when (string= (normalize mine) (normalize ref)) (incf norm)))
+        (error (e) (declare (ignore e)) (incf unsup))))
+    (values raw norm sup unsup total)))
+
 (defun diff-pre-abi (ssa-path)
   "(values raw-ok norm-ok supported unsupported total)."
   (let* ((mod (qbe:parse-file ssa-path))
@@ -105,6 +135,17 @@ pre-ABI:\") for each function in DUMP."
       (error (e) (format t "~&~a: ERROR ~a~%" (file-namestring p) e))))
   (format t "~&=== arm64 abi0 (apple_extsb) — pre-ABI dump ===~%")
   (format t "  supported: ~d/~d functions~%" sup tot)
+  (format t "  raw  (byte-exact):   ~d/~d supported~%" raw sup)
+  (format t "  norm (structure):    ~d/~d supported~%" norm sup))
+
+(let ((raw 0) (norm 0) (sup 0) (unsup 0) (tot 0))
+  (dolist (p (corpus-files))
+    (handler-case
+        (multiple-value-bind (r nm s u n) (diff-abi1 p)
+          (incf raw r) (incf norm nm) (incf sup s) (incf unsup u) (incf tot n))
+      (error (e) (format t "~&~a: ERROR ~a~%" (file-namestring p) e))))
+  (format t "~&=== arm64 abi1 (arm64_abi, stage 1: scalars) — ABI-lowering dump ===~%")
+  (format t "  supported (no structs/stack-args/varargs): ~d/~d functions~%" sup tot)
   (format t "  raw  (byte-exact):   ~d/~d supported~%" raw sup)
   (format t "  norm (structure):    ~d/~d supported~%" norm sup)
   (sb-ext:exit :code (if (= norm sup) 0 1)))
