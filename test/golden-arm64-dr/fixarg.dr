@@ -1,0 +1,20 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $test() {
+@start
+	R2 =l addr S2
+	R1 =l addr S0
+	acmpl R1, R2
+	R1 =w flagine
+	ret0 0001
+}
+

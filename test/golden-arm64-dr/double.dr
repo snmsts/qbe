@@ -1,0 +1,37 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end (isel.1, R33)
+	loop       beg (i1, R1) (x4, R33)
+	           end (x5, R33) (i2, R1)
+	end        beg (i2, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $test() {
+@start
+	R1 =l copy $"Lfp0"
+	R33 =d load R1
+	jmp @start_loop
+@loop
+	R33 =d add R33, R33
+	R2 =w copy 1
+	R1 =w add R1, R2
+	R2 =l copy $"Lfp1"
+	R34 =d load R2
+	afcmpd R33, R34
+	jffle @loop, @end
+@end
+	R2 =l copy $a
+	storew R1, R2
+	ret0
+@start_loop
+	R1 =w copy 0
+	jmp @loop
+}
+

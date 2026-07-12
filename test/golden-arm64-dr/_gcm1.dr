@@ -1,0 +1,97 @@
+**** Function ifmv ****
+> Register mappings:
+	start      beg
+	           end (p2, R2) (p3, R3)
+	false      beg (p3, R3) (p2, R2)
+	           end (rf.2, R1)
+	true       beg (p3, R3) (p2, R2)
+	           end (rt.1, R1)
+	exit       beg (r.3, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ifmv() {
+@start
+	acmpw R1, 0
+	jfine @true, @false
+@true
+	R1 =w add R2, R3
+	jmp @exit
+@false
+	R1 =w sub R2, R3
+@exit
+	ret0 0001
+}
+
+**** Function hoist1 ****
+> Register mappings:
+	start      beg
+	           end (p2, R2) (p3, R3) (p1, R1)
+	loop       beg (p2, R2) (p3, R3) (n.9, R4) (i.8, R1)
+	           end (i.11, R1) (p2, R2) (p3, R3) (n.12, R4)
+	exit       beg (n.12, R4) (p3, R3) (p2, R2)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $hoist1() {
+@start
+	jmp @start_loop
+@loop
+	R5 =w copy 1
+	R1 =w sub R1, R5
+	R5 =w copy 1
+	R4 =w add R4, R5
+	acmpw R1, 0
+	jfine @loop, @exit
+@exit
+	R1 =w add R2, R3
+	R1 =w add R1, R4
+	ret0 0001
+@start_loop
+	R4 =w copy 0
+	jmp @loop
+}
+
+**** Function hoist2 ****
+> Register mappings:
+	start      beg
+	           end (base.19, R3) (p1, R1)
+	loop       beg (base.19, R3) (n.18, R2) (i.17, R1)
+	           end (i.20, R1) (n.21, R2) (base.19, R3)
+	exit       beg (n.21, R2) (base.19, R3)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $hoist2() {
+@start
+	R3 =w add R2, R3
+	jmp @start_loop
+@loop
+	R4 =w copy 1
+	R1 =w sub R1, R4
+	R2 =w add R2, R3
+	acmpw R1, 0
+	jfine @loop, @exit
+@exit
+	R1 =w add R3, R2
+	ret0 0001
+@start_loop
+	R2 =w copy 0
+	jmp @loop
+}
+

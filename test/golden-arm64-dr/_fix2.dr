@@ -1,0 +1,34 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+	loop       beg (x.2, R1)
+	           end
+	isz        beg
+	           end
+	noz        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  2
+	new blocks: 2
+
+> After register allocation:
+function $test() {
+@start
+	jmp @start_loop
+@loop
+	acmpw R1, 0
+	jfine @noz, @isz
+@noz
+	ret0
+@isz
+@isz_loop
+	R1 =w copy 1
+	jmp @loop
+@start_loop
+	R1 =w copy 1
+	jmp @loop
+}
+

@@ -1,0 +1,341 @@
+**** Function ifc1 ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.1, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifc1() {
+@start
+	acmpw R3, 0
+	jfine @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+
+**** Function ifc2 ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.4, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifc2() {
+@start
+	acmpw R3, 42
+	jfine @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+
+**** Function ifc3 ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.7, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifc3() {
+@start
+	acmpw R3, 42
+	jfiugt @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+
+**** Function ifclts ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.10, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifclts() {
+@start
+	afcmps R33, R34
+	jfflt @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+
+**** Function ifcles ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.13, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifcles() {
+@start
+	afcmps R33, R34
+	jffle @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+
+**** Function ifcgts ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.16, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifcgts() {
+@start
+	afcmps R33, R34
+	jffgt @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+
+**** Function ifcges ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.19, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifcges() {
+@start
+	afcmps R33, R34
+	jffge @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+
+**** Function ifceqs ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.22, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifceqs() {
+@start
+	afcmps R33, R34
+	jffeq @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+
+**** Function ifcnes ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.25, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifcnes() {
+@start
+	afcmps R33, R34
+	jffne @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+
+**** Function ifcos ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.28, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifcos() {
+@start
+	afcmps R33, R34
+	jffo @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+
+**** Function ifcuos ****
+> Register mappings:
+	start      beg
+	           end (v0, R1) (v1, R2)
+	false      beg (v0, R1)
+	           end (v0, R1)
+	true       beg (v1, R1)
+	           end (v1, R1)
+	end        beg (v.31, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $ifcuos() {
+@start
+	afcmps R33, R34
+	jffuo @start_true, @false
+@true
+	jmp @end
+@false
+@end
+	ret0 0001
+@start_true
+	R1 =l copy R2
+	jmp @true
+}
+

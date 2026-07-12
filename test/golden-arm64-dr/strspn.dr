@@ -1,0 +1,78 @@
+**** Function strspn_ ****
+> Register mappings:
+	.64        beg
+	           end (s2.82.val, R3) (s1.81.val, R1)
+	.27        beg (s1.81.4, R1) (n.83.3, R5) (s2.82.val, R3)
+	           end (.60, R4) (s1.81.4, R1) (n.83.3, R5) (s2.82.val, R3)
+	.28        beg (.60, R4) (s1.81.4, R1) (n.83.3, R5) (s2.82.val, R3)
+	           end (.60, R4) (s1.81.4, R1) (n.83.3, R5) (s2.82.val, R3)
+	.29        beg (p.85.8, R2) (.60, R4) (s1.81.4, R1) (n.83.3, R5) (s2.82.val, R3)
+	           end (.44, R6) (p.85.8, R2) (.60, R4) (s1.81.4, R1) (n.83.3, R5) (s2.82.val, R3)
+	.42        beg (p.85.8, R2) (.60, R4) (s1.81.4, R1) (n.83.3, R5) (s2.82.val, R3) (.44, R6)
+	           end (p.85.8, R2) (.60, R4) (s1.81.4, R1) (n.83.3, R5) (s2.82.val, R3) (.44, R6)
+	.30        beg (s1.81.4, R1) (s2.82.val, R3) (.60, R4) (n.83.3, R5) (p.85.8, R2)
+	           end (.41, R2) (s1.81.4, R1) (s2.82.val, R3) (.60, R4) (n.83.3, R5)
+	.36        beg (s1.81.4, R1) (n.83.3, R5) (s2.82.val, R3) (.44, R6)
+	           end (s1.81.4, R1) (n.83.3, R5) (s2.82.val, R3)
+	.33        beg (s2.82.val, R3) (s1.81.4, R1) (n.83.3, R5)
+	           end (s2.82.val, R3) (.57, R5) (.59, R1)
+	.37        beg (n.83.3, R1)
+	           end (n.83.3, R1)
+	.38        beg (n.83.3, R1)
+	           end (n.83.3, R1)
+	.34        beg (n.83.3, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  5
+	new blocks: 4
+
+> After register allocation:
+function $strspn_() {
+@.64
+	R3 =l copy R2
+	jmp @.64_.27
+@.28
+	jmp @.28_.29
+@.30
+	R6 =l copy 1
+	R2 =l add R2, R6
+@.29
+	R6 =w loadsb R2
+	acmpw R6, 0
+	jfine @.42, @.36
+@.42
+	acmpw R6, R4
+	jfine @.30, @.36
+@.36
+	acmpw R6, 0
+	jfine @.33, @.36_.37
+@.37
+	jmp @.34
+@.33
+	R2 =w copy 1
+	R5 =w add R5, R2
+	R2 =l copy 1
+	R1 =l add R1, R2
+@.27
+	R4 =w loadsb R1
+	acmpw R4, 0
+	jfine @.28, @.27_.38
+@.38
+@.34
+	ret0 0001
+@.27_.38
+	R1 =w copy R5
+	jmp @.38
+@.36_.37
+	R1 =w copy R5
+	jmp @.37
+@.28_.29
+	R2 =l copy R3
+	jmp @.29
+@.64_.27
+	R5 =w copy 0
+	jmp @.27
+}
+

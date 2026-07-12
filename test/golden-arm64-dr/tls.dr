@@ -1,0 +1,230 @@
+**** Function main ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $main() {
+@start
+	R4 =l copy 0
+	R3 =l copy $thread
+	R2 =l copy 0
+	R1 =l addr S0
+	call $pthread_create, 0081
+	R1 =l addr S0
+	R1 =l load R1
+	R2 =l addr S2
+	call $pthread_join, 0041
+	R1 =l copy thread $i
+	R2 =l load R1
+	call R2, 0021
+	R1 =w loadsw R1
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy 0
+	R2 =l add R32, R1
+	R1 =w copy 0
+	storew R1, R2
+	R1 =l copy $fmti
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	R1 =l addr S2
+	R1 =w load R1
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy 0
+	R2 =l add R32, R1
+	R1 =w copy 1
+	storew R1, R2
+	R1 =l copy $fmti
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $xaddr, 0001
+	R1 =w load R1
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy 0
+	R2 =l add R32, R1
+	R1 =w copy 0
+	storew R1, R2
+	R1 =l copy $fmtx
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $xaddroff4, 0001
+	R1 =w load R1
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy 0
+	R2 =l add R32, R1
+	R1 =w copy 4
+	storew R1, R2
+	R1 =l copy $fmtx
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	R1 =l copy 8
+	call $xaddroff, 0021
+	R1 =w load R1
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy 0
+	R2 =l add R32, R1
+	R1 =w copy 8
+	storew R1, R2
+	R1 =l copy $fmtx
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	R1 =l copy 3
+	call $xvalcnt, 0021
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy 0
+	R2 =l add R32, R1
+	R1 =w copy 12
+	storew R1, R2
+	R1 =l copy $fmtx
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function thread ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $thread() {
+@start
+	R1 =l copy thread $i
+	R2 =l load R1
+	call R2, 0021
+	R2 =l add R1, 3
+	R1 =w copy 24
+	storeb R1, R2
+	R1 =l copy thread $i
+	R2 =l load R1
+	call R2, 0021
+	R1 =l loadsw R1
+	ret0 0001
+}
+
+**** Function xaddr ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $xaddr() {
+@start
+	R1 =l copy thread $x
+	R2 =l load R1
+	call R2, 0021
+	ret0 0001
+}
+
+**** Function xaddroff4 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $xaddroff4() {
+@start
+	R1 =l copy thread $x
+	R2 =l load R1
+	call R2, 0021
+	R1 =l add R1, 4
+	ret0 0001
+}
+
+**** Function xaddroff ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  3
+	new blocks: 0
+
+> After register allocation:
+function $xaddroff() {
+@start
+	R20 =l copy R1
+	R1 =l copy thread $x
+	R2 =l load R1
+	call R2, 0021
+	R2 =l copy R1
+	R1 =l copy R20
+	R1 =l add R1, R2
+	ret0 0001
+}
+
+**** Function xvalcnt ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $xvalcnt() {
+@start
+	R2 =l copy 4
+	R20 =l mul R1, R2
+	R1 =l copy thread $x
+	R2 =l load R1
+	call R2, 0021
+	R1 =l add R20, R1
+	R1 =w load R1
+	ret0 0001
+}
+

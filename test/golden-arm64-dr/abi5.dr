@@ -1,0 +1,290 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $test() {
+@start
+	R9 =l addr S18
+	call $t1, 2001
+	R1 =l copy 16
+	R32 =l sub R32, R1
+	R1 =l copy 0
+	R2 =l add R32, R1
+	R1 =l addr S18
+	storel R1, R2
+	R1 =l copy $fmt1
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $t2, 0001
+	R3 =l copy 0
+	R2 =l addr S16
+	R2 =l add R2, R3
+	storel R1, R2
+	R1 =l addr S16
+	R1 =w loadsw R1
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 0
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy $fmt2
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $t3, 0001
+	R3 =l copy 0
+	R2 =l addr S14
+	R2 =l add R2, R3
+	storel R1, R2
+	R1 =l addr S14
+	R33 =s load R1
+	R2 =l copy 4
+	R1 =l addr S14
+	R1 =l add R1, R2
+	R1 =w loadsw R1
+	R33 =d exts R33
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy 0
+	R1 =l add R32, R1
+	stored R33, R1
+	R1 =l copy $fmt3
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $t4, 0002
+	R4 =l copy 8
+	R3 =l addr S31
+	R3 =l add R3, R4
+	storel R2, R3
+	R3 =l copy 0
+	R2 =l addr S31
+	R2 =l add R2, R3
+	storel R1, R2
+	R1 =l addr S31
+	R1 =w loadsw R1
+	R3 =l copy 8
+	R2 =l addr S31
+	R2 =l add R2, R3
+	R33 =d load R2
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	stored R33, R2
+	R2 =l copy 0
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy $fmt4
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $t5, 0002
+	R4 =l copy 8
+	R3 =l addr S27
+	R3 =l add R3, R4
+	storel R2, R3
+	R3 =l copy 0
+	R2 =l addr S27
+	R2 =l add R2, R3
+	storel R1, R2
+	R1 =l addr S27
+	R33 =s load R1
+	R33 =d exts R33
+	R2 =l copy 8
+	R1 =l addr S27
+	R1 =l add R1, R2
+	R1 =l load R1
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	storel R1, R2
+	R1 =l copy 0
+	R1 =l add R32, R1
+	stored R33, R1
+	R1 =l copy $fmt5
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $t6, 0002
+	R4 =l copy 8
+	R3 =l addr S10
+	R3 =l add R3, R4
+	storel R2, R3
+	R3 =l copy 0
+	R2 =l addr S10
+	R2 =l add R2, R3
+	storel R1, R2
+	R1 =l copy 16
+	R32 =l sub R32, R1
+	R1 =l copy 0
+	R2 =l add R32, R1
+	R1 =l addr S10
+	storel R1, R2
+	R1 =l copy $fmt6
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $t7, 0002
+	R4 =l copy 8
+	R3 =l addr S23
+	R3 =l add R3, R4
+	storel R2, R3
+	R3 =l copy 0
+	R2 =l addr S23
+	R2 =l add R2, R3
+	storel R1, R2
+	R1 =l addr S23
+	R33 =s load R1
+	R33 =d exts R33
+	R2 =l copy 8
+	R1 =l addr S23
+	R1 =l add R1, R2
+	R34 =d load R1
+	R1 =l copy 16
+	R32 =l sub R32, R1
+	R1 =l copy 8
+	R1 =l add R32, R1
+	stored R34, R1
+	R1 =l copy 0
+	R1 =l add R32, R1
+	stored R33, R1
+	R1 =l copy $fmt7
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $t8, 0002
+	R4 =l copy 8
+	R3 =l addr S6
+	R3 =l add R3, R4
+	storel R2, R3
+	R3 =l copy 0
+	R2 =l addr S6
+	R2 =l add R2, R3
+	storel R1, R2
+	R2 =l copy 4
+	R1 =l addr S6
+	R2 =l add R1, R2
+	R3 =l copy 8
+	R1 =l addr S6
+	R3 =l add R1, R3
+	R4 =l copy 12
+	R1 =l addr S6
+	R4 =l add R1, R4
+	R1 =l addr S6
+	R1 =w loadsw R1
+	R2 =w loadsw R2
+	R3 =w loadsw R3
+	R4 =w loadsw R4
+	R5 =l copy 32
+	R32 =l sub R32, R5
+	R5 =l copy 24
+	R5 =l add R32, R5
+	storew R4, R5
+	R4 =l copy 16
+	R4 =l add R32, R4
+	storew R3, R4
+	R3 =l copy 8
+	R3 =l add R32, R3
+	storew R2, R3
+	R2 =l copy 0
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy $fmt8
+	call $printf, 0021
+	R1 =l copy 32
+	R32 =l add R32, R1
+	call $t9, 0001
+	R3 =l copy 0
+	R2 =l addr S4
+	R2 =l add R2, R3
+	storel R1, R2
+	R2 =l copy 4
+	R1 =l addr S4
+	R2 =l add R1, R2
+	R1 =l addr S4
+	R1 =w loadsw R1
+	R33 =s load R2
+	R33 =d exts R33
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	stored R33, R2
+	R2 =l copy 0
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy $fmt9
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $ta, 0001
+	R3 =l copy 0
+	R2 =l addr S2
+	R2 =l add R2, R3
+	storel R1, R2
+	R2 =l copy 4
+	R1 =l addr S2
+	R2 =l add R1, R2
+	R1 =l addr S2
+	R1 =w loadsb R1
+	R33 =s load R2
+	R33 =d exts R33
+	R2 =l copy 16
+	R32 =l sub R32, R2
+	R2 =l copy 8
+	R2 =l add R32, R2
+	stored R33, R2
+	R2 =l copy 0
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy $fmta
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	call $tb, 0001
+	R3 =l copy 0
+	R2 =l addr S0
+	R2 =l add R2, R3
+	storel R1, R2
+	R2 =l copy 1
+	R1 =l addr S0
+	R2 =l add R1, R2
+	R3 =l copy 4
+	R1 =l addr S0
+	R3 =l add R1, R3
+	R1 =l addr S0
+	R1 =w loadsb R1
+	R2 =w loadsb R2
+	R33 =s load R3
+	R33 =d exts R33
+	R3 =l copy 32
+	R32 =l sub R32, R3
+	R3 =l copy 16
+	R3 =l add R32, R3
+	stored R33, R3
+	R3 =l copy 8
+	R3 =l add R32, R3
+	storew R2, R3
+	R2 =l copy 0
+	R2 =l add R32, R2
+	storew R1, R2
+	R1 =l copy $fmtb
+	call $printf, 0021
+	R1 =l copy 32
+	R32 =l add R32, R1
+	ret0
+}
+

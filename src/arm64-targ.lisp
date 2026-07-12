@@ -27,7 +27,7 @@
    'vector))
 (defparameter *arm64-rclob*
   (coerce
-   (append (loop for i from 19 to 28 collect (+ +a64-r0+ (1- i))) ; R19..R28
+   (append (loop for i from 19 to 28 collect (+ +a64-r0+ i))      ; R19..R28 (ids 20..29)
            (loop for i from 8 to 15 collect (+ +a64-v0+ i)))      ; V8..V15
    'vector))
 
@@ -55,8 +55,8 @@
    :abi0 #'a64-apple-extsb
    :abi1 #'arm64-abi
    :isel #'arm64-isel
-   :emitfn nil                  ; arm64 emit (arm64-emit.lisp) lands in G4
-   :emitfin nil
+   :emitfn #'a64-be-emit-fn
+   :emitfin #'a64-emit-fin
    :retregs #'arm64-retregs
    :argregs #'arm64-argregs
    :memargs #'arm64-memargs

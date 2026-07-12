@@ -1,0 +1,99 @@
+**** Function f ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 0
+
+> After register allocation:
+function $f() {
+@start
+	R41 =d load S-18
+	R42 =d copy R39
+	R2 =l copy 8
+	R1 =l addr S4
+	R1 =l add R1, R2
+	stores R38, R1
+	R2 =l copy 4
+	R1 =l addr S4
+	R1 =l add R1, R2
+	stores R37, R1
+	R2 =l copy 0
+	R1 =l addr S4
+	R1 =l add R1, R2
+	stores R36, R1
+	R2 =l copy 8
+	R1 =l addr S0
+	R1 =l add R1, R2
+	stores R35, R1
+	R2 =l copy 4
+	R1 =l addr S0
+	R1 =l add R1, R2
+	stores R34, R1
+	R2 =l copy 0
+	R1 =l addr S0
+	R1 =l add R1, R2
+	stores R33, R1
+	R2 =l copy 8
+	R1 =l addr S0
+	R1 =l add R1, R2
+	R35 =s load R1
+	R2 =l copy 4
+	R1 =l addr S0
+	R1 =l add R1, R2
+	R34 =s load R1
+	R2 =l copy 0
+	R1 =l addr S0
+	R1 =l add R1, R2
+	R33 =s load R1
+	call $phfa3, 0601
+	R2 =l copy 8
+	R1 =l addr S4
+	R1 =l add R1, R2
+	R35 =s load R1
+	R2 =l copy 4
+	R1 =l addr S4
+	R1 =l add R1, R2
+	R34 =s load R1
+	R2 =l copy 0
+	R1 =l addr S4
+	R1 =l add R1, R2
+	R33 =s load R1
+	call $phfa3, 0601
+	R2 =l copy 8
+	R1 =l addr S-2
+	R1 =l add R1, R2
+	R35 =s load R1
+	R2 =l copy 4
+	R1 =l addr S-2
+	R1 =l add R1, R2
+	R34 =s load R1
+	R2 =l copy 0
+	R1 =l addr S-2
+	R1 =l add R1, R2
+	R33 =s load R1
+	call $phfa3, 0601
+	R1 =l copy 16
+	R32 =l sub R32, R1
+	R1 =l copy 0
+	R1 =l add R32, R1
+	stored R42, R1
+	R1 =l copy $dfmt
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	R1 =l copy 16
+	R32 =l sub R32, R1
+	R1 =l copy 0
+	R1 =l add R32, R1
+	stored R41, R1
+	R1 =l copy $dfmt
+	call $printf, 0021
+	R1 =l copy 16
+	R32 =l add R32, R1
+	ret0
+}
+

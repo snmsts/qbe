@@ -1,0 +1,347 @@
+**** Function chacha20_rounds_qbe ****
+> Register mappings:
+	start      beg
+	           end (out.98, R1) (t0.99, R2) (t1.100, R5) (t2.101, R8) (t3.102, R11) (t4.103, R20) (t5.104, R15) (t6.105, R16) (t7.106, R17) (t8.107, R10) (t9.108, R13) (t10.109, R4) (t11.110, R7) (t12.111, R6) (t13.112, R9) (t14.113, R12) (t15.114, R3)
+	loop       beg (out.98, R1) (counter.116, R14) (t7.125, R17) (t11.121, R7) (t15.117, R3) (t3.129, R11) (t6.126, R16) (t10.122, R4) (t14.118, R12) (t2.130, R8) (t5.127, R15) (t9.123, R13) (t13.119, R9) (t1.131, R5) (t4.128, R20) (t8.124, R10) (t12.120, R6) (t0.132, R2)
+	           end (out.98, R1) (t0.187, R2) (t15.189, R3) (t10.190, R4) (t1.199, R5) (t12.201, R6) (t11.202, R7) (t2.211, R8) (t13.213, R9) (t8.214, R10) (t3.223, R11) (t14.225, R12) (t9.226, R13) (counter.229, R14) (t5.192, R15) (t6.204, R16) (t7.216, R17) (t4.228, R20)
+	done       beg (t15.189, R3) (out.98, R1) (t14.225, R12) (t13.213, R9) (t12.201, R6) (t11.202, R7) (t10.190, R4) (t9.226, R13) (t8.214, R10) (t7.216, R17) (t6.204, R16) (t5.192, R15) (t4.228, R20) (t3.223, R11) (t2.211, R8) (t1.199, R5) (t0.187, R2)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  2
+	new blocks: 1
+
+> After register allocation:
+function $chacha20_rounds_qbe() {
+@start
+	R3 =l copy R2
+	R2 =w loadsw R3
+	R4 =l copy 4
+	R4 =l add R3, R4
+	R5 =w loadsw R4
+	R4 =l copy 8
+	R4 =l add R3, R4
+	R8 =w loadsw R4
+	R4 =l copy 12
+	R4 =l add R3, R4
+	R11 =w loadsw R4
+	R4 =l copy 16
+	R4 =l add R3, R4
+	R20 =w loadsw R4
+	R4 =l copy 20
+	R4 =l add R3, R4
+	R15 =w loadsw R4
+	R4 =l copy 24
+	R4 =l add R3, R4
+	R16 =w loadsw R4
+	R4 =l copy 28
+	R4 =l add R3, R4
+	R17 =w loadsw R4
+	R4 =l copy 32
+	R4 =l add R3, R4
+	R10 =w loadsw R4
+	R4 =l copy 36
+	R4 =l add R3, R4
+	R13 =w loadsw R4
+	R4 =l copy 40
+	R4 =l add R3, R4
+	R4 =w loadsw R4
+	R6 =l copy 44
+	R6 =l add R3, R6
+	R7 =w loadsw R6
+	R6 =l copy 48
+	R6 =l add R3, R6
+	R6 =w loadsw R6
+	R9 =l copy 52
+	R9 =l add R3, R9
+	R9 =w loadsw R9
+	R12 =l copy 56
+	R12 =l add R3, R12
+	R12 =w loadsw R12
+	R14 =l copy 60
+	R3 =l add R3, R14
+	R3 =w loadsw R3
+	jmp @start_loop
+@loop
+	R2 =w add R20, R2
+	R21 =w xor R6, R2
+	R6 =w copy 16
+	R6 =w shl R21, R6
+	R22 =w copy 16
+	R21 =w shr R21, R22
+	R6 =w xor R6, R21
+	R10 =w add R10, R6
+	R21 =w xor R20, R10
+	R20 =w copy 12
+	R20 =w shl R21, R20
+	R22 =w copy 20
+	R21 =w shr R21, R22
+	R20 =w xor R20, R21
+	R2 =w add R2, R20
+	R21 =w xor R6, R2
+	R6 =w copy 8
+	R6 =w shl R21, R6
+	R22 =w copy 24
+	R21 =w shr R21, R22
+	R6 =w xor R6, R21
+	R10 =w add R10, R6
+	R21 =w xor R20, R10
+	R20 =w copy 7
+	R20 =w shl R21, R20
+	R22 =w copy 25
+	R21 =w shr R21, R22
+	R20 =w xor R20, R21
+	R5 =w add R15, R5
+	R21 =w xor R9, R5
+	R9 =w copy 16
+	R9 =w shl R21, R9
+	R22 =w copy 16
+	R21 =w shr R21, R22
+	R9 =w xor R9, R21
+	R13 =w add R13, R9
+	R21 =w xor R15, R13
+	R15 =w copy 12
+	R15 =w shl R21, R15
+	R22 =w copy 20
+	R21 =w shr R21, R22
+	R15 =w xor R15, R21
+	R5 =w add R5, R15
+	R21 =w xor R9, R5
+	R9 =w copy 8
+	R9 =w shl R21, R9
+	R22 =w copy 24
+	R21 =w shr R21, R22
+	R9 =w xor R9, R21
+	R13 =w add R13, R9
+	R21 =w xor R15, R13
+	R15 =w copy 7
+	R15 =w shl R21, R15
+	R22 =w copy 25
+	R21 =w shr R21, R22
+	R15 =w xor R15, R21
+	R8 =w add R16, R8
+	R21 =w xor R12, R8
+	R12 =w copy 16
+	R12 =w shl R21, R12
+	R22 =w copy 16
+	R21 =w shr R21, R22
+	R12 =w xor R12, R21
+	R4 =w add R4, R12
+	R21 =w xor R16, R4
+	R16 =w copy 12
+	R16 =w shl R21, R16
+	R22 =w copy 20
+	R21 =w shr R21, R22
+	R16 =w xor R16, R21
+	R8 =w add R8, R16
+	R21 =w xor R12, R8
+	R12 =w copy 8
+	R12 =w shl R21, R12
+	R22 =w copy 24
+	R21 =w shr R21, R22
+	R12 =w xor R12, R21
+	R4 =w add R4, R12
+	R21 =w xor R16, R4
+	R16 =w copy 7
+	R16 =w shl R21, R16
+	R22 =w copy 25
+	R21 =w shr R21, R22
+	R16 =w xor R16, R21
+	R11 =w add R17, R11
+	R21 =w xor R3, R11
+	R3 =w copy 16
+	R3 =w shl R21, R3
+	R22 =w copy 16
+	R21 =w shr R21, R22
+	R3 =w xor R3, R21
+	R7 =w add R7, R3
+	R21 =w xor R17, R7
+	R17 =w copy 12
+	R17 =w shl R21, R17
+	R22 =w copy 20
+	R21 =w shr R21, R22
+	R17 =w xor R17, R21
+	R11 =w add R11, R17
+	R21 =w xor R3, R11
+	R3 =w copy 8
+	R3 =w shl R21, R3
+	R22 =w copy 24
+	R21 =w shr R21, R22
+	R3 =w xor R3, R21
+	R7 =w add R7, R3
+	R21 =w xor R17, R7
+	R17 =w copy 7
+	R17 =w shl R21, R17
+	R22 =w copy 25
+	R21 =w shr R21, R22
+	R17 =w xor R17, R21
+	R2 =w add R2, R15
+	R21 =w xor R3, R2
+	R3 =w copy 16
+	R3 =w shl R21, R3
+	R22 =w copy 16
+	R21 =w shr R21, R22
+	R3 =w xor R3, R21
+	R4 =w add R4, R3
+	R21 =w xor R15, R4
+	R15 =w copy 12
+	R15 =w shl R21, R15
+	R22 =w copy 20
+	R21 =w shr R21, R22
+	R15 =w xor R15, R21
+	R2 =w add R2, R15
+	R21 =w xor R3, R2
+	R3 =w copy 8
+	R3 =w shl R21, R3
+	R22 =w copy 24
+	R21 =w shr R21, R22
+	R3 =w xor R3, R21
+	R4 =w add R4, R3
+	R21 =w xor R15, R4
+	R15 =w copy 7
+	R15 =w shl R21, R15
+	R22 =w copy 25
+	R21 =w shr R21, R22
+	R15 =w xor R15, R21
+	R5 =w add R5, R16
+	R21 =w xor R6, R5
+	R6 =w copy 16
+	R6 =w shl R21, R6
+	R22 =w copy 16
+	R21 =w shr R21, R22
+	R6 =w xor R6, R21
+	R7 =w add R7, R6
+	R21 =w xor R16, R7
+	R16 =w copy 12
+	R16 =w shl R21, R16
+	R22 =w copy 20
+	R21 =w shr R21, R22
+	R16 =w xor R16, R21
+	R5 =w add R5, R16
+	R21 =w xor R6, R5
+	R6 =w copy 8
+	R6 =w shl R21, R6
+	R22 =w copy 24
+	R21 =w shr R21, R22
+	R6 =w xor R6, R21
+	R7 =w add R7, R6
+	R21 =w xor R16, R7
+	R16 =w copy 7
+	R16 =w shl R21, R16
+	R22 =w copy 25
+	R21 =w shr R21, R22
+	R16 =w xor R16, R21
+	R8 =w add R8, R17
+	R21 =w xor R9, R8
+	R9 =w copy 16
+	R9 =w shl R21, R9
+	R22 =w copy 16
+	R21 =w shr R21, R22
+	R9 =w xor R9, R21
+	R10 =w add R10, R9
+	R21 =w xor R17, R10
+	R17 =w copy 12
+	R17 =w shl R21, R17
+	R22 =w copy 20
+	R21 =w shr R21, R22
+	R17 =w xor R17, R21
+	R8 =w add R8, R17
+	R21 =w xor R9, R8
+	R9 =w copy 8
+	R9 =w shl R21, R9
+	R22 =w copy 24
+	R21 =w shr R21, R22
+	R9 =w xor R9, R21
+	R10 =w add R10, R9
+	R21 =w xor R17, R10
+	R17 =w copy 7
+	R17 =w shl R21, R17
+	R22 =w copy 25
+	R21 =w shr R21, R22
+	R17 =w xor R17, R21
+	R11 =w add R20, R11
+	R21 =w xor R12, R11
+	R12 =w copy 16
+	R12 =w shl R21, R12
+	R22 =w copy 16
+	R21 =w shr R21, R22
+	R12 =w xor R12, R21
+	R13 =w add R13, R12
+	R21 =w xor R20, R13
+	R20 =w copy 12
+	R20 =w shl R21, R20
+	R22 =w copy 20
+	R21 =w shr R21, R22
+	R20 =w xor R20, R21
+	R11 =w add R11, R20
+	R21 =w xor R12, R11
+	R12 =w copy 8
+	R12 =w shl R21, R12
+	R22 =w copy 24
+	R21 =w shr R21, R22
+	R12 =w xor R12, R21
+	R13 =w add R13, R12
+	R21 =w xor R20, R13
+	R20 =w copy 7
+	R20 =w shl R21, R20
+	R22 =w copy 25
+	R21 =w shr R21, R22
+	R20 =w xor R20, R21
+	R21 =w copy 10
+	R14 =w sub R14, R21
+	acmpw R14, 0
+	jfine @loop, @done
+@done
+	storew R2, R1
+	R2 =l copy 4
+	R2 =l add R1, R2
+	storew R5, R2
+	R2 =l copy 8
+	R2 =l add R1, R2
+	storew R8, R2
+	R2 =l copy 12
+	R2 =l add R1, R2
+	storew R11, R2
+	R2 =l copy 16
+	R2 =l add R1, R2
+	storew R20, R2
+	R2 =l copy 20
+	R2 =l add R1, R2
+	storew R15, R2
+	R2 =l copy 24
+	R2 =l add R1, R2
+	storew R16, R2
+	R2 =l copy 28
+	R2 =l add R1, R2
+	storew R17, R2
+	R2 =l copy 32
+	R2 =l add R1, R2
+	storew R10, R2
+	R2 =l copy 36
+	R2 =l add R1, R2
+	storew R13, R2
+	R2 =l copy 40
+	R2 =l add R1, R2
+	storew R4, R2
+	R2 =l copy 44
+	R2 =l add R1, R2
+	storew R7, R2
+	R2 =l copy 48
+	R2 =l add R1, R2
+	storew R6, R2
+	R2 =l copy 52
+	R2 =l add R1, R2
+	storew R9, R2
+	R2 =l copy 56
+	R2 =l add R1, R2
+	storew R12, R2
+	R2 =l copy 60
+	R1 =l add R1, R2
+	storew R3, R1
+	ret0
+@start_loop
+	R14 =w copy 10
+	jmp @loop
+}
+

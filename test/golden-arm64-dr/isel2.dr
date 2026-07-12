@@ -1,0 +1,254 @@
+**** Function lt ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $lt() {
+@start
+	afcmpd R33, R34
+	R1 =w flagflt
+	ret0 0001
+}
+
+**** Function le ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $le() {
+@start
+	afcmpd R33, R34
+	R1 =w flagfle
+	ret0 0001
+}
+
+**** Function gt ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $gt() {
+@start
+	afcmpd R33, R34
+	R1 =w flagfgt
+	ret0 0001
+}
+
+**** Function ge ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ge() {
+@start
+	afcmpd R33, R34
+	R1 =w flagfge
+	ret0 0001
+}
+
+**** Function eq1 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $eq1() {
+@start
+	afcmpd R33, R34
+	R1 =w flagfeq
+	ret0 0001
+}
+
+**** Function eq2 ****
+> Register mappings:
+	start      beg
+	           end
+	false      beg
+	           end
+	true       beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $eq2() {
+@start
+	afcmpd R33, R34
+	jffeq @true, @false
+@true
+	R1 =w copy 1
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function eq3 ****
+> Register mappings:
+	start      beg
+	           end (x, R33) (y, R34)
+	false      beg
+	           end
+	true       beg (y, R34) (x, R33)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $eq3() {
+@start
+	afcmpd R33, R34
+	jffeq @true, @false
+@true
+	afcmpd R33, R34
+	R1 =w flagfeq
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function ne1 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ne1() {
+@start
+	afcmpd R33, R34
+	R1 =w flagfne
+	ret0 0001
+}
+
+**** Function ne2 ****
+> Register mappings:
+	start      beg
+	           end
+	false      beg
+	           end
+	true       beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ne2() {
+@start
+	afcmpd R33, R34
+	jffne @true, @false
+@true
+	R1 =w copy 1
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function ne3 ****
+> Register mappings:
+	start      beg
+	           end (x, R33) (y, R34)
+	false      beg
+	           end
+	true       beg (y, R34) (x, R33)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ne3() {
+@start
+	afcmpd R33, R34
+	jffne @true, @false
+@true
+	afcmpd R33, R34
+	R1 =w flagfne
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function o ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $o() {
+@start
+	afcmpd R33, R34
+	R1 =w flagfo
+	ret0 0001
+}
+
+**** Function uo ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $uo() {
+@start
+	afcmpd R33, R34
+	R1 =w flagfuo
+	ret0 0001
+}
+

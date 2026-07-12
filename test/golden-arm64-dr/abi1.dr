@@ -1,0 +1,136 @@
+**** Function alpha ****
+> Register mappings:
+	ini        beg
+	           end (pe, R5) (p, R4) (n, R3) (l, R2)
+	lop        beg (n, R3) (p, R4) (pe, R5) (l1, R2) (p1, R1)
+	           end (p2, R1) (l2, R2) (n, R3) (p, R4) (pe, R5)
+	end        beg (n, R3) (p, R4)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  3
+	new blocks: 1
+
+> After register allocation:
+function $alpha() {
+@ini
+	R4 =l copy R1
+	R5 =l add R4, R3
+	jmp @ini_lop
+@lop
+	storeb R2, R1
+	R6 =l copy R1
+	R1 =l copy 1
+	R1 =l add R6, R1
+	R7 =w copy 1
+	R2 =w add R2, R7
+	acmpl R5, R6
+	jfieq @end, @lop
+@end
+	R2 =l add R4, R3
+	R1 =w copy 0
+	storeb R1, R2
+	ret0
+@ini_lop
+	R1 =l copy R4
+	jmp @lop
+}
+
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $test() {
+@start
+	R3 =l copy 16
+	R2 =w copy 65
+	R1 =l addr S10
+	call $alpha, 0061
+	R3 =l copy 16
+	R2 =w copy 97
+	R1 =l addr S15
+	call $alpha, 0061
+	R2 =l copy 0
+	R1 =l addr S15
+	R1 =l add R1, R2
+	R1 =w loadub R1
+	R3 =l copy 0
+	R2 =l addr S5
+	R2 =l add R2, R3
+	storeb R1, R2
+	R2 =l copy 1
+	R1 =l addr S15
+	R1 =l add R1, R2
+	R1 =l load R1
+	R3 =l copy 1
+	R2 =l addr S5
+	R2 =l add R2, R3
+	storel R1, R2
+	R2 =l copy 9
+	R1 =l addr S15
+	R1 =l add R1, R2
+	R1 =l load R1
+	R3 =l copy 9
+	R2 =l addr S5
+	R2 =l add R2, R3
+	storel R1, R2
+	R2 =l copy 0
+	R1 =l addr S10
+	R1 =l add R1, R2
+	R1 =w loadub R1
+	R3 =l copy 0
+	R2 =l addr S0
+	R2 =l add R2, R3
+	storeb R1, R2
+	R2 =l copy 1
+	R1 =l addr S10
+	R1 =l add R1, R2
+	R1 =l load R1
+	R3 =l copy 1
+	R2 =l addr S0
+	R2 =l add R2, R3
+	storel R1, R2
+	R2 =l copy 9
+	R1 =l addr S10
+	R1 =l add R1, R2
+	R1 =l load R1
+	R3 =l copy 9
+	R2 =l addr S0
+	R2 =l add R2, R3
+	storel R1, R2
+	R1 =l copy 16
+	R32 =l sub R32, R1
+	R1 =l copy 8
+	R2 =l add R32, R1
+	R1 =l addr S5
+	storel R1, R2
+	R1 =l copy 4
+	R2 =l add R32, R1
+	R1 =w copy 9
+	storew R1, R2
+	R1 =l copy 0
+	R2 =l add R32, R1
+	R1 =w copy 8
+	storew R1, R2
+	R8 =w copy 7
+	R7 =w copy 6
+	R6 =w copy 5
+	R5 =w copy 4
+	R4 =w copy 3
+	R3 =w copy 2
+	R2 =w copy 1
+	R1 =l addr S0
+	call $fcb, 0101
+	R1 =l copy 16
+	R32 =l add R32, R1
+	ret0
+}
+

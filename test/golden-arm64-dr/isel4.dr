@@ -1,0 +1,112 @@
+**** Function f0 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f0() {
+@start
+	R3 =l copy 2
+	R2 =l add R2, R3
+	R3 =l copy 4
+	R2 =l mul R2, R3
+	R1 =l add R1, R2
+	R1 =l loadsw R1
+	ret0 0001
+}
+
+**** Function f1 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f1() {
+@start
+	R3 =l copy 2
+	R2 =l add R2, R3
+	R3 =l copy 4
+	R2 =l mul R2, R3
+	R1 =l add R1, R2
+	R1 =l loadsw R1
+	ret0 0001
+}
+
+**** Function f2 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f2() {
+@start
+	R3 =l copy 4
+	R2 =l mul R2, R3
+	R3 =l copy 8
+	R2 =l add R2, R3
+	R1 =l add R1, R2
+	R1 =l loadsw R1
+	ret0 0001
+}
+
+**** Function f3 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f3() {
+@start
+	R3 =l copy 4
+	R2 =l mul R2, R3
+	R3 =l copy 8
+	R2 =l add R2, R3
+	R1 =l add R1, R2
+	R1 =l loadsw R1
+	ret0 0001
+}
+
+**** Function f4 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f4() {
+@start
+	R3 =l copy 1
+	R2 =l add R2, R3
+	R3 =l copy 4
+	R2 =l mul R2, R3
+	R3 =l copy 4
+	R2 =l add R2, R3
+	R1 =l add R1, R2
+	R1 =l loadsw R1
+	ret0 0001
+}
+

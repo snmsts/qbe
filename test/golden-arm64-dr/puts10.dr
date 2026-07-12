@@ -1,0 +1,41 @@
+**** Function main ****
+> Register mappings:
+	start      beg
+	           end
+	loop       beg (n, R20)
+	           end (n1, R20)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $main() {
+@start
+	R2 =l copy 1
+	R1 =l addr S0
+	R2 =l add R1, R2
+	R1 =w copy 0
+	storeb R1, R2
+	jmp @start_loop
+@loop
+	R1 =w copy 48
+	R1 =w add R20, R1
+	R2 =l addr S0
+	storeb R1, R2
+	R1 =l addr S0
+	call $puts, 0021
+	R1 =w copy 1
+	R20 =w add R20, R1
+	acmpw R20, 9
+	jfisle @loop, @end
+@end
+	ret0
+@start_loop
+	R20 =w copy 0
+	jmp @loop
+}
+

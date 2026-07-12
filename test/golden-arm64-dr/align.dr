@@ -1,0 +1,24 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $test() {
+@start
+	R2 =l copy 8
+	R1 =l addr S0
+	R2 =l add R1, R2
+	R1 =w copy 16
+	R1 =w rem R2, R1
+	storew R1, R2
+	R2 =l copy $a
+	storew R1, R2
+	ret0
+}
+

@@ -1,0 +1,110 @@
+**** Function f1 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f1() {
+@start
+	R1 =w copy 4294967295
+	ret0 0001
+}
+
+**** Function f2 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f2() {
+@start
+	R2 =w copy 8
+	R1 =w copy 4294967040
+	R1 =w div R1, R2
+	ret0 0001
+}
+
+**** Function f3 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f3() {
+@start
+	R2 =w copy 7
+	R1 =w copy 4294967284
+	R1 =w rem R1, R2
+	ret0 0001
+}
+
+**** Function f4 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f4() {
+@start
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function f5 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f5() {
+@start
+	R2 =w copy 0
+	R1 =w copy 1
+	R1 =w shr R1, R2
+	ret0 0001
+}
+
+**** Function f6 ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f6() {
+@start
+	R2 =w copy 7
+	R1 =w copy 0
+	R1 =w urem R1, R2
+	ret0 0001
+}
+

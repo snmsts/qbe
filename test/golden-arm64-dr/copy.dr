@@ -1,0 +1,54 @@
+**** Function f ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $f() {
+@start
+	R1 =l copy $a
+	R1 =w loadsb R1
+	R1 =l extsb R1
+	acmnl R1, 1
+	R1 =w flagieq
+	ret0 0001
+}
+
+**** Function g ****
+> Register mappings:
+	start      beg
+	           end (arg, R1)
+	loop       beg (arg, R1)
+	           end (arg, R1)
+	end        beg (arg, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $g() {
+@start
+@loop
+	acmpw R1, 0
+	jfine @end, @loop
+@end
+	R2 =w extuh R1
+	R1 =w copy 65536
+	R1 =w or R2, R1
+	R3 =w copy 1
+	R1 =w shr R1, R3
+	R3 =w copy 65537
+	R2 =w or R2, R3
+	R1 =w or R1, R2
+	R1 =w extuh R1
+	ret0 0001
+}
+

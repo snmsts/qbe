@@ -1,0 +1,82 @@
+**** Function alpha ****
+> Register mappings:
+	ini        beg
+	           end (pe, R5) (p, R4) (n, R3) (l, R2)
+	lop        beg (n, R3) (p, R4) (pe, R5) (l1, R2) (p1, R1)
+	           end (p2, R1) (l2, R2) (n, R3) (p, R4) (pe, R5)
+	end        beg (n, R3) (p, R4)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  3
+	new blocks: 1
+
+> After register allocation:
+function $alpha() {
+@ini
+	R4 =l copy R1
+	R5 =l add R4, R3
+	jmp @ini_lop
+@lop
+	storeb R2, R1
+	R6 =l copy R1
+	R1 =l copy 1
+	R1 =l add R6, R1
+	R7 =w copy 1
+	R2 =w add R2, R7
+	acmpl R5, R6
+	jfieq @end, @lop
+@end
+	R2 =l add R4, R3
+	R1 =w copy 0
+	storeb R1, R2
+	ret0
+@ini_lop
+	R1 =l copy R4
+	jmp @lop
+}
+
+**** Function test ****
+> Register mappings:
+	ini        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  2
+	new blocks: 0
+
+> After register allocation:
+function $test() {
+@ini
+	R20 =l copy R9
+	R3 =l copy 16
+	R2 =w copy 65
+	R1 =l addr S0
+	call $alpha, 0061
+	R9 =l copy R20
+	R2 =l copy 0
+	R1 =l addr S0
+	R1 =l add R1, R2
+	R1 =w loadub R1
+	R2 =l copy 0
+	R2 =l add R9, R2
+	storeb R1, R2
+	R2 =l copy 1
+	R1 =l addr S0
+	R1 =l add R1, R2
+	R1 =l load R1
+	R2 =l copy 1
+	R2 =l add R9, R2
+	storel R1, R2
+	R2 =l copy 9
+	R1 =l addr S0
+	R1 =l add R1, R2
+	R1 =l load R1
+	R2 =l copy 9
+	R2 =l add R9, R2
+	storel R1, R2
+	ret0 0000
+}
+

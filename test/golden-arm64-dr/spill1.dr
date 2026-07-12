@@ -1,0 +1,92 @@
+**** Function f ****
+> Register mappings:
+	start      beg
+	           end (n0, R1)
+	loop       beg (n1, R1) (pf, R17) (pe, R16) (pd, R15) (pc, R14) (pb, R13) (pa, R12) (p9, R11) (p8, R10) (p7, R9) (p6, R8) (p5, R7) (p4, R6) (p3, R5) (p2, R4) (p1, R3) (p0, R2)
+	           end (n2, R1) (p01, R2) (p11, R3) (p21, R4) (p31, R5) (p41, R6) (p51, R7) (p61, R8) (p71, R9) (p81, R10) (p91, R11) (pa1, R12) (pb1, R13) (pc1, R14) (pd1, R15) (pe1, R16) (pf1, R17)
+	end        beg (pf1, R17) (pe1, R16) (pd1, R15) (pc1, R14) (pb1, R13) (pa1, R12) (p91, R11) (p81, R10) (p71, R9) (p61, R8) (p51, R7) (p41, R6) (p31, R5) (p21, R4) (p11, R3) (p01, R2)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  16
+	new blocks: 1
+
+> After register allocation:
+function $f() {
+@start
+	jmp @start_loop
+@loop
+	R20 =w copy 1
+	R2 =w add R2, R20
+	R20 =w copy 2
+	R3 =w add R3, R20
+	R20 =w copy 3
+	R4 =w add R4, R20
+	R20 =w copy 4
+	R5 =w add R5, R20
+	R20 =w copy 5
+	R6 =w add R6, R20
+	R20 =w copy 6
+	R7 =w add R7, R20
+	R20 =w copy 7
+	R8 =w add R8, R20
+	R20 =w copy 8
+	R9 =w add R9, R20
+	R20 =w copy 9
+	R10 =w add R10, R20
+	R20 =w copy 10
+	R11 =w add R11, R20
+	R20 =w copy 11
+	R12 =w add R12, R20
+	R20 =w copy 12
+	R13 =w add R13, R20
+	R20 =w copy 13
+	R14 =w add R14, R20
+	R20 =w copy 14
+	R15 =w add R15, R20
+	R20 =w copy 15
+	R16 =w add R16, R20
+	R20 =w copy 16
+	R17 =w add R17, R20
+	R20 =w copy 1
+	R1 =w sub R1, R20
+	acmpw R1, 0
+	jfine @loop, @end
+@end
+	R1 =w add R2, R3
+	R1 =w add R4, R1
+	R1 =w add R5, R1
+	R1 =w add R6, R1
+	R1 =w add R7, R1
+	R1 =w add R8, R1
+	R1 =w add R9, R1
+	R1 =w add R10, R1
+	R1 =w add R11, R1
+	R1 =w add R12, R1
+	R1 =w add R13, R1
+	R1 =w add R14, R1
+	R1 =w add R15, R1
+	R1 =w add R16, R1
+	R1 =w add R17, R1
+	ret0 0001
+@start_loop
+	R17 =w copy 0
+	R16 =w copy 0
+	R15 =w copy 0
+	R14 =w copy 0
+	R13 =w copy 0
+	R12 =w copy 0
+	R11 =w copy 0
+	R10 =w copy 0
+	R9 =w copy 0
+	R8 =w copy 0
+	R7 =w copy 0
+	R6 =w copy 0
+	R5 =w copy 0
+	R4 =w copy 0
+	R3 =w copy 0
+	R2 =w copy 0
+	jmp @loop
+}
+

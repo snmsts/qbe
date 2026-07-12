@@ -1,0 +1,118 @@
+**** Function main ****
+> Register mappings:
+	start      beg
+	           end
+	L0         beg (v3.4, R2) (v1.6, R4) (v2.5, R5)
+	           end (v3.4, R1) (v1.6, R4) (v2.5, R5)
+	L8         beg (v3.4, R1) (v1.6, R4) (v2.5, R5)
+	           end (v3.4, R1) (v1.6, R4) (v2.5, R5)
+	L9         beg (v3.4, R1) (v1.6, R4) (v2.5, R5)
+	           end (v3.4, R1) (v1.6, R4) (v2.5, R5)
+	L5         beg (v3.4, R1) (v4.8, R3) (v1.6, R4) (v2.5, R5)
+	           end (v3.4, R1) (v4.8, R3) (v1.6, R4) (v2.5, R5)
+	L2         beg (v0.10, R2) (v3.4, R1) (v4.8, R3) (v1.6, R4) (v2.5, R5)
+	           end (v0.10, R2) (v3.4, R1) (v4.8, R3) (v1.6, R4) (v2.5, R5)
+	L10        beg (v0.10, R2) (v3.4, R1) (v4.8, R3) (v1.6, R4) (v2.5, R5)
+	           end (v0.10, R2) (v3.4, R1) (v4.8, R3) (v1.6, R4) (v2.5, R5)
+	L4         beg (v3.4, R1) (v4.8, R3) (v1.6, R4) (v2.5, R5) (v0.10, R2)
+	           end (v3.4, R1) (v18, R2) (v4.8, R3) (v1.6, R4) (v2.5, R5)
+	L11        beg (v3.4, R1) (v1.6, R4) (v2.5, R5)
+	           end (v3.4, R1) (v1.6, R4) (v2.5, R5)
+	L3         beg (v3.4, R1) (v1.6, R4) (v2.5, R5) (v4.11, R3)
+	           end (v3.4, R1) (v1.6, R4) (v2.5, R5)
+	L12        beg (v1.6, R4) (v3.4, R1)
+	           end (v3.4, R2) (v22, R4)
+	L6         beg (v2.12, R1) (v1.13, R4) (v3.4, R2)
+	           end (v2.12, R1) (v1.13, R4) (v24, R2)
+	L1         beg (v2.5, R5)
+	           end
+	L7         beg
+	           end
+	L13        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  13
+	new blocks: 8
+
+> After register allocation:
+function $main() {
+@start
+	jmp @start_L0
+@L0
+	R1 =w copy R2
+	acmpw R4, 201
+	jfine @L8, @L1
+@L8
+	R2 =w copy 2
+	R2 =w rem R1, R2
+	acmpw R2, 0
+	jfieq @L9, @L8_L5
+@L9
+	jmp @L9_L5
+@L5
+	jmp @L5_L2
+@L2
+	acmpw R2, R1
+	jfislt @L10, @L3
+@L10
+	R6 =w rem R1, R2
+	acmpw R6, 0
+	jfieq @L11, @L4
+@L11
+	jmp @L11_L3
+@L4
+	R6 =w copy 2
+	R2 =w add R2, R6
+	jmp @L2
+@L3
+	acmpw R3, 0
+	jfine @L12, @L3_L6
+@L12
+	R2 =w copy R1
+	R1 =w copy 1
+	R4 =w add R4, R1
+	jmp @L12_L6
+@L6
+	R3 =w copy 1
+	R2 =w add R2, R3
+	jmp @L6_L0
+@L1
+	acmpw R5, 1229
+	jfine @L13, @L7
+@L13
+	R1 =w copy 1
+	ret0 0001
+@L7
+	R1 =w copy 0
+	ret0 0001
+@L6_L0
+	R5 =w copy R1
+	jmp @L0
+@L12_L6
+	R1 =w copy R2
+	jmp @L6
+@L3_L6
+	R2 =w copy R1
+	R1 =w copy R5
+	jmp @L6
+@L11_L3
+	R3 =w copy 0
+	jmp @L3
+@L5_L2
+	R2 =w copy 3
+	jmp @L2
+@L9_L5
+	R3 =w copy 0
+	jmp @L5
+@L8_L5
+	R3 =w copy 1
+	jmp @L5
+@start_L0
+	R4 =w copy 5
+	R5 =w copy 11
+	R2 =w copy 12
+	jmp @L0
+}
+

@@ -1,0 +1,53 @@
+**** Function f ****
+> Register mappings:
+	start      beg
+	           end (a, R1)
+	loop       beg (a0, R3) (b, R1)
+	           end (a0, R3) (a1, R1) (b, R2)
+	loop1      beg (a1, R1) (b, R2) (a0, R3)
+	           end (a1, R1) (b, R2)
+	loop0      beg (a1, R1) (b, R2) (a0, R3)
+	           end (a1, R1) (b, R2)
+	end        beg (b, R2)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  6
+	new blocks: 3
+
+> After register allocation:
+function $f() {
+@start
+	jmp @start_loop
+@loop
+	R2 =l copy R1
+	R1 =l copy 1
+	R1 =l sub R3, R1
+	acmpw R2, 0
+	jfine @loop0, @loop1
+@loop0
+	R4 =l copy 1
+	R3 =l sub R3, R4
+	acmpw R3, 0
+	jfine @loop0_loop, @end
+@loop1
+	R4 =l copy 1
+	R3 =l sub R3, R4
+	acmpw R3, 0
+	jfine @loop1_loop, @end
+@end
+	R1 =l copy R2
+	ret0 0001
+@loop1_loop
+	R3 =l copy R1
+	jmp @loop
+@loop0_loop
+	R3 =l copy R1
+	jmp @loop
+@start_loop
+	R3 =l copy R1
+	R1 =l copy 42
+	jmp @loop
+}
+

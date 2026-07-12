@@ -1,0 +1,16 @@
+**** Function intwrap ****
+> Register mappings:
+	s          beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $intwrap() {
+@s
+	ret0
+}
+

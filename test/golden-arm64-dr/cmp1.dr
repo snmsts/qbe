@@ -1,0 +1,30 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end (cmp.1, R1)
+	yes        beg
+	           end
+	no         beg (cmp.2, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  1
+	new blocks: 1
+
+> After register allocation:
+function $test() {
+@start
+	acmpw R1, 1
+	R1 =w flagiugt
+	acmpw R1, 0
+	jfine @yes, @no
+@yes
+	jmp @yes_no
+@no
+	ret0 0001
+@yes_no
+	R1 =w copy 1
+	jmp @no
+}
+

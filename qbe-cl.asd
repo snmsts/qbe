@@ -35,6 +35,7 @@
                              (:file "arm64")
                              (:file "arm64-abi")
                              (:file "arm64-isel")
+                             (:file "arm64-emit")
                              (:file "arm64-targ")
                              (:file "driver")))))
 

@@ -1,0 +1,64 @@
+**** Function blit ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $blit() {
+@start
+	R2 =l addr S0
+	R1 =w copy 287454020
+	storew R1, R2
+	R2 =l copy 4
+	R1 =l addr S0
+	R2 =l add R1, R2
+	R1 =w copy 1432778632
+	storew R1, R2
+	R2 =l copy 8
+	R1 =l addr S0
+	R2 =l add R1, R2
+	R1 =w copy 2578103244
+	storew R1, R2
+	R2 =l copy 1
+	R1 =l addr S0
+	R2 =l add R1, R2
+	R3 =l copy 10
+	R1 =l addr S0
+	R1 =l add R1, R3
+	R1 =w loadub R1
+	R3 =l copy 10
+	R3 =l add R2, R3
+	storeb R1, R3
+	R3 =l copy 8
+	R1 =l addr S0
+	R1 =l add R1, R3
+	R1 =w loaduh R1
+	R3 =l copy 8
+	R3 =l add R2, R3
+	storeh R1, R3
+	R3 =l copy 0
+	R1 =l addr S0
+	R1 =l add R1, R3
+	R1 =l load R1
+	R3 =l copy 0
+	R2 =l add R2, R3
+	storel R1, R2
+	R2 =l addr S0
+	R1 =w copy 221
+	storeb R1, R2
+	R2 =l copy 8
+	R1 =l addr S0
+	R1 =l add R1, R2
+	R2 =l load R1
+	R3 =l copy 0
+	R1 =l addr S0
+	R1 =l add R1, R3
+	R1 =l load R1
+	ret0 0002
+}
+

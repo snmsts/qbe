@@ -1,0 +1,49 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+	loop       beg (cnt, R1) (alt, R3)
+	           end (cnt, R1) (alt1, R3)
+	left       beg (cnt, R1) (alt1, R3) (x, R2)
+	           end (cnt, R1) (x1, R2) (alt1, R3)
+	right      beg (alt1, R3) (cnt, R1)
+	           end (alt1, R3) (cnt1, R1)
+	end        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  4
+	new blocks: 2
+
+> After register allocation:
+function $test() {
+@start
+	jmp @start_loop
+@loop
+	R2 =w copy 1
+	R3 =w sub R2, R3
+	acmpw R3, 0
+	jfine @right, @loop_left
+@left
+	R4 =w copy R2
+	R2 =w copy 1
+	R2 =w sub R4, R2
+	acmpw R4, 0
+	jfine @left, @loop
+@right
+	R2 =w copy 10
+	R1 =w sub R1, R2
+	acmpw R1, 0
+	jfine @loop, @end
+@end
+	ret0
+@loop_left
+	R2 =w copy 10
+	jmp @left
+@start_loop
+	R1 =w copy 100
+	R3 =w copy 0
+	jmp @loop
+}
+

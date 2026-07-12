@@ -44,4 +44,6 @@
    ;; arm64 abi (G2)
    #:a64-apple-extsb #:arm64-abi #:arm64-retregs #:arm64-argregs
    ;; arm64 isel + target instance (G3)
-   #:arm64-isel #:*arm64-apple-target* #:arm64-logimm))
+   #:arm64-isel #:*arm64-apple-target* #:arm64-logimm
+   ;; arm64 emit + backend driver (G4)
+   #:a64-be-emit-fn #:a64-emit-fin #:a64-backend-pipeline #:a64-be-emit-module))

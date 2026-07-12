@@ -74,7 +74,7 @@
 
 (defconstant +a64-r0+ 1) (defconstant +a64-r8+ 9) (defconstant +a64-r9+ 10)
 (defconstant +a64-sp+ 32) (defconstant +a64-v0+ 33)
-(defconstant +a64-ngpr+ 31) (defconstant +a64-nfpr+ 31)  ; R0..SP, V0..V30
+(defconstant +a64-ngpr+ 32) (defconstant +a64-nfpr+ 31)  ; R0..SP (32), V0..V30 (31)
 
 (defparameter *a64-reg-spec*
   (append (loop for i from 0 to 30 collect (cons (+ +a64-r0+ i)  ; R0..R28,FP,LR

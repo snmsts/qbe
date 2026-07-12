@@ -1,0 +1,50 @@
+**** Function test ****
+> Register mappings:
+	start      beg
+	           end
+	loop       beg (max, R1) (loc, R2)
+	           end (max, R1) (loc, R2) (byt, R3)
+	iter       beg (max, R1) (byt, R3) (loc, R2)
+	           end (max, R1) (loc1, R2) (byt, R3)
+	old        beg (loc1, R2) (max, R1)
+	           end (loc1, R2) (max, R1)
+	new        beg (byt, R1) (loc1, R2)
+	           end (byt, R1) (loc1, R2)
+	end        beg (max, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  3
+	new blocks: 2
+
+> After register allocation:
+function $test() {
+@start
+	jmp @start_loop
+@loop
+	R3 =w loadub R2
+	acmpw R3, 0
+	jfine @iter, @end
+@iter
+	R4 =l copy 1
+	R2 =l add R2, R4
+	acmpw R1, R3
+	jfisle @iter_new, @old
+@new
+	jmp @loop
+@old
+	jmp @loop
+@end
+	R2 =l copy $a
+	storew R1, R2
+	ret0
+@iter_new
+	R1 =w copy R3
+	jmp @new
+@start_loop
+	R2 =l copy $arr
+	R1 =w copy -1
+	jmp @loop
+}
+

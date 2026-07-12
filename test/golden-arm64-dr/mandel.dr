@@ -1,0 +1,140 @@
+**** Function mandel ****
+> Register mappings:
+	mandel     beg
+	           end (x, R33) (cr, R36) (isel.2, R34) (isel.4, R35)
+	loop       beg (zi, R35) (x, R33) (cr, R36) (zr, R34) (i, R1)
+	           end (zr, R37) (zi, R35) (i1, R1) (zr2, R34) (zi2, R38) (x, R33) (cr, R36) (i, R2)
+	loop1      beg (x, R33) (i1, R1) (cr, R36) (zi, R35) (zr, R37) (zr2, R34) (zi2, R38)
+	           end (x, R33) (i1, R1) (zr1, R34) (zi1, R35) (cr, R36)
+	ret0       beg
+	           end
+	reti       beg (i, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  4
+	new blocks: 2
+
+> After register allocation:
+function $mandel() {
+@mandel
+	R1 =l copy $"Lfp1"
+	R35 =d load R1
+	R36 =d sub R34, R35
+	R1 =l copy $"Lfp0"
+	R35 =d load R1
+	R1 =l copy $"Lfp0"
+	R34 =d load R1
+	jmp @mandel_loop
+@loop
+	R2 =w copy R1
+	R1 =w copy 1
+	R1 =w add R2, R1
+	R37 =d copy R34
+	R34 =d mul R34, R34
+	R38 =d mul R35, R35
+	R39 =d add R34, R38
+	R3 =l copy $"Lfp2"
+	R40 =d load R3
+	afcmpd R39, R40
+	jffgt @loop_reti, @loop1
+@loop1
+	R34 =d sub R34, R38
+	R34 =d add R36, R34
+	R35 =d mul R37, R35
+	R35 =d add R35, R35
+	R35 =d add R33, R35
+	acmpw R1, 1000
+	jfisgt @ret0, @loop
+@reti
+	R2 =w copy 1
+	R1 =w add R1, R2
+	ret0 0001
+@ret0
+	R1 =w copy 0
+	ret0 0001
+@loop_reti
+	R1 =w copy R2
+	jmp @reti
+@mandel_loop
+	R1 =w copy 0
+	jmp @loop
+}
+
+**** Function main ****
+> Register mappings:
+	main       beg
+	           end (isel.13, R33)
+	loopy      beg (y, R42)
+	           end (y, R42) (isel.15, R33)
+	loopx      beg (x, R41) (y, R42)
+	           end (x, R41) (y, R42)
+	in         beg (x, R41) (y, R42)
+	           end (x, R41) (y, R42)
+	out        beg (x, R41) (y, R42)
+	           end (x, R41) (y, R42)
+	loopx1     beg (y, R42) (x, R41)
+	           end (x1, R41) (y, R42)
+	loopy1     beg (y, R42)
+	           end (y1, R42)
+	ret        beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  2
+	new blocks: 2
+
+> After register allocation:
+function $main() {
+@main
+	R1 =l copy $"Lfp3"
+	R33 =d load R1
+	jmp @main_loopy
+@loopy
+	R1 =l copy $"Lfp3"
+	R33 =d load R1
+	jmp @loopy_loopx
+@loopx
+	R34 =d copy R42
+	R33 =d copy R41
+	call $mandel, 0401
+	acmpw R1, 0
+	jfine @out, @in
+@in
+	R1 =w copy 42
+	call $putchar, 0021
+	jmp @loopx1
+@out
+	R1 =w copy 32
+	call $putchar, 0021
+@loopx1
+	R1 =l copy $"Lfp5"
+	R33 =d load R1
+	R41 =d add R41, R33
+	R1 =l copy $"Lfp4"
+	R33 =d load R1
+	afcmpd R41, R33
+	jffgt @loopy1, @loopx
+@loopy1
+	R1 =w copy 10
+	call $putchar, 0021
+	R1 =l copy $"Lfp5"
+	R33 =d load R1
+	R42 =d add R42, R33
+	R1 =l copy $"Lfp4"
+	R33 =d load R1
+	afcmpd R42, R33
+	jffgt @ret, @loopy
+@ret
+	R1 =w copy 0
+	ret0 0001
+@loopy_loopx
+	R41 =d copy R33
+	jmp @loopx
+@main_loopy
+	R42 =d copy R33
+	jmp @loopy
+}
+

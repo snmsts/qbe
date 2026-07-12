@@ -1,0 +1,174 @@
+**** Function fneg ****
+> Register mappings:
+	fneg       beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $fneg() {
+@fneg
+	R1 =w cast R33
+	R2 =w copy 2147483648
+	R1 =w xor R1, R2
+	R33 =s cast R1
+	ret0 0004
+}
+
+**** Function ftrunc ****
+> Register mappings:
+	ftrunc     beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ftrunc() {
+@ftrunc
+	R1 =w dtosi R33
+	R33 =d swtof R1
+	ret0 0004
+}
+
+**** Function wtos ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $wtos() {
+@start
+	R33 =s uwtof R1
+	ret0 0004
+}
+
+**** Function wtod ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $wtod() {
+@start
+	R33 =d uwtof R1
+	ret0 0004
+}
+
+**** Function ltos ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ltos() {
+@start
+	R33 =s ultof R1
+	ret0 0004
+}
+
+**** Function ltod ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $ltod() {
+@start
+	R33 =d ultof R1
+	ret0 0004
+}
+
+**** Function stow ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $stow() {
+@start
+	R1 =w stoui R33
+	ret0 0001
+}
+
+**** Function dtow ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $dtow() {
+@start
+	R1 =w dtoui R33
+	ret0 0001
+}
+
+**** Function stol ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $stol() {
+@start
+	R1 =l stoui R33
+	ret0 0001
+}
+
+**** Function dtol ****
+> Register mappings:
+	start      beg
+	           end
+
+
+> Register allocation statistics:
+	new moves:  0
+	new blocks: 0
+
+> After register allocation:
+function $dtol() {
+@start
+	R1 =l dtoui R33
+	ret0 0001
+}
+

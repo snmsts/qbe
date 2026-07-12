@@ -1,0 +1,43 @@
+**** Function sum ****
+> Register mappings:
+	start      beg
+	           end (arr, R1) (num, R2)
+	loop       beg (n1, R2) (s0, R3) (arr, R1)
+	           end (n1, R2) (s0, R3) (arr, R1)
+	loop1      beg (arr, R1) (s0, R3) (n1, R2)
+	           end (n2, R2) (arr, R1) (s1, R3)
+	end        beg (s0, R1)
+	           end
+
+
+> Register allocation statistics:
+	new moves:  2
+	new blocks: 2
+
+> After register allocation:
+function $sum() {
+@start
+	jmp @start_loop
+@loop
+	acmpw R2, 0
+	jfisle @loop_end, @loop1
+@loop1
+	R4 =w copy 1
+	R2 =w sub R2, R4
+	R4 =l extsw R2
+	R5 =l copy 4
+	R4 =l mul R4, R5
+	R4 =l add R1, R4
+	R4 =w loadsw R4
+	R3 =w add R3, R4
+	jmp @loop
+@end
+	ret0 0001
+@loop_end
+	R1 =w copy R3
+	jmp @end
+@start_loop
+	R3 =w copy 0
+	jmp @loop
+}
+
