@@ -317,16 +317,20 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
     (cond
       ((member :thr st)
        (unless (tg-apple) (error "arm64 enc: elf TLS unsupported"))
+       (unless (zerop (con-off c)) (error "arm64 enc: TLS addr addend unsupported"))
        (a64-reloc e sym :tlvppage21)   (a64-adrp e rd)
        (a64-reloc e sym :tlvppageoff12) (a64-ldst-uimm e 3 #b01 rd rd 0))
       ((member :ext st)
        (unless (tg-apple) (error "arm64 enc: elf GOT unsupported"))
+       (unless (zerop (con-off c)) (error "arm64 enc: GOT addr addend unsupported"))
        (a64-reloc e sym :gotpage21)    (a64-adrp e rd)
        (a64-reloc e sym :gotpageoff12) (a64-ldst-uimm e 3 #b01 rd rd 0))
       (t
-       (a64-reloc e sym :page21)    (a64-adrp e rd)
-       (a64-reloc e sym :pageoff12) (a64-addsub-imm e 0 :l rd rd 0)
-       (unless (zerop (con-off c)) (error "arm64 enc: addr addend (later tranche)"))))))
+       ;; SGlo: the byte oracle (`as`) folds the addend into @page/@pageoff; solder
+       ;; folds it into S+A before the page split, so carry it on both fixups.
+       (let ((off (con-off c)))
+         (a64-reloc e sym :page21 off)    (a64-adrp e rd)
+         (a64-reloc e sym :pageoff12 off) (a64-addsub-imm e 0 :l rd rd 0))))))
 
 (defun aenc-call (e i)
   "arm64/emit.c Ocall: bl sym (CAddr, off 0) -> BRANCH26 fixup; else blr Xn."
@@ -650,3 +654,43 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
     (values (coerce (aenc-buf e) '(simple-array (unsigned-byte 8) (*)))
             (list (cons (fn-name fn) 0))
             (nreverse (aenc-fixups e)))))
+
+;;; ------------------------------------------------------------------ data / stash
+;;; The bytes+fixups twin of a64-emit-data / a64-emit-fin, feeding solder instead
+;;; of `as`.  Mirrors amd64 enc-data/enc-stash: one flat blob per definition (no
+;;; mach-o literal sections -- solder just needs each symbol at a known offset and
+;;; the fixups pointing into it).  `:ref` pointer items become ABS64 relocations.
+(defun aenc-data (d)
+  "Encode a `dat` -> (values octets symbols fixups writable) for a solder obj."
+  (when (dat-thread d) (error "arm64 enc: thread-local data ~a (later)" (dat-name d)))
+  (let ((buf (make-octets)) (fixups '()))
+    (dolist (it (dat-items d))
+      (ecase (first it)
+        (:int  (destructuring-bind (size value) (rest it)
+                 (push-int buf (if (= size 8) (norm-i64 value)
+                                   (logand value (1- (ash 1 (* 8 size)))))
+                           size)))
+        (:zero (dotimes (k (second it)) (vector-push-extend 0 buf)))
+        (:str  (loop for b across (unescape-str (second it)) do (vector-push-extend b buf)))
+        (:ref  (destructuring-bind (size name off) (rest it)
+                 (unless (= size 8) (error "arm64 enc: TODO ~d-byte data ref" size))
+                 ;; prefix like a64-symname so solder normalizes uniformly (_name)
+                 (push (list :offset (fill-pointer buf)
+                             :symbol (concatenate 'string (target-assym *target*) name)
+                             :kind :abs64 :addend off)
+                       fixups)
+                 (push-int buf 0 8)))))
+    (values (coerce buf '(simple-array (unsigned-byte 8) (*)))
+            (list (cons (dat-name d) 0)) (nreverse fixups) t)))
+
+(defun aenc-stash ()
+  "Encode the fp-constant pool (*stash*) -> (values octets symbols) for a rodata
+obj.  Each entry lands size-aligned under the same quoted `LfpN` name that isel's
+adrp/add pool operands reference (tg-asloc = \"L\" on arm64_apple)."
+  (let ((buf (make-octets)) (syms '()))
+    (dotimes (i (fill-pointer *stash*))
+      (destructuring-bind (bits . size) (aref *stash* i)
+        (loop until (zerop (mod (fill-pointer buf) size)) do (vector-push-extend 0 buf))
+        (push (cons (format nil "\"~afp~d\"" (tg-asloc) i) (fill-pointer buf)) syms)
+        (push-int buf bits size)))
+    (values (coerce buf '(simple-array (unsigned-byte 8) (*))) (nreverse syms))))
