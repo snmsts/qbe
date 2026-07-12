@@ -4,9 +4,11 @@
 ;;;;   (2) a64-be-emit-fn -> as -> .text  -> Apple `as`'s machine-code bytes
 ;;;;
 ;;;; AArch64 is fixed-width, so the whole thing is bitfield packing; this is the
-;;;; JIT feed for solder (G6-B).  Tranche A covers single-block-ish integer leaf
-;;;; functions (mov-imm, add/sub/and/or/xor/mul, reg mov); cases beyond it error
-;;;; and are reported, not silently skipped.
+;;;; JIT feed for solder (G6-B).  The curated cases span every encoder tranche:
+;;;; integer ALU/mov, loads/stores + ext, cmp/cset, multi-block branches, calls +
+;;;; relocs, floats, variable shifts, div/rem, fp compare/convert/cast, GOT/TLS
+;;;; addresses, and large frames.  Cases beyond the encoder error and are reported,
+;;;; not silently skipped.  (The exhaustive complement is arm64-encode-corpus.lisp.)
 ;;;;
 ;;;; Run: ros -Q run -- --script test/arm64-encode.lisp   (from repo root)
 (require :asdf)
@@ -110,10 +112,41 @@
           "fsubs" "export function s $fsubs(s %x, s %y) { @s %z =s sub %x, %y ret %z }"
           "fmuld" "export function d $fmuld(d %x, d %y) { @s %z =d mul %x, %y ret %z }"
           "fldd"  "export function d $fldd(l %p) { @s %v =d loadd %p ret %v }"
-          "fstd"  "export function d $fstd(l %p, d %v) { @s stored %v, %p ret %v }")))
+          "fstd"  "export function d $fstd(l %p, d %v) { @s stored %v, %p ret %v }"
+          ;; tranche D: variable shifts (lslv/lsrv/asrv)
+          "shlw" "export function w $shlw(w %a, w %b) { @s %c =w shl %a, %b ret %c }"
+          "shrw" "export function w $shrw(w %a, w %b) { @s %c =w shr %a, %b ret %c }"
+          "sarl" "export function l $sarl(l %a, l %b) { @s %c =l sar %a, %b ret %c }"
+          ;; tranche E: integer divide / remainder (sdiv/udiv, +msub for rem)
+          "divw"  "export function w $divw(w %a, w %b) { @s %c =w div %a, %b ret %c }"
+          "udivl" "export function l $udivl(l %a, l %b) { @s %c =l udiv %a, %b ret %c }"
+          "remw"  "export function w $remw(w %a, w %b) { @s %c =w rem %a, %b ret %c }"
+          "ureml" "export function l $ureml(l %a, l %b) { @s %c =l urem %a, %b ret %c }"
+          ;; tranche F: fp compare (fcmpe) -> cset
+          "fltd" "export function w $fltd(d %x, d %y) { @s %c =w cltd %x, %y ret %c }"
+          "flts" "export function w $flts(s %x, s %y) { @s %c =w clts %x, %y ret %c }"
+          ;; tranche G: fp<->fp and fp<->int conversions + bit casts
+          "extd"  "export function d $extd(s %x) { @s %z =d exts %x ret %z }"
+          "trncs" "export function s $trncs(d %x) { @s %z =s truncd %x ret %z }"
+          "d2si"  "export function w $d2si(d %x) { @s %z =w dtosi %x ret %z }"
+          "d2ui"  "export function l $d2ui(d %x) { @s %z =l dtoui %x ret %z }"
+          "s2si"  "export function w $s2si(s %x) { @s %z =w stosi %x ret %z }"
+          "w2fd"  "export function d $w2fd(w %x) { @s %z =d swtof %x ret %z }"
+          "uw2fs" "export function s $uw2fs(w %x) { @s %z =s uwtof %x ret %z }"
+          "l2fd"  "export function d $l2fd(l %x) { @s %z =d sltof %x ret %z }"
+          "ul2fd" "export function d $ul2fd(l %x) { @s %z =d ultof %x ret %z }"
+          "castws" "export function s $castws(w %x) { @s %z =s cast %x ret %z }"
+          "castsw" "export function w $castsw(s %x) { @s %z =w cast %x ret %z }"
+          ;; GOT / Apple-TLS symbol address loads
+          "gotld" "export function l $gotld() { @s %v =l loadl $ext ret %v }"
+          ;; large frames: a >512-byte alloc kept live pushes the frame past the
+          ;; stp-immediate range, forcing the sub-sp / mov-x16 prologue+epilogue.
+          "bigfrm" "export function w $bigfrm(l %p) {
+@s %a =l alloc4 2400 storew 1, %a %b =l add %a, 4 storew 2, %b
+%v =w loadw %p ret %v }")))
   (dolist (kv cases)
     (case (oracle-check (car kv) (cdr kv))
       ((t) (incf pass)) ((:skip) (incf skip)) (t (incf fail))))
-  (format t "~&~%=== G6 arm64 encoder (as-diff, tranche A) ===~%  ~d pass, ~d fail, ~d skip (~d cases)~%"
+  (format t "~&~%=== G6 arm64 encoder (as-diff, all tranches) ===~%  ~d pass, ~d fail, ~d skip (~d cases)~%"
           pass fail skip (length cases))
   (sb-ext:exit :code (if (zerop fail) 0 1)))

@@ -53,10 +53,19 @@
   `(sb-alien:alien-funcall
     (sb-alien:sap-alien ,sap (function sb-alien:int sb-alien:int sb-alien:int)) ,a ,b))
 
+;;; double(double,double) — exercises the fp tranches natively.
+(defmacro call2d (sap a b)
+  `(sb-alien:alien-funcall
+    (sb-alien:sap-alien ,sap (function sb-alien:double sb-alien:double sb-alien:double)) ,a ,b))
+
 (let ((pass 0) (fail 0))
   (flet ((chk (name got want)
            (if (= got want) (progn (incf pass) (format t "~&  ok   ~a = ~d~%" name got))
-               (progn (incf fail) (format t "~&  FAIL ~a = ~d (want ~d)~%" name got want)))))
+               (progn (incf fail) (format t "~&  FAIL ~a = ~d (want ~d)~%" name got want))))
+         (chk-d (name got want)
+           (if (< (abs (- got want)) 1d-9)
+               (progn (incf pass) (format t "~&  ok   ~a = ~f~%" name got))
+               (progn (incf fail) (format t "~&  FAIL ~a = ~f (want ~f)~%" name got want)))))
     (let ((addmul (jit-fn "export function w $f(w %a, w %b) {
 @s %s =w add %a, %b %r =w add %s, %s ret %r }"))
           (submul (jit-fn "export function w $g(w %a, w %b) {
@@ -72,7 +81,26 @@
       (chk "(10-3)^2"     (call2 submul 10 3)    49)
       (chk "max(7,3)"     (call2 maxfn 7 3)      7)
       (chk "max(2,9)"     (call2 maxfn 2 9)      9)
-      (chk "and+or(12,10)"(call2 andor 12 10)    (+ (logand 12 10) (logior 12 10)))))
+      (chk "and+or(12,10)"(call2 andor 12 10)    (+ (logand 12 10) (logior 12 10))))
+    ;; newly-encoded tranches, run natively: shifts, sdiv, rem-via-msub
+    (let ((divfn (jit-fn "export function w $d(w %a, w %b) { @s %q =w div %a, %b ret %q }"))
+          (remfn (jit-fn "export function w $r(w %a, w %b) { @s %m =w rem %a, %b ret %m }"))
+          (shlfn (jit-fn "export function w $sl(w %a, w %b) { @s %s =w shl %a, %b ret %s }"))
+          (shrfn (jit-fn "export function w $sr(w %a, w %b) { @s %s =w sar %a, %b ret %s }")))
+      (chk "77/6"         (call2 divfn 77 6)     12)
+      (chk "77%6"         (call2 remfn 77 6)     5)
+      (chk "-20/3"        (call2 divfn -20 3)    (truncate -20 3))
+      (chk "3<<4"         (call2 shlfn 3 4)      48)
+      (chk "-256>>2"      (call2 shrfn -256 2)   -64))
+    ;; fp tranches run natively: fadd/fmul/fdiv on doubles, and a truncd roundtrip
+    (let ((fma  (jit-fn "export function d $fa(d %x, d %y) {
+@s %p =d mul %x, %y %s =d add %p, %x ret %s }"))
+          (fdv  (jit-fn "export function d $fd(d %x, d %y) { @s %q =d div %x, %y ret %q }"))
+          (rt   (jit-fn "export function d $rt(d %x, d %y) {
+@s %s =s truncd %x %z =d exts %s ret %z }")))
+      (chk-d "2.5*4+2.5"   (call2d fma 2.5d0 4d0)  12.5d0)
+      (chk-d "9.0/4.0"     (call2d fdv 9d0 4d0)    2.25d0)
+      (chk-d "trunc-rt"    (call2d rt 1.5d0 0d0)   1.5d0)))
   (format t "~&=== G6 arm64 JIT smoke (aenc-fn -> exec page -> native call) ===~%  ~d passed, ~d failed~%"
           pass fail)
   (sb-ext:exit :code (if (zerop fail) 0 1)))

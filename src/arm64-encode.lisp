@@ -163,9 +163,12 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
                    (when (> rot esize) (error "arm64 enc: not a logical immediate")))
           (let ((ones (logcount x)))
             (unless (= x (1- (ash 1 ones))) (error "arm64 enc: not a logical immediate"))
-            ;; immr = (esize - rot) mod esize; imms = (~(esize-1) | (ones-1)) low 6
+            ;; immr = (esize - rot) mod esize.  imms packs the element size in its
+            ;; high bits as NOT(2*esize-1) (per ARM DecodeBitMasks: len = log2 esize
+            ;; recovered from the leading 0 of NOT(N:imms)) and (ones-1) in the low
+            ;; `log2 esize` bits.
             (let* ((immr (mod (- esize rot) esize))
-                   (imms (logior (logand (lognot (1- esize)) #x3f) (1- ones)))
+                   (imms (logior (logand (lognot (1- (* 2 esize))) #x3f) (1- ones)))
                    (nbit (if (= esize 64) 1 0)))
               (declare (ignore emask))
               (values nbit immr (logand imms #x3f)))))))))
@@ -300,18 +303,30 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
 (defun a64-reloc (e sym kind &optional (addend 0))
   (push (list :offset (ahere e) :symbol sym :kind kind :addend addend) (aenc-fixups e)))
 
+(defun a64-adrp (e rd)
+  ;; adrp Xd, #0 : 1|immlo(2)|10000|immhi(19)|Rd  (immlo/immhi left 0 for the reloc)
+  (aw e (logior #x90000000 (a64-hw rd))))
+
 (defun aenc-loadaddr (e c rd)
-  "arm64/emit.c loadaddr (SGlo apple): adrp Xd,sym@page ; add Xd,Xd,sym@pageoff."
-  (when (or (member :ext (con-symtype c)) (member :thr (con-symtype c)))
-    (error "arm64 enc: GOT/TLS address (later tranche)"))
-  (let ((sym (a64-symname c)))
-    ;; adrp Xd, #0 : 1|immlo(2)|10000|immhi(19)|Rd  (immlo/immhi left 0 for the reloc)
-    (a64-reloc e sym :page21)
-    (aw e (logior #x90000000 (a64-hw rd)))
-    ;; add Xd, Xd, #0  (imm12 left 0 for the pageoff reloc)
-    (a64-reloc e sym :pageoff12)
-    (a64-addsub-imm e 0 :l rd rd 0)
-    (unless (zerop (con-off c)) (error "arm64 enc: addr addend (later tranche)"))))
+  "arm64/emit.c loadaddr (apple).  SGlo: adrp Xd,sym@page ; add Xd,Xd,sym@pageoff.
+   :ext -> GOT (adrp @gotpage ; ldr [Xd,@gotpageoff]);
+   :thr -> Apple TLS (adrp @tlvppage ; ldr [Xd,@tlvppageoff]).
+   The load's second operand is patched by the PAGEOFF12 reloc, so it is a plain
+   `ldr Xd,[Xd,#0]` (a64-ldst-uimm size=3 opc=01 off=0)."
+  (let ((sym (a64-symname c)) (st (con-symtype c)))
+    (cond
+      ((member :thr st)
+       (unless (tg-apple) (error "arm64 enc: elf TLS unsupported"))
+       (a64-reloc e sym :tlvppage21)   (a64-adrp e rd)
+       (a64-reloc e sym :tlvppageoff12) (a64-ldst-uimm e 3 #b01 rd rd 0))
+      ((member :ext st)
+       (unless (tg-apple) (error "arm64 enc: elf GOT unsupported"))
+       (a64-reloc e sym :gotpage21)    (a64-adrp e rd)
+       (a64-reloc e sym :gotpageoff12) (a64-ldst-uimm e 3 #b01 rd rd 0))
+      (t
+       (a64-reloc e sym :page21)    (a64-adrp e rd)
+       (a64-reloc e sym :pageoff12) (a64-addsub-imm e 0 :l rd rd 0)
+       (unless (zerop (con-off c)) (error "arm64 enc: addr addend (later tranche)"))))))
 
 (defun aenc-call (e i)
   "arm64/emit.c Ocall: bl sym (CAddr, off 0) -> BRANCH26 fixup; else blr Xn."
@@ -324,6 +339,11 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
       ((reg-p a0) (a64-blr e a0))               ; blr Xn (register indirect)
       (t (error "arm64 enc: invalid call argument ~s" a0)))))
 
+;;; V31 is the fp swap scratch (arm64/emit.c %? for the Ka class).  Its id lives
+;;; outside *arm64-regs* (isel never allocates it), so build a standalone reg
+;;; object; a64-hw already special-cases +a64-v31+ -> hw 31.
+(defparameter *a64-v31-reg* (make-reg +a64-v31+ "d31" :d))
+
 ;;; swap: mov ?, a0 ; mov a0, a1 ; mov a1, ?  (? = IP1 for int, V31 for fp).
 (defun aenc-mov-reg (e rd rm cls fp)
   (if fp
@@ -334,7 +354,7 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
 
 (defun aenc-swap (e i)
   (let* ((cls (ins-cls i)) (fp (member cls '(:s :d)))
-         (tmp (a64rg (if fp +a64-v31+ +a64-ip1+)))
+         (tmp (if fp *a64-v31-reg* (a64rg +a64-ip1+)))
          (a0 (ins-arg0 i)) (a1 (ins-arg1 i)))
     (aenc-mov-reg e tmp a0 cls fp)
     (aenc-mov-reg e a0 a1 cls fp)
@@ -360,9 +380,77 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
     (aw e (logior #x1e214000 (ash (if (eq cls :d) 1 0) 22)
                   (ash (a64-hw (ins-arg0 i)) 5) (a64-hw (ins-to i))))))
 
+;;; ------------------------------------------------------------------ shifts / div
+;;; Variable shifts (lslv/lsrv/asrv) and integer divide (sdiv/udiv) are all
+;;; data-processing 2-source (a64-dp2).  The corpus only ever produces the
+;;; register forms (no immediate shift / no immediate divisor).
+(defparameter *a64-dp2-opc*
+  '((:shl . #b001000) (:shr . #b001001) (:sar . #b001010)   ; lslv lsrv asrv
+    (:udiv . #b000010) (:div . #b000011)))                  ; udiv sdiv
+(defun aenc-shift-div (e i op)
+  (a64-dp2 e (ins-cls i) (ins-to i) (ins-arg0 i) (ins-arg1 i)
+           (cdr (assoc op *a64-dp2-opc*))))
+
+;;; rem/urem: (s|u)div %?, %0, %1 ; msub %=, %?, %1, %0   (%? = IP1 scratch, the
+;;; integer temp arm64/emit.c uses for the two-instruction remainder sequence).
+;;; msub is data-processing 3-source with op31=000, o0=1.
+(defun aenc-rem (e i signed)
+  (let ((cls (ins-cls i)) (to (ins-to i)) (a0 (ins-arg0 i)) (a1 (ins-arg1 i))
+        (q (a64rg +a64-ip1+)))
+    (a64-dp2 e cls q a0 a1 (if signed #b000011 #b000010))    ; sdiv/udiv q, a0, a1
+    (a64-dp3 e cls to q a1 a0 #b000 1)))                      ; msub to, q, a1, a0
+
+;;; ------------------------------------------------------------------ fp compare
+;;; fcmp/fcmpe Vn, Vm : 00011110 ptype 1 Rm 001000 Rn opc(00=fcmp,10=fcmpe).
+;;; arm64/emit.c uses fcmpe (signalling); no destination register.
+(defun aenc-afcmp (e i)
+  (let ((cls (ins-cls i)))
+    (aw e (logior #x1e202010 (ash (if (eq cls :d) 1 0) 22)
+                  (ash (a64-hw (ins-arg1 i)) 16) (ash (a64-hw (ins-arg0 i)) 5)))))
+
+;;; ------------------------------------------------------------------ fp convert
+;;; fcvt Vd, Vn (precision change): 00011110 ptype 1 0001 opc(2) 10000 Rn Rd.
+;;;   exts   (single->double): ptype=00 opc=01  -> fcvt d,s   (0x1e22c000)
+;;;   truncd (double->single): ptype=01 opc=00  -> fcvt s,d   (0x1e624000)
+(defun aenc-fcvt (e i to-double)
+  (if to-double
+      (aw e (logior #x1e22c000 (ash (a64-hw (ins-arg0 i)) 5) (a64-hw (ins-to i))))
+      (aw e (logior #x1e624000 (ash (a64-hw (ins-arg0 i)) 5) (a64-hw (ins-to i))))))
+
+;;; fp<->int conversion: sf|00|11110|ptype(2)|1|rmode(2)|opcode(3)|000000|Rn|Rd.
+;;;   fcvtzs/fcvtzu (float->int): rmode=11 opcode=000(s)/001(u), Rd int, Rn fp.
+;;;   scvtf/ucvtf   (int->float): rmode=00 opcode=010(s)/011(u), Rd fp,  Rn int.
+;;;   fmov (bit cast):            rmode=00 opcode=110(->fp)/111(->int).
+;;; INTCLS is the integer-side class (:w or :l) -> sf; FPD is T for double ptype.
+(defun a64-fpint (e sf fpd rmode opcode3 rn rd)
+  (aw e (logior (ash sf 31) (ash #b0011110 24) (ash (if fpd 1 0) 22) (ash 1 21)
+                (ash rmode 19) (ash opcode3 16) (ash (a64-hw rn) 5) (a64-hw rd))))
+
+(defun aenc-ftoi (e i signed fpd)
+  "fcvtzs/fcvtzu %=, %{S,D}0 : result class (Kw/Kl) drives sf; source fp ptype."
+  (a64-fpint e (a64-sf (ins-cls i)) fpd #b11 (if signed #b000 #b001)
+             (ins-arg0 i) (ins-to i)))
+
+(defun aenc-itof (e i signed srcwide)
+  "scvtf/ucvtf %=, %{W,L}0 : source int class drives sf; result fp ptype from cls."
+  (a64-fpint e (if srcwide 1 0) (eq (ins-cls i) :d) #b00 (if signed #b010 #b011)
+             (ins-arg0 i) (ins-to i)))
+
+(defun aenc-cast (e i)
+  "fmov bit-reinterpret between int and fp registers of the same width.
+   cls w: fmov Wd,Sn ; cls l: fmov Xd,Dn ; cls s: fmov Sd,Wn ; cls d: fmov Dd,Xn."
+  (let ((cls (ins-cls i)) (a0 (ins-arg0 i)) (to (ins-to i)))
+    (ecase cls
+      (:w (a64-fpint e 0 nil #b00 #b110 a0 to))     ; fmov Wd, Sn  (fp->int)
+      (:l (a64-fpint e 1 t   #b00 #b110 a0 to))     ; fmov Xd, Dn
+      (:s (a64-fpint e 0 nil #b00 #b111 a0 to))     ; fmov Sd, Wn  (int->fp)
+      (:d (a64-fpint e 1 t   #b00 #b111 a0 to)))))  ; fmov Dd, Xn
+
 ;;; ------------------------------------------------------------------ dispatch
-;;; Tranches A+: integer ALU/mov, loads/stores + slots, ext, cmp/cset.  The rest
-;;; (calls+relocs, floats, div/rem, logimm) error, mirroring arm64-emit.lisp.
+;;; Every op the arm64 backend produces over the QBE corpus is encoded here:
+;;; integer ALU/mov, loads/stores + slots, ext, cmp/cset, calls+relocs, floats,
+;;; shifts, div/rem, fp compare/convert/cast, GOT/TLS addresses.  Mirrors
+;;; arm64-emit.lisp op-for-op (that text path is the byte-exact oracle).
 (defun aenc-ins (e i)
   (let ((op (ins-op i)) (cls (ins-cls i)))
     (cond
@@ -377,6 +465,21 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
       ((eq op :or)  (aenc-logic e i #b01))
       ((eq op :xor) (aenc-logic e i #b10))
       ((eq op :mul) (a64-dp3 e cls (ins-to i) (ins-arg0 i) (ins-arg1 i) (a64rg +a64-sp+) #b000 0))
+      ((member op '(:shl :shr :sar :div :udiv)) (aenc-shift-div e i op))
+      ((eq op :rem) (aenc-rem e i t))
+      ((eq op :urem) (aenc-rem e i nil))
+      ((eq op :afcmp) (aenc-afcmp e i))
+      ((eq op :exts) (aenc-fcvt e i t))        ; single -> double
+      ((eq op :truncd) (aenc-fcvt e i nil))    ; double -> single
+      ((eq op :cast) (aenc-cast e i))
+      ((eq op :stosi) (aenc-ftoi e i t   nil)) ; signed <- single
+      ((eq op :stoui) (aenc-ftoi e i nil nil)) ; unsigned <- single
+      ((eq op :dtosi) (aenc-ftoi e i t   t))   ; signed <- double
+      ((eq op :dtoui) (aenc-ftoi e i nil t))   ; unsigned <- double
+      ((eq op :swtof) (aenc-itof e i t   nil)) ; single/double <- signed word
+      ((eq op :uwtof) (aenc-itof e i nil nil)) ; single/double <- unsigned word
+      ((eq op :sltof) (aenc-itof e i t   t))   ; single/double <- signed long
+      ((eq op :ultof) (aenc-itof e i nil t))   ; single/double <- unsigned long
       ((member op '(:load :loadsw :loadsb :loadub :loadsh :loaduh :loaduw)) (aenc-load e i))
       ((member op '(:storeb :storeh :storew :storel :stores :stored)) (aenc-store e i))
       ((eq op :addr)                                          ; add Xd, x29, #slot
@@ -436,12 +539,27 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
   "AArch64 condition-code field values.")
 (defun a64-cc-code (s) (cdr (assoc s *a64-cc-codes* :test #'string=)))
 
+;;; Materialize a 0..65535 frame delta into x16 (movz + optional movk<<16), then
+;;; `sub sp, sp, x16` — the large-frame path shared by prologue/epilogue.
+(defun a64-frame-sub-x16 (e amount subp)
+  (a64-movzknq e #b10 :l (a64rg +a64-ip0+) (logand amount #xffff) 0)       ; mov x16,#lo
+  (when (> amount 65535) (error "arm64 enc: frame > 65535"))
+  (when (/= 0 (ash amount -16))
+    (a64-movzknq e #b11 :l (a64rg +a64-ip0+) (ash amount -16) 1))          ; movk x16,#hi,lsl#16
+  (a64-addsub-reg e (if subp 1 0) :l (a64rg +a64-sp+) (a64rg +a64-sp+) (a64rg +a64-ip0+)))
+
 (defun aenc-prologue (e frame fn)
   (a64-hint e 34)
   (cond
     ((<= (+ frame 16) 512)
      (a64-ldstp e 0 t (- (+ frame 16)) (a64rg +a64-fp+) (a64rg +a64-lr+) (a64rg +a64-sp+)))
-    (t (error "arm64 enc: large frame prologue (tranche B)")))
+    ((<= frame 4095)
+     (a64-addsub-imm e 1 :l (a64rg +a64-sp+) (a64rg +a64-sp+) frame)        ; sub sp,sp,#frame
+     (a64-ldstp e 0 t -16 (a64rg +a64-fp+) (a64rg +a64-lr+) (a64rg +a64-sp+)))
+    ((<= frame 65535)
+     (a64-frame-sub-x16 e frame t)                                          ; sub sp,sp,x16
+     (a64-ldstp e 0 t -16 (a64rg +a64-fp+) (a64rg +a64-lr+) (a64rg +a64-sp+)))
+    (t (error "arm64 enc: frame > 65535 (unsupported)")))
   (a64-addsub-imm e 0 :l (a64rg +a64-fp+) (a64rg +a64-sp+) 0)     ; mov x29, sp
   ;; callee-clobbered register saves (str into top-of-frame slots)
   (let ((sc (floor (- frame (ae-padding (aenc-es e))) 4)))
@@ -460,12 +578,16 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
              (aenc-ins e (make-instance 'ins
                            :op :load :cls (if (>= rc +a64-v0+) :d :l)
                            :to (a64rg rc) :arg0 (make-slot-ref sc) :arg1 nil))))
-  (when (fn-dynalloc fn) (error "arm64 enc: dynalloc epilogue (tranche B)"))
+  (when (fn-dynalloc fn)                                            ; mov sp, x29
+    (a64-addsub-imm e 0 :l (a64rg +a64-sp+) (a64rg +a64-fp+) 0))
   (let ((o (+ frame 16)))
     (when (and (fn-vararg fn) (not (tg-apple))) (incf o 192))
     (cond
       ((<= o 504) (a64-ldstp e 1 nil o (a64rg +a64-fp+) (a64rg +a64-lr+) (a64rg +a64-sp+)))
-      (t (error "arm64 enc: large frame epilogue (tranche B)"))))
+      (t (a64-ldstp e 1 nil 16 (a64rg +a64-fp+) (a64rg +a64-lr+) (a64rg +a64-sp+))  ; ldp [sp],16
+         (if (<= (- o 16) 4095)
+             (a64-addsub-imm e 0 :l (a64rg +a64-sp+) (a64rg +a64-sp+) (- o 16))     ; add sp,sp,#(o-16)
+             (a64-frame-sub-x16 e (- o 16) nil)))))                                 ; add sp,sp,x16
   (a64-ret e))
 
 ;;; ------------------------------------------------------------------ fn driver

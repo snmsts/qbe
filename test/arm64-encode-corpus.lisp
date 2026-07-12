@@ -47,7 +47,7 @@ resolved but the encoder relocated)."
                                 (ash (aref eb (+ k 2)) 16) (ash (aref eb (+ k 3)) 24))
                always (or (= tw ew) (member k brs))))))
 
-(let ((pass 0) (localcall 0) (fail 0) (skip 0) (fails '()))
+(let ((pass 0) (localcall 0) (fail 0) (asfail 0) (encerr 0) (fails '()) (errs '()))
   (dolist (p (qbe-test:corpus-files))
     (let ((mod (parse-file p)))
       (let ((*target* *arm64-apple-target*) (*a64-id0* 0))
@@ -60,14 +60,17 @@ resolved but the encoder relocated)."
                   (declare (ignore syms))
                   (let ((tb (a64ec-text-bytes fn)))
                     (cond
-                      ((eq tb :as-fail) (incf skip))
+                      ((eq tb :as-fail) (incf asfail))
                       ((equalp tb eb) (incf pass))
                       ((a64ec-diffs-are-branch26 tb eb fixups) (incf localcall))
                       (t (incf fail) (push (fn-name fn) fails))))))
-            (error (c) (declare (ignore c)) (incf skip)))))))
+            ;; aenc-fn itself erroring means the encoder can't handle an op yet.
+            (error (c) (declare (ignore c)) (incf encerr) (push (fn-name fn) errs)))))))
   (format t "~&=== G6 arm64 encode-corpus (as-diff) ===~%")
   (format t "  byte-exact:  ~d~%" pass)
   (format t "  local-call:  ~d  (bl to same-object fn -> BRANCH26 fixup; = after link)~%" localcall)
   (format t "  fail:        ~d~@[  ~{~a ~}~]~%" fail fails)
-  (format t "  skip:        ~d  (ops not yet encoded)~%" skip)
-  (sb-ext:exit :code (if (zerop fail) 0 1)))
+  (format t "  enc-gap:     ~d~@[  ~{~a ~}~]  (aenc-fn errored: op not encoded)~%" encerr errs)
+  (format t "  as-fail:     ~d  (`as` can't assemble the per-fn text; oracle N/A, encoder ran)~%" asfail)
+  ;; a real regression is a byte mismatch (fail) or a new encoder gap (enc-gap).
+  (sb-ext:exit :code (if (and (zerop fail) (zerop encerr)) 0 1)))
