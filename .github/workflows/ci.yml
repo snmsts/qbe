@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Host-agnostic golden/unit tests for BOTH targets (amd64 + arm64), plus the
+  # amd64 native-execution and byte-exact-vs-`as` suites.  x86-64 runner.
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Roswell + SBCL
+        run: |
+          curl -L https://raw.githubusercontent.com/roswell/roswell/master/scripts/install-for-ci.sh | sh
+          echo "$HOME/.roswell/bin" >> "$GITHUB_PATH"
+      - name: qbe-cl tests (linux)
+        run: bash ci/run-tests.sh linux
+
+  # arm64/Apple-only suites: native execution + byte-exact vs Apple's assembler.
+  # Requires an Apple Silicon runner (macos-14 is arm64).
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Roswell + SBCL
+        run: |
+          brew install roswell
+          ros install sbcl-bin
+          ros use sbcl-bin
+      - name: qbe-cl tests (macos/arm64)
+        run: bash ci/run-tests.sh macos
