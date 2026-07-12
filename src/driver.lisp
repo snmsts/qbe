@@ -37,3 +37,33 @@ return (values exit-code stdout asm-string)."
                             :output :string :ignore-error-status t)
         (declare (ignore err))
         (values code out asm)))))
+
+;;; ------------------------------------------------- arm64 naive (G1) driver
+;;; Same shape as the amd64 naive path above, but each a64-emit-fn emits its own
+;;; .text/.balign header, so the module driver just loops.
+
+(defun a64-emit-module (module &optional (stream *standard-output*))
+  "Emit naive arm64 (Apple) assembly for every function in MODULE."
+  (loop for fn in (module-funcs module) for id from 0
+        do (a64-emit-fn fn stream id))
+  (values))
+
+(defun a64-module-asm-string (module)
+  (with-output-to-string (s) (a64-emit-module module s)))
+
+(defun a64-compile-and-run (source &key (cc "cc"))
+  "Like compile-and-run but via the naive arm64 (Apple) code generator.
+Returns (values exit-code stdout asm-string)."
+  (let* ((module (if (stringp source) (parse-string source) (parse-file source)))
+         (asm (a64-module-asm-string module)))
+    (uiop:with-temporary-file (:pathname exe :type "out" :keep nil)
+      (uiop:with-temporary-file (:pathname asmf :type "s" :keep nil)
+        (with-open-file (s asmf :direction :output :if-exists :supersede)
+          (write-string asm s))
+        (uiop:run-program (list cc (namestring asmf) "-o" (namestring exe))
+                          :error-output :string))
+      (multiple-value-bind (out err code)
+          (uiop:run-program (list (namestring exe))
+                            :output :string :ignore-error-status t)
+        (declare (ignore err))
+        (values code out asm)))))
