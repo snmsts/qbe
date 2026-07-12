@@ -1,0 +1,92 @@
+**** Function f ****
+> After Apple pre-ABI:
+function $f() {
+@start
+	%h1 =l parc :hfa3
+	%h2 =l parc :hfa3
+	%d1 =d par
+	%h3 =l parc :hfa3
+	%d2 =d par
+	argc :hfa3, %h1
+	call $phfa3
+	argc :hfa3, %h2
+	call $phfa3
+	argc :hfa3, %h3
+	call $phfa3
+	argl $dfmt
+	argv
+	argd %d1
+	call $printf
+	argl $dfmt
+	argv
+	argd %d2
+	call $printf
+	ret0
+}
+
+> After ABI lowering:
+function $f() {
+@start
+	%d2 =d load S-18
+	%d1 =d copy R39
+	%abi.11 =s copy R38
+	%abi.9 =s copy R37
+	%abi.7 =s copy R36
+	%abi.5 =s copy R35
+	%abi.3 =s copy R34
+	%abi.1 =s copy R33
+	%h1 =l alloc4 16
+	%h2 =l alloc4 16
+	%abi.12 =l add %h2, 8
+	stores %abi.11, %abi.12
+	%abi.10 =l add %h2, 4
+	stores %abi.9, %abi.10
+	%abi.8 =l add %h2, 0
+	stores %abi.7, %abi.8
+	%abi.6 =l add %h1, 8
+	stores %abi.5, %abi.6
+	%abi.4 =l add %h1, 4
+	stores %abi.3, %abi.4
+	%abi.2 =l add %h1, 0
+	stores %abi.1, %abi.2
+	%abi.23 =l add %h1, 8
+	R35 =s load %abi.23
+	%abi.22 =l add %h1, 4
+	R34 =s load %abi.22
+	%abi.21 =l add %h1, 0
+	R33 =s load %abi.21
+	call $phfa3, 0601
+	copy R1
+	%abi.20 =l add %h2, 8
+	R35 =s load %abi.20
+	%abi.19 =l add %h2, 4
+	R34 =s load %abi.19
+	%abi.18 =l add %h2, 0
+	R33 =s load %abi.18
+	call $phfa3, 0601
+	copy R1
+	%abi.17 =l add %h3, 8
+	R35 =s load %abi.17
+	%abi.16 =l add %h3, 4
+	R34 =s load %abi.16
+	%abi.15 =l add %h3, 0
+	R33 =s load %abi.15
+	call $phfa3, 0601
+	copy R1
+	R32 =l sub R32, 16
+	%abi.14 =l add R32, 0
+	stored %d1, %abi.14
+	R1 =l copy $dfmt
+	call $printf, 0021
+	copy R1
+	R32 =l add R32, 16
+	R32 =l sub R32, 16
+	%abi.13 =l add R32, 0
+	stored %d2, %abi.13
+	R1 =l copy $dfmt
+	call $printf, 0021
+	copy R1
+	R32 =l add R32, 16
+	ret0
+}
+

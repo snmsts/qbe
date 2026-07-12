@@ -1,0 +1,41 @@
+**** Function test ****
+> After Apple pre-ABI:
+function $test() {
+@start
+	%c =w par
+	jnz %c, @yes, @no
+@yes
+	%c0 =w cnew %c, 0
+	jnz %c0, @yesyes, @yesno
+@yesyes
+	%rc =w copy 1
+	jmp @end
+@yesno
+	%rc =w copy 111
+	jmp @end
+@no
+	%c1 =w cnew %c, 0
+	jnz %c1, @noyes, @nono
+@noyes
+	%rc =w copy 222
+	jmp @end
+@nono
+	%rc =w copy 0
+@end
+	retw %rc
+}
+
+> After ABI lowering:
+function $test() {
+@start
+	%c =w copy R1
+	jnz %c, @yes, @no
+@yes
+	jmp @end
+@no
+@end
+	%rc.1 =w phi @no 0, @yes 1
+	R1 =w copy %rc.1
+	ret0 0001
+}
+

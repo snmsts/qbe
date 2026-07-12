@@ -1,0 +1,64 @@
+**** Function func ****
+> After Apple pre-ABI:
+function $func() {
+@start.0
+	%temp =l alloc4 4
+	%ret =l alloc4 8
+	storew 1, %temp
+	%field =l add %ret, 4
+	storew 2, %ret
+	blit0 %temp, %field
+	blit1 4
+	storew 2, %ret
+	retc %ret, :t
+}
+
+> After ABI lowering:
+function $func() {
+@start.0
+	%ret =l alloc4 8
+	storew 1, %ret
+	%field =l add %ret, 4
+	blit0 %ret, %field
+	blit1 -4
+	storew 2, %ret
+	%abi.1 =l add %ret, 0
+	R1 =l load %abi.1
+	ret0 0001
+}
+
+**** Function main ****
+> After Apple pre-ABI:
+function $main() {
+@start
+	%ret =l call $func, :t
+	%fptr =l add %ret, 4
+	%field =w loaduw %fptr
+	%x =w ceqw %field, 1
+	jnz %x, @passed, @failed
+@failed
+	call $abort
+@passed
+	retw 0
+}
+
+> After ABI lowering:
+function $main() {
+@start
+	%ret =l alloc4 8
+	call $func, 0001
+	%abi.16 =l copy R1
+	%abi.17 =l add %ret, 0
+	storel %abi.16, %abi.17
+	%fptr =l add %ret, 4
+	%field =w loaduw %fptr
+	%x =w ceqw %field, 1
+	jnz %x, @passed, @failed
+@failed
+	call $abort, 0001
+	copy R1
+@passed
+	R1 =w copy 0
+	ret0 0001
+}
+

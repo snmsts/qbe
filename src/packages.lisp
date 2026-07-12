@@ -40,4 +40,6 @@
    #:emit-fn #:emit-module #:module-asm-string
    #:build-exe #:compile-and-run
    ;; arm64 naive codegen (G1 walking skeleton) + driver
-   #:a64-emit-fn #:a64-emit-module #:a64-module-asm-string #:a64-compile-and-run))
+   #:a64-emit-fn #:a64-emit-module #:a64-module-asm-string #:a64-compile-and-run
+   ;; arm64 abi (G2)
+   #:a64-apple-extsb))

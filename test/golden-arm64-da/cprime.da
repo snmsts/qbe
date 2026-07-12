@@ -1,0 +1,121 @@
+**** Function main ****
+> After Apple pre-ABI:
+function $main() {
+@start
+	%v0 =l alloc8 4
+	%v1 =l alloc8 4
+	%v2 =l alloc8 4
+	%v3 =l alloc8 4
+	%v4 =l alloc8 4
+	storew 5, %v1
+	storew 11, %v2
+	storew 12, %v3
+@L0
+	%v5 =w loadsw %v1
+	%v6 =w cnew %v5, 201
+	jnz %v6, @L8, @L1
+@L8
+	storew 1, %v4
+	%v7 =w loadsw %v3
+	%v8 =w rem %v7, 2
+	%v9 =w ceqw %v8, 0
+	jnz %v9, @L9, @L5
+@L9
+	storew 0, %v4
+@L5
+	storew 3, %v0
+@L2
+	%v10 =w loadsw %v0
+	%v11 =w loadsw %v3
+	%v12 =w csltw %v10, %v11
+	jnz %v12, @L10, @L3
+@L10
+	%v13 =w loadsw %v3
+	%v14 =w loadsw %v0
+	%v15 =w rem %v13, %v14
+	%v16 =w ceqw %v15, 0
+	jnz %v16, @L11, @L4
+@L11
+	storew 0, %v4
+	jmp @L3
+@L4
+	%v17 =w loadsw %v0
+	%v18 =w add %v17, 2
+	storew %v18, %v0
+	jmp @L2
+@L3
+	%v19 =w loadsw %v4
+	jnz %v19, @L12, @L6
+@L12
+	%v20 =w loadsw %v3
+	storew %v20, %v2
+	%v21 =w loadsw %v1
+	%v22 =w add %v21, 1
+	storew %v22, %v1
+@L6
+	%v23 =w loadsw %v3
+	%v24 =w add %v23, 1
+	storew %v24, %v3
+	jmp @L0
+@L1
+	%v25 =w loadsw %v2
+	%v26 =w cnew %v25, 1229
+	jnz %v26, @L13, @L7
+@L13
+	retw 1
+@L7
+	retw 0
+@end
+	retw 0
+}
+
+> After ABI lowering:
+function $main() {
+@start
+@L0
+	%v3.4 =w phi @start 12, @L6 %v24
+	%v2.5 =w phi @start 11, @L6 %v2.12
+	%v1.6 =w phi @start 5, @L6 %v1.13
+	%v6 =w cnew %v1.6, 201
+	jnz %v6, @L8, @L1
+@L8
+	%v8 =w rem %v3.4, 2
+	%v9 =w ceqw %v8, 0
+	jnz %v9, @L9, @L5
+@L9
+@L5
+	%v4.8 =w phi @L8 1, @L9 0
+@L2
+	%v0.10 =w phi @L5 3, @L4 %v18
+	%v12 =w csltw %v0.10, %v3.4
+	jnz %v12, @L10, @L3
+@L10
+	%v15 =w rem %v3.4, %v0.10
+	%v16 =w ceqw %v15, 0
+	jnz %v16, @L11, @L4
+@L11
+	jmp @L3
+@L4
+	%v18 =w add %v0.10, 2
+	jmp @L2
+@L3
+	%v4.11 =w phi @L2 %v4.8, @L11 0
+	jnz %v4.11, @L12, @L6
+@L12
+	%v22 =w add %v1.6, 1
+@L6
+	%v2.12 =w phi @L3 %v2.5, @L12 %v3.4
+	%v1.13 =w phi @L3 %v1.6, @L12 %v22
+	%v24 =w add %v3.4, 1
+	jmp @L0
+@L1
+	%v26 =w cnew %v2.5, 1229
+	jnz %v26, @L13, @L7
+@L13
+	R1 =w copy 1
+	ret0 0001
+@L7
+	R1 =w copy 0
+	ret0 0001
+}
+

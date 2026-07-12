@@ -1,0 +1,1220 @@
+**** Function qbeprint0 ****
+> After Apple pre-ABI:
+function $qbeprint0() {
+@start
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add 1, %fmt
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c =w loadsb %p
+	%p1 =l add 3, %p
+	jnz %c, @loop1, @end
+@loop1
+	%isg =w ceqw %c, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qbeprint0() {
+@start
+	%fmt =l copy R1
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	%abi.11 =l addr S-1
+	%abi.12 =l add %abi.11, 0
+	storel %abi.12, %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.4 =w loadsb %p
+	jnz %c.4, @loop1, @end
+@loop1
+	%isg =w ceqw %c.4, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%abi.7 =l load %vp
+	%dbl =d load %abi.7
+	%abi.6 =l add %abi.7, 8
+	storel %abi.6, %vp
+	R32 =l sub R32, 16
+	%abi.5 =l add R32, 0
+	stored %dbl, %abi.5
+	R1 =l copy %fmtdbl
+	call $printf, 0021
+	%r.1 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@cased
+	%abi.10 =l load %vp
+	%int =w load %abi.10
+	%abi.9 =l add %abi.10, 8
+	storel %abi.9, %vp
+	R32 =l sub R32, 16
+	%abi.8 =l add R32, 0
+	storew %int, %abi.8
+	R1 =l copy %fmtint
+	call $printf, 0021
+	%r.2 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@end
+	R1 =l copy %emptys
+	call $puts, 0021
+	%r.3 =w copy R1
+	ret0
+}
+
+**** Function qbecall0 ****
+> After Apple pre-ABI:
+function $qbecall0() {
+@start
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After ABI lowering:
+function $qbecall0() {
+@start
+	%fmt =l copy R1
+	%vp =l alloc8 32
+	%abi.38 =l addr S-1
+	%abi.39 =l add %abi.38, 0
+	storel %abi.39, %vp
+	R2 =l copy %vp
+	R1 =l copy %fmt
+	call $print, 0041
+	%r =w copy R1
+	ret0
+}
+
+**** Function qbeprint1 ****
+> After Apple pre-ABI:
+function $qbeprint1() {
+@start
+	%argw0 =w par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add 1, %fmt
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c =w loadsb %p
+	%p1 =l add 3, %p
+	jnz %c, @loop1, @end
+@loop1
+	%isg =w ceqw %c, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qbeprint1() {
+@start
+	%fmt =l copy R2
+	%vw.47 =w copy R1
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	%abi.54 =l addr S-1
+	%abi.55 =l add %abi.54, 0
+	storel %abi.55, %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.46 =w loadsb %p
+	jnz %c.46, @loop1, @end
+@loop1
+	%isg =w ceqw %c.46, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%abi.50 =l load %vp
+	%dbl =d load %abi.50
+	%abi.49 =l add %abi.50, 8
+	storel %abi.49, %vp
+	R32 =l sub R32, 16
+	%abi.48 =l add R32, 0
+	stored %dbl, %abi.48
+	R1 =l copy %fmtdbl
+	call $printf, 0021
+	%r.43 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@cased
+	%abi.53 =l load %vp
+	%int =w load %abi.53
+	%abi.52 =l add %abi.53, 8
+	storel %abi.52, %vp
+	R32 =l sub R32, 16
+	%abi.51 =l add R32, 0
+	storew %int, %abi.51
+	R1 =l copy %fmtint
+	call $printf, 0021
+	%r.44 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@end
+	R1 =l copy %emptys
+	call $puts, 0021
+	%r.45 =w copy R1
+	ret0
+}
+
+**** Function qbecall1 ****
+> After Apple pre-ABI:
+function $qbecall1() {
+@start
+	%argw0 =w par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After ABI lowering:
+function $qbecall1() {
+@start
+	%fmt =l copy R2
+	%argw0 =w copy R1
+	%vp =l alloc8 32
+	%abi.81 =l addr S-1
+	%abi.82 =l add %abi.81, 0
+	storel %abi.82, %vp
+	R2 =l copy %vp
+	R1 =l copy %fmt
+	call $print, 0041
+	%r =w copy R1
+	ret0
+}
+
+**** Function qbeprint2 ****
+> After Apple pre-ABI:
+function $qbeprint2() {
+@start
+	%argd0 =d par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add 1, %fmt
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c =w loadsb %p
+	%p1 =l add 3, %p
+	jnz %c, @loop1, @end
+@loop1
+	%isg =w ceqw %c, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qbeprint2() {
+@start
+	%fmt =l copy R1
+	%argd0 =d copy R33
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	%abi.96 =l addr S-1
+	%abi.97 =l add %abi.96, 0
+	storel %abi.97, %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.89 =w loadsb %p
+	jnz %c.89, @loop1, @end
+@loop1
+	%isg =w ceqw %c.89, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%abi.92 =l load %vp
+	%dbl =d load %abi.92
+	%abi.91 =l add %abi.92, 8
+	storel %abi.91, %vp
+	R32 =l sub R32, 16
+	%abi.90 =l add R32, 0
+	stored %dbl, %abi.90
+	R1 =l copy %fmtdbl
+	call $printf, 0021
+	%r.86 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@cased
+	%abi.95 =l load %vp
+	%int =w load %abi.95
+	%abi.94 =l add %abi.95, 8
+	storel %abi.94, %vp
+	R32 =l sub R32, 16
+	%abi.93 =l add R32, 0
+	storew %int, %abi.93
+	R1 =l copy %fmtint
+	call $printf, 0021
+	%r.87 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@end
+	R1 =l copy %emptys
+	call $puts, 0021
+	%r.88 =w copy R1
+	ret0
+}
+
+**** Function qbecall2 ****
+> After Apple pre-ABI:
+function $qbecall2() {
+@start
+	%argd0 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After ABI lowering:
+function $qbecall2() {
+@start
+	%fmt =l copy R1
+	%argd0 =d copy R33
+	%vp =l alloc8 32
+	%abi.123 =l addr S-1
+	%abi.124 =l add %abi.123, 0
+	storel %abi.124, %vp
+	R2 =l copy %vp
+	R1 =l copy %fmt
+	call $print, 0041
+	%r =w copy R1
+	ret0
+}
+
+**** Function qbeprint3 ****
+> After Apple pre-ABI:
+function $qbeprint3() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add 1, %fmt
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c =w loadsb %p
+	%p1 =l add 3, %p
+	jnz %c, @loop1, @end
+@loop1
+	%isg =w ceqw %c, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qbeprint3() {
+@start
+	%fmt =l copy R5
+	%vw.135 =w copy R4
+	%vw.134 =w copy R3
+	%vw.133 =w copy R2
+	%vw.132 =w copy R1
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	%abi.142 =l addr S-1
+	%abi.143 =l add %abi.142, 0
+	storel %abi.143, %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.131 =w loadsb %p
+	jnz %c.131, @loop1, @end
+@loop1
+	%isg =w ceqw %c.131, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%abi.138 =l load %vp
+	%dbl =d load %abi.138
+	%abi.137 =l add %abi.138, 8
+	storel %abi.137, %vp
+	R32 =l sub R32, 16
+	%abi.136 =l add R32, 0
+	stored %dbl, %abi.136
+	R1 =l copy %fmtdbl
+	call $printf, 0021
+	%r.128 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@cased
+	%abi.141 =l load %vp
+	%int =w load %abi.141
+	%abi.140 =l add %abi.141, 8
+	storel %abi.140, %vp
+	R32 =l sub R32, 16
+	%abi.139 =l add R32, 0
+	storew %int, %abi.139
+	R1 =l copy %fmtint
+	call $printf, 0021
+	%r.129 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@end
+	R1 =l copy %emptys
+	call $puts, 0021
+	%r.130 =w copy R1
+	ret0
+}
+
+**** Function qbecall3 ****
+> After Apple pre-ABI:
+function $qbecall3() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After ABI lowering:
+function $qbecall3() {
+@start
+	%fmt =l copy R5
+	%argw3 =w copy R4
+	%argw2 =w copy R3
+	%argw1 =w copy R2
+	%argw0 =w copy R1
+	%vp =l alloc8 32
+	%abi.169 =l addr S-1
+	%abi.170 =l add %abi.169, 0
+	storel %abi.170, %vp
+	R2 =l copy %vp
+	R1 =l copy %fmt
+	call $print, 0041
+	%r =w copy R1
+	ret0
+}
+
+**** Function qbeprint4 ****
+> After Apple pre-ABI:
+function $qbeprint4() {
+@start
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add 1, %fmt
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c =w loadsb %p
+	%p1 =l add 3, %p
+	jnz %c, @loop1, @end
+@loop1
+	%isg =w ceqw %c, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qbeprint4() {
+@start
+	%fmt =l copy R1
+	%argd5 =d copy R38
+	%argd4 =d copy R37
+	%argd3 =d copy R36
+	%argd2 =d copy R35
+	%argd1 =d copy R34
+	%argd0 =d copy R33
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	%abi.184 =l addr S-1
+	%abi.185 =l add %abi.184, 0
+	storel %abi.185, %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.177 =w loadsb %p
+	jnz %c.177, @loop1, @end
+@loop1
+	%isg =w ceqw %c.177, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%abi.180 =l load %vp
+	%dbl =d load %abi.180
+	%abi.179 =l add %abi.180, 8
+	storel %abi.179, %vp
+	R32 =l sub R32, 16
+	%abi.178 =l add R32, 0
+	stored %dbl, %abi.178
+	R1 =l copy %fmtdbl
+	call $printf, 0021
+	%r.174 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@cased
+	%abi.183 =l load %vp
+	%int =w load %abi.183
+	%abi.182 =l add %abi.183, 8
+	storel %abi.182, %vp
+	R32 =l sub R32, 16
+	%abi.181 =l add R32, 0
+	storew %int, %abi.181
+	R1 =l copy %fmtint
+	call $printf, 0021
+	%r.175 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@end
+	R1 =l copy %emptys
+	call $puts, 0021
+	%r.176 =w copy R1
+	ret0
+}
+
+**** Function qbecall4 ****
+> After Apple pre-ABI:
+function $qbecall4() {
+@start
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After ABI lowering:
+function $qbecall4() {
+@start
+	%fmt =l copy R1
+	%argd5 =d copy R38
+	%argd4 =d copy R37
+	%argd3 =d copy R36
+	%argd2 =d copy R35
+	%argd1 =d copy R34
+	%argd0 =d copy R33
+	%vp =l alloc8 32
+	%abi.211 =l addr S-1
+	%abi.212 =l add %abi.211, 0
+	storel %abi.212, %vp
+	R2 =l copy %vp
+	R1 =l copy %fmt
+	call $print, 0041
+	%r =w copy R1
+	ret0
+}
+
+**** Function qbeprint5 ****
+> After Apple pre-ABI:
+function $qbeprint5() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add 1, %fmt
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c =w loadsb %p
+	%p1 =l add 3, %p
+	jnz %c, @loop1, @end
+@loop1
+	%isg =w ceqw %c, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qbeprint5() {
+@start
+	%fmt =l copy R6
+	%argd6 =d copy R39
+	%argd5 =d copy R38
+	%argd4 =d copy R37
+	%argd3 =d copy R36
+	%argd2 =d copy R35
+	%argd1 =d copy R34
+	%argd0 =d copy R33
+	%vw.224 =w copy R5
+	%vw.223 =w copy R4
+	%vw.222 =w copy R3
+	%vw.221 =w copy R2
+	%vw.220 =w copy R1
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	%abi.231 =l addr S-1
+	%abi.232 =l add %abi.231, 0
+	storel %abi.232, %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.219 =w loadsb %p
+	jnz %c.219, @loop1, @end
+@loop1
+	%isg =w ceqw %c.219, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%abi.227 =l load %vp
+	%dbl =d load %abi.227
+	%abi.226 =l add %abi.227, 8
+	storel %abi.226, %vp
+	R32 =l sub R32, 16
+	%abi.225 =l add R32, 0
+	stored %dbl, %abi.225
+	R1 =l copy %fmtdbl
+	call $printf, 0021
+	%r.216 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@cased
+	%abi.230 =l load %vp
+	%int =w load %abi.230
+	%abi.229 =l add %abi.230, 8
+	storel %abi.229, %vp
+	R32 =l sub R32, 16
+	%abi.228 =l add R32, 0
+	storew %int, %abi.228
+	R1 =l copy %fmtint
+	call $printf, 0021
+	%r.217 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@end
+	R1 =l copy %emptys
+	call $puts, 0021
+	%r.218 =w copy R1
+	ret0
+}
+
+**** Function qbecall5 ****
+> After Apple pre-ABI:
+function $qbecall5() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After ABI lowering:
+function $qbecall5() {
+@start
+	%fmt =l copy R6
+	%argd6 =d copy R39
+	%argd5 =d copy R38
+	%argd4 =d copy R37
+	%argd3 =d copy R36
+	%argd2 =d copy R35
+	%argd1 =d copy R34
+	%argd0 =d copy R33
+	%argw4 =w copy R5
+	%argw3 =w copy R4
+	%argw2 =w copy R3
+	%argw1 =w copy R2
+	%argw0 =w copy R1
+	%vp =l alloc8 32
+	%abi.258 =l addr S-1
+	%abi.259 =l add %abi.258, 0
+	storel %abi.259, %vp
+	R2 =l copy %vp
+	R1 =l copy %fmt
+	call $print, 0041
+	%r =w copy R1
+	ret0
+}
+
+**** Function qbeprint6 ****
+> After Apple pre-ABI:
+function $qbeprint6() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argw5 =w par
+	%argw6 =w par
+	%argw7 =w par
+	%argw8 =w par
+	%argw9 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%argd7 =d par
+	%argd8 =d par
+	%argd9 =d par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add 1, %fmt
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c =w loadsb %p
+	%p1 =l add 3, %p
+	jnz %c, @loop1, @end
+@loop1
+	%isg =w ceqw %c, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qbeprint6() {
+@start
+	%fmt =l load S-26
+	%argd9 =d load S-18
+	%argd8 =d load S-10
+	%argd7 =d copy R40
+	%argd6 =d copy R39
+	%argd5 =d copy R38
+	%argd4 =d copy R37
+	%argd3 =d copy R36
+	%argd2 =d copy R35
+	%argd1 =d copy R34
+	%argd0 =d copy R33
+	%vw.276 =w load S-6
+	%vw.275 =w load S-2
+	%vw.274 =w copy R8
+	%vw.273 =w copy R7
+	%vw.272 =w copy R6
+	%vw.271 =w copy R5
+	%vw.270 =w copy R4
+	%vw.269 =w copy R3
+	%vw.268 =w copy R2
+	%vw.267 =w copy R1
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	%abi.283 =l addr S-1
+	%abi.284 =l add %abi.283, 32
+	storel %abi.284, %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.266 =w loadsb %p
+	jnz %c.266, @loop1, @end
+@loop1
+	%isg =w ceqw %c.266, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%abi.279 =l load %vp
+	%dbl =d load %abi.279
+	%abi.278 =l add %abi.279, 8
+	storel %abi.278, %vp
+	R32 =l sub R32, 16
+	%abi.277 =l add R32, 0
+	stored %dbl, %abi.277
+	R1 =l copy %fmtdbl
+	call $printf, 0021
+	%r.263 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@cased
+	%abi.282 =l load %vp
+	%int =w load %abi.282
+	%abi.281 =l add %abi.282, 8
+	storel %abi.281, %vp
+	R32 =l sub R32, 16
+	%abi.280 =l add R32, 0
+	storew %int, %abi.280
+	R1 =l copy %fmtint
+	call $printf, 0021
+	%r.264 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@end
+	R1 =l copy %emptys
+	call $puts, 0021
+	%r.265 =w copy R1
+	ret0
+}
+
+**** Function qbecall6 ****
+> After Apple pre-ABI:
+function $qbecall6() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argw5 =w par
+	%argw6 =w par
+	%argw7 =w par
+	%argw8 =w par
+	%argw9 =w par
+	%argd0 =d par
+	%argd1 =d par
+	%argd2 =d par
+	%argd3 =d par
+	%argd4 =d par
+	%argd5 =d par
+	%argd6 =d par
+	%argd7 =d par
+	%argd8 =d par
+	%argd9 =d par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After ABI lowering:
+function $qbecall6() {
+@start
+	%fmt =l load S-26
+	%argd9 =d load S-18
+	%argd8 =d load S-10
+	%argd7 =d copy R40
+	%argd6 =d copy R39
+	%argd5 =d copy R38
+	%argd4 =d copy R37
+	%argd3 =d copy R36
+	%argd2 =d copy R35
+	%argd1 =d copy R34
+	%argd0 =d copy R33
+	%argw9 =w load S-6
+	%argw8 =w load S-2
+	%argw7 =w copy R8
+	%argw6 =w copy R7
+	%argw5 =w copy R6
+	%argw4 =w copy R5
+	%argw3 =w copy R4
+	%argw2 =w copy R3
+	%argw1 =w copy R2
+	%argw0 =w copy R1
+	%vp =l alloc8 32
+	%abi.310 =l addr S-1
+	%abi.311 =l add %abi.310, 32
+	storel %abi.311, %vp
+	R2 =l copy %vp
+	R1 =l copy %fmt
+	call $print, 0041
+	%r =w copy R1
+	ret0
+}
+
+**** Function qbeprint7 ****
+> After Apple pre-ABI:
+function $qbeprint7() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argw5 =w par
+	%argw6 =w par
+	%argw7 =w par
+	%argw8 =w par
+	%fmt =l par
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add 1, %fmt
+	vastart %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c =w loadsb %p
+	%p1 =l add 3, %p
+	jnz %c, @loop1, @end
+@loop1
+	%isg =w ceqw %c, 103
+	jnz %isg, @casef, @cased
+@casef
+	%dbl =d vaarg %vp
+	argl %fmtdbl
+	argv
+	argd %dbl
+	%r =w call $printf
+	jmp @loop
+@cased
+	%int =w vaarg %vp
+	argl %fmtint
+	argv
+	argw %int
+	%r =w call $printf
+	jmp @loop
+@end
+	argl %emptys
+	%r =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qbeprint7() {
+@start
+	%fmt =l load S-10
+	%vw.327 =w load S-2
+	%vw.326 =w copy R8
+	%vw.325 =w copy R7
+	%vw.324 =w copy R6
+	%vw.323 =w copy R5
+	%vw.322 =w copy R4
+	%vw.321 =w copy R3
+	%vw.320 =w copy R2
+	%vw.319 =w copy R1
+	%fmtdbl =l alloc4 4
+	%fmtint =l alloc4 4
+	%emptys =l alloc4 4
+	storew 2122789, %fmtint
+	storew 2123557, %fmtdbl
+	storew 0, %emptys
+	%vp =l alloc8 32
+	%fmt1 =l add %fmt, 1
+	%abi.334 =l addr S-1
+	%abi.335 =l add %abi.334, 16
+	storel %abi.335, %vp
+@loop
+	%p =l phi @start %fmt1, @casef %p1, @cased %p1
+	%c.318 =w loadsb %p
+	jnz %c.318, @loop1, @end
+@loop1
+	%isg =w ceqw %c.318, 103
+	%p1 =l add %p, 3
+	jnz %isg, @casef, @cased
+@casef
+	%abi.330 =l load %vp
+	%dbl =d load %abi.330
+	%abi.329 =l add %abi.330, 8
+	storel %abi.329, %vp
+	R32 =l sub R32, 16
+	%abi.328 =l add R32, 0
+	stored %dbl, %abi.328
+	R1 =l copy %fmtdbl
+	call $printf, 0021
+	%r.315 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@cased
+	%abi.333 =l load %vp
+	%int =w load %abi.333
+	%abi.332 =l add %abi.333, 8
+	storel %abi.332, %vp
+	R32 =l sub R32, 16
+	%abi.331 =l add R32, 0
+	storew %int, %abi.331
+	R1 =l copy %fmtint
+	call $printf, 0021
+	%r.316 =w copy R1
+	R32 =l add R32, 16
+	jmp @loop
+@end
+	R1 =l copy %emptys
+	call $puts, 0021
+	%r.317 =w copy R1
+	ret0
+}
+
+**** Function qbecall7 ****
+> After Apple pre-ABI:
+function $qbecall7() {
+@start
+	%argw0 =w par
+	%argw1 =w par
+	%argw2 =w par
+	%argw3 =w par
+	%argw4 =w par
+	%argw5 =w par
+	%argw6 =w par
+	%argw7 =w par
+	%argw8 =w par
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	ret0
+}
+
+> After ABI lowering:
+function $qbecall7() {
+@start
+	%fmt =l load S-10
+	%argw8 =w load S-2
+	%argw7 =w copy R8
+	%argw6 =w copy R7
+	%argw5 =w copy R6
+	%argw4 =w copy R5
+	%argw3 =w copy R4
+	%argw2 =w copy R3
+	%argw1 =w copy R2
+	%argw0 =w copy R1
+	%vp =l alloc8 32
+	%abi.361 =l addr S-1
+	%abi.362 =l add %abi.361, 16
+	storel %abi.362, %vp
+	R2 =l copy %vp
+	R1 =l copy %fmt
+	call $print, 0041
+	%r =w copy R1
+	ret0
+}
+

@@ -1,0 +1,43 @@
+**** Function test ****
+> After Apple pre-ABI:
+function $test() {
+@start
+@loop
+	%max =w phi @start -1, @new %byt, @old %max
+	%loc =l phi @start $arr, @new %loc1, @old %loc1
+	%byt =w loadub %loc
+	%loc1 =l add 1, %loc
+	jnz %byt, @iter, @end
+@iter
+	%cmp =w cslew %max, %byt
+	jnz %cmp, @new, @old
+@new
+	jmp @loop
+@old
+	jmp @loop
+@end
+	storew %max, $a
+	ret0
+}
+
+> After ABI lowering:
+function $test() {
+@start
+@loop
+	%max =w phi @start -1, @new %byt, @old %max
+	%loc =l phi @start $arr, @new %loc1, @old %loc1
+	%byt =w loadub %loc
+	jnz %byt, @iter, @end
+@iter
+	%cmp =w cslew %max, %byt
+	%loc1 =l add %loc, 1
+	jnz %cmp, @new, @old
+@new
+	jmp @loop
+@old
+	jmp @loop
+@end
+	storew %max, $a
+	ret0
+}
+

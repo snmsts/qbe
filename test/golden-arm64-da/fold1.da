@@ -1,0 +1,94 @@
+**** Function f1 ****
+> After Apple pre-ABI:
+function $f1() {
+@start
+	%x =w sar 2147483648, 31
+	retw %x
+}
+
+> After ABI lowering:
+function $f1() {
+@start
+	R1 =w copy 4294967295
+	ret0 0001
+}
+
+**** Function f2 ****
+> After Apple pre-ABI:
+function $f2() {
+@start
+	%x =w div 4294967040, 8
+	retw %x
+}
+
+> After ABI lowering:
+function $f2() {
+@start
+	%x =w div 4294967040, 8
+	R1 =w copy %x
+	ret0 0001
+}
+
+**** Function f3 ****
+> After Apple pre-ABI:
+function $f3() {
+@start
+	%x =w rem 4294967284, 7
+	retw %x
+}
+
+> After ABI lowering:
+function $f3() {
+@start
+	%x =w rem 4294967284, 7
+	R1 =w copy %x
+	ret0 0001
+}
+
+**** Function f4 ****
+> After Apple pre-ABI:
+function $f4() {
+@start
+	%x =w shr 4294967296, 1
+	retw %x
+}
+
+> After ABI lowering:
+function $f4() {
+@start
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function f5 ****
+> After Apple pre-ABI:
+function $f5() {
+@start
+	%x =w udiv 1, 4294967297
+	retw %x
+}
+
+> After ABI lowering:
+function $f5() {
+@start
+	%x =w udiv 1, 1
+	R1 =w copy %x
+	ret0 0001
+}
+
+**** Function f6 ****
+> After Apple pre-ABI:
+function $f6() {
+@start
+	%x =w urem 4294967296, 7
+	retw %x
+}
+
+> After ABI lowering:
+function $f6() {
+@start
+	%x =w urem 0, 7
+	R1 =w copy %x
+	ret0 0001
+}
+

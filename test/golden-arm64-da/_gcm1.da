@@ -1,0 +1,116 @@
+**** Function ifmv ****
+> After Apple pre-ABI:
+function $ifmv() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%rt =w add %p2, %p3
+	%rf =w sub %p2, %p3
+	jnz %p1, @true, @false
+@true
+	%r =w copy %rt
+	jmp @exit
+@false
+	%r =w copy %rf
+@exit
+	retw %r
+}
+
+> After ABI lowering:
+function $ifmv() {
+@start
+	%p3 =w copy R3
+	%p2 =w copy R2
+	%p1 =w copy R1
+	jnz %p1, @true, @false
+@true
+	%rt.1 =w add %p2, %p3
+	jmp @exit
+@false
+	%rf.2 =w sub %p2, %p3
+@exit
+	%r.3 =w phi @false %rf.2, @true %rt.1
+	R1 =w copy %r.3
+	ret0 0001
+}
+
+**** Function hoist1 ****
+> After Apple pre-ABI:
+function $hoist1() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%n =w copy 0
+	%i =w copy %p1
+@loop
+	%base =w add %p2, %p3
+	%i =w sub %i, 1
+	%n =w add %n, 1
+	jnz %i, @loop, @exit
+@exit
+	%r =w add %base, %n
+	retw %r
+}
+
+> After ABI lowering:
+function $hoist1() {
+@start
+	%p3 =w copy R3
+	%p2 =w copy R2
+	%p1 =w copy R1
+@loop
+	%i.8 =w phi @start %p1, @loop %i.11
+	%n.9 =w phi @start 0, @loop %n.12
+	%i.11 =w sub %i.8, 1
+	%n.12 =w add %n.9, 1
+	jnz %i.11, @loop, @exit
+@exit
+	%base.10 =w add %p2, %p3
+	%r =w add %base.10, %n.12
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function hoist2 ****
+> After Apple pre-ABI:
+function $hoist2() {
+@start
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+@entry
+	%n =w copy 0
+	%i =w copy %p1
+@loop
+	%base =w add %p2, %p3
+	%i =w sub %i, 1
+	%n =w add %n, %base
+	jnz %i, @loop, @exit
+@exit
+	%r =w add %base, %n
+	retw %r
+}
+
+> After ABI lowering:
+function $hoist2() {
+@start
+	%p3 =w copy R3
+	%p2 =w copy R2
+	%p1 =w copy R1
+	%base.19 =w add %p2, %p3
+@loop
+	%i.17 =w phi @start %p1, @loop %i.20
+	%n.18 =w phi @start 0, @loop %n.21
+	%i.20 =w sub %i.17, 1
+	%n.21 =w add %n.18, %base.19
+	jnz %i.20, @loop, @exit
+@exit
+	%r =w add %base.19, %n.21
+	R1 =w copy %r
+	ret0 0001
+}
+

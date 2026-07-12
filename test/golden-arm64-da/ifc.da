@@ -1,0 +1,399 @@
+**** Function ifc1 ****
+> After Apple pre-ABI:
+function $ifc1() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%c =w par
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifc1() {
+@start
+	%c =w copy R3
+	%v1 =l copy R2
+	%v0 =l copy R1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.1 =l phi @false %v0, @true %v1
+	R1 =l copy %v.1
+	ret0 0001
+}
+
+**** Function ifc2 ****
+> After Apple pre-ABI:
+function $ifc2() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cnew %p, 42
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifc2() {
+@start
+	%p =w copy R3
+	%v1 =l copy R2
+	%v0 =l copy R1
+	%c =w cnew %p, 42
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.4 =l phi @false %v0, @true %v1
+	R1 =l copy %v.4
+	ret0 0001
+}
+
+**** Function ifc3 ****
+> After Apple pre-ABI:
+function $ifc3() {
+@start
+	%v0 =l par
+	%v1 =l par
+	%p =w par
+	%c =w cugtw %p, 42
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifc3() {
+@start
+	%p =w copy R3
+	%v1 =l copy R2
+	%v0 =l copy R1
+	%c =w cugtw %p, 42
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.7 =l phi @false %v0, @true %v1
+	R1 =l copy %v.7
+	ret0 0001
+}
+
+**** Function ifclts ****
+> After Apple pre-ABI:
+function $ifclts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w clts %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifclts() {
+@start
+	%v1 =l copy R2
+	%v0 =l copy R1
+	%s1 =s copy R34
+	%s0 =s copy R33
+	%c =w clts %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.10 =l phi @false %v0, @true %v1
+	R1 =l copy %v.10
+	ret0 0001
+}
+
+**** Function ifcles ****
+> After Apple pre-ABI:
+function $ifcles() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cles %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifcles() {
+@start
+	%v1 =l copy R2
+	%v0 =l copy R1
+	%s1 =s copy R34
+	%s0 =s copy R33
+	%c =w cles %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.13 =l phi @false %v0, @true %v1
+	R1 =l copy %v.13
+	ret0 0001
+}
+
+**** Function ifcgts ****
+> After Apple pre-ABI:
+function $ifcgts() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cgts %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifcgts() {
+@start
+	%v1 =l copy R2
+	%v0 =l copy R1
+	%s1 =s copy R34
+	%s0 =s copy R33
+	%c =w cgts %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.16 =l phi @false %v0, @true %v1
+	R1 =l copy %v.16
+	ret0 0001
+}
+
+**** Function ifcges ****
+> After Apple pre-ABI:
+function $ifcges() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cges %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifcges() {
+@start
+	%v1 =l copy R2
+	%v0 =l copy R1
+	%s1 =s copy R34
+	%s0 =s copy R33
+	%c =w cges %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.19 =l phi @false %v0, @true %v1
+	R1 =l copy %v.19
+	ret0 0001
+}
+
+**** Function ifceqs ****
+> After Apple pre-ABI:
+function $ifceqs() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w ceqs %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifceqs() {
+@start
+	%v1 =l copy R2
+	%v0 =l copy R1
+	%s1 =s copy R34
+	%s0 =s copy R33
+	%c =w ceqs %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.22 =l phi @false %v0, @true %v1
+	R1 =l copy %v.22
+	ret0 0001
+}
+
+**** Function ifcnes ****
+> After Apple pre-ABI:
+function $ifcnes() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cnes %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifcnes() {
+@start
+	%v1 =l copy R2
+	%v0 =l copy R1
+	%s1 =s copy R34
+	%s0 =s copy R33
+	%c =w cnes %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.25 =l phi @false %v0, @true %v1
+	R1 =l copy %v.25
+	ret0 0001
+}
+
+**** Function ifcos ****
+> After Apple pre-ABI:
+function $ifcos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cos %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifcos() {
+@start
+	%v1 =l copy R2
+	%v0 =l copy R1
+	%s1 =s copy R34
+	%s0 =s copy R33
+	%c =w cos %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.28 =l phi @false %v0, @true %v1
+	R1 =l copy %v.28
+	ret0 0001
+}
+
+**** Function ifcuos ****
+> After Apple pre-ABI:
+function $ifcuos() {
+@start
+	%s0 =s par
+	%s1 =s par
+	%v0 =l par
+	%v1 =l par
+	%c =w cuos %s0, %s1
+	jnz %c, @true, @false
+@true
+	%v =l copy %v1
+	jmp @end
+@false
+	%v =l copy %v0
+@end
+	retl %v
+}
+
+> After ABI lowering:
+function $ifcuos() {
+@start
+	%v1 =l copy R2
+	%v0 =l copy R1
+	%s1 =s copy R34
+	%s0 =s copy R33
+	%c =w cuos %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.31 =l phi @false %v0, @true %v1
+	R1 =l copy %v.31
+	ret0 0001
+}
+

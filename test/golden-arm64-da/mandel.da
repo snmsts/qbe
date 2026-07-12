@@ -1,0 +1,135 @@
+**** Function mandel ****
+> After Apple pre-ABI:
+function $mandel() {
+@mandel
+	%x =d par
+	%y =d par
+	%cr =d sub %y, d_0.500000
+	%ci =d copy %x
+@loop
+	%i =w phi @mandel 0, @loop1 %i1
+	%zr =d phi @mandel 0, @loop1 %zr1
+	%zi =d phi @mandel 0, @loop1 %zi1
+	%i1 =w add 1, %i
+	%tmp =d mul %zr, %zi
+	%zr2 =d mul %zr, %zr
+	%zi2 =d mul %zi, %zi
+	%zrx =d sub %zr2, %zi2
+	%zr1 =d add %zrx, %cr
+	%zix =d add %tmp, %tmp
+	%zi1 =d add %zix, %ci
+	%sum =d add %zi2, %zr2
+	%cmp1 =w cgtd %sum, d_16.000000
+	jnz %cmp1, @reti, @loop1
+@loop1
+	%cmp2 =w csgtw %i1, 1000
+	jnz %cmp2, @ret0, @loop
+@reti
+	retw %i1
+@ret0
+	retw 0
+}
+
+> After ABI lowering:
+function $mandel() {
+@mandel
+	%y =d copy R34
+	%x =d copy R33
+	%cr =d sub %y, d_0.500000
+@loop
+	%i =w phi @mandel 0, @loop1 %i1
+	%zr =d phi @mandel 0, @loop1 %zr1
+	%zi =d phi @mandel 0, @loop1 %zi1
+	%i1 =w add %i, 1
+	%zr2 =d mul %zr, %zr
+	%zi2 =d mul %zi, %zi
+	%sum =d add %zr2, %zi2
+	%cmp1 =w cgtd %sum, d_16.000000
+	jnz %cmp1, @reti, @loop1
+@loop1
+	%cmp2 =w csgtw %i1, 1000
+	%zrx =d sub %zr2, %zi2
+	%zr1 =d add %cr, %zrx
+	%tmp =d mul %zr, %zi
+	%zix =d add %tmp, %tmp
+	%zi1 =d add %x, %zix
+	jnz %cmp2, @ret0, @loop
+@reti
+	%snk.1 =w add %i, 1
+	R1 =w copy %snk.1
+	ret0 0001
+@ret0
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function main ****
+> After Apple pre-ABI:
+function $main() {
+@main
+@loopy
+	%y =d phi @main d_-1.000000, @loopy1 %y1
+@loopx
+	%x =d phi @loopy d_-1.000000, @loopx1 %x1
+	argd %x
+	argd %y
+	%i =w call $mandel
+	jnz %i, @out, @in
+@in
+	argw 42
+	%r0 =w call $putchar
+	jmp @loopx1
+@out
+	argw 32
+	%r1 =w call $putchar
+@loopx1
+	%x1 =d add %x, d_0.032000
+	%cmp1 =w cgtd %x1, d_1.000000
+	jnz %cmp1, @loopy1, @loopx
+@loopy1
+	argw 10
+	%r2 =w call $putchar
+	%y1 =d add %y, d_0.032000
+	%cmp2 =w cgtd %y1, d_1.000000
+	jnz %cmp2, @ret, @loopy
+@ret
+	retw 0
+}
+
+> After ABI lowering:
+function $main() {
+@main
+@loopy
+	%y =d phi @main d_-1.000000, @loopy1 %y1
+@loopx
+	%x =d phi @loopy d_-1.000000, @loopx1 %x1
+	R34 =d copy %y
+	R33 =d copy %x
+	call $mandel, 0401
+	%i =w copy R1
+	jnz %i, @out, @in
+@in
+	R1 =w copy 42
+	call $putchar, 0021
+	%r0 =w copy R1
+	jmp @loopx1
+@out
+	R1 =w copy 32
+	call $putchar, 0021
+	%r1 =w copy R1
+@loopx1
+	%x1 =d add %x, d_0.032000
+	%cmp1 =w cgtd %x1, d_1.000000
+	jnz %cmp1, @loopy1, @loopx
+@loopy1
+	R1 =w copy 10
+	call $putchar, 0021
+	%r2 =w copy R1
+	%y1 =d add %y, d_0.032000
+	%cmp2 =w cgtd %y1, d_1.000000
+	jnz %cmp2, @ret, @loopy
+@ret
+	R1 =w copy 0
+	ret0 0001
+}
+

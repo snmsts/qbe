@@ -1,0 +1,815 @@
+**** Function qfn0 ****
+> After Apple pre-ABI:
+function $qfn0() {
+@start
+	%p0 =s par
+	%p1 =s par
+	%p2 =s par
+	%p3 =s par
+	%p4 =s par
+	%p5 =s par
+	%p6 =s par
+	%p7 =s par
+	%p8 =s par
+	argl $ctoqbestr
+	argv
+	argw 0
+	%r0 =w call $printf
+	args %p8
+	call $ps
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn0() {
+@start
+	%p8 =s load S-2
+	%p7 =s copy R40
+	%p6 =s copy R39
+	%p5 =s copy R38
+	%p4 =s copy R37
+	%p3 =s copy R36
+	%p2 =s copy R35
+	%p1 =s copy R34
+	%p0 =s copy R33
+	R32 =l sub R32, 16
+	%abi.1 =l add R32, 0
+	storew 0, %abi.1
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R33 =s copy %p8
+	call $ps, 0201
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn1 ****
+> After Apple pre-ABI:
+function $qfn1() {
+@start
+	%p0 =w par
+	%p1 =s par
+	%p2 =l parc :fi1
+	argl $ctoqbestr
+	argv
+	argw 1
+	%r0 =w call $printf
+	argw %p0
+	call $pw
+	args %p1
+	call $ps
+	argl %p2
+	call $pfi1
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn1() {
+@start
+	%abi.8 =l copy R2
+	%p1 =s copy R33
+	%p0 =w copy R1
+	%p2 =l alloc4 8
+	%abi.9 =l add %p2, 0
+	storel %abi.8, %abi.9
+	R32 =l sub R32, 16
+	%abi.10 =l add R32, 0
+	storew 1, %abi.10
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =w copy %p0
+	call $pw, 0021
+	copy R1
+	R33 =s copy %p1
+	call $ps, 0201
+	copy R1
+	R1 =l copy %p2
+	call $pfi1, 0021
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn2 ****
+> After Apple pre-ABI:
+function $qfn2() {
+@start
+	%p0 =w par
+	%p1 =l parc :fi2
+	%p2 =s par
+	argl $ctoqbestr
+	argv
+	argw 2
+	%r0 =w call $printf
+	argw %p0
+	call $pw
+	argl %p1
+	call $pfi2
+	args %p2
+	call $ps
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn2() {
+@start
+	%p2 =s copy R33
+	%abi.20 =l copy R2
+	%p0 =w copy R1
+	%p1 =l alloc4 8
+	%abi.21 =l add %p1, 0
+	storel %abi.20, %abi.21
+	R32 =l sub R32, 16
+	%abi.22 =l add R32, 0
+	storew 2, %abi.22
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =w copy %p0
+	call $pw, 0021
+	copy R1
+	R1 =l copy %p1
+	call $pfi2, 0021
+	copy R1
+	R33 =s copy %p2
+	call $ps, 0201
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn3 ****
+> After Apple pre-ABI:
+function $qfn3() {
+@start
+	%p0 =w par
+	%p1 =s par
+	%p2 =l parc :fi3
+	argl $ctoqbestr
+	argv
+	argw 3
+	%r0 =w call $printf
+	argw %p0
+	call $pw
+	args %p1
+	call $ps
+	argl %p2
+	call $pfi3
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn3() {
+@start
+	%abi.32 =l copy R2
+	%p1 =s copy R33
+	%p0 =w copy R1
+	%p2 =l alloc4 8
+	%abi.33 =l add %p2, 0
+	storel %abi.32, %abi.33
+	R32 =l sub R32, 16
+	%abi.34 =l add R32, 0
+	storew 3, %abi.34
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =w copy %p0
+	call $pw, 0021
+	copy R1
+	R33 =s copy %p1
+	call $ps, 0201
+	copy R1
+	R1 =l copy %p2
+	call $pfi3, 0021
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn4 ****
+> After Apple pre-ABI:
+function $qfn4() {
+@start
+	%p0 =l parc :ss
+	argl $ctoqbestr
+	argv
+	argw 4
+	%r0 =w call $printf
+	argl %p0
+	call $pss
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn4() {
+@start
+	%abi.46 =s copy R34
+	%abi.44 =s copy R33
+	%p0 =l alloc4 8
+	%abi.47 =l add %p0, 4
+	stores %abi.46, %abi.47
+	%abi.45 =l add %p0, 0
+	stores %abi.44, %abi.45
+	R32 =l sub R32, 16
+	%abi.48 =l add R32, 0
+	storew 4, %abi.48
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =l copy %p0
+	call $pss, 0021
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn5 ****
+> After Apple pre-ABI:
+function $qfn5() {
+@start
+	%p0 =d par
+	%p1 =d par
+	%p2 =d par
+	%p3 =d par
+	%p4 =d par
+	%p5 =d par
+	%p6 =d par
+	%p7 =l parc :ss
+	%p8 =s par
+	%p9 =l par
+	argl $ctoqbestr
+	argv
+	argw 5
+	%r0 =w call $printf
+	argl %p7
+	call $pss
+	args %p8
+	call $ps
+	argl %p9
+	call $pl
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn5() {
+@start
+	%p9 =l copy R1
+	%p8 =s load S-10
+	%p6 =d copy R39
+	%p5 =d copy R38
+	%p4 =d copy R37
+	%p3 =d copy R36
+	%p2 =d copy R35
+	%p1 =d copy R34
+	%p0 =d copy R33
+	R32 =l sub R32, 16
+	%abi.60 =l add R32, 0
+	storew 5, %abi.60
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =l copy %p7
+	call $pss, 0021
+	copy R1
+	R33 =s copy %p8
+	call $ps, 0201
+	copy R1
+	R1 =l copy %p9
+	call $pl, 0021
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn6 ****
+> After Apple pre-ABI:
+function $qfn6() {
+@start
+	%p0 =l parc :lb
+	argl $ctoqbestr
+	argv
+	argw 6
+	%r0 =w call $printf
+	argl %p0
+	call $plb
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn6() {
+@start
+	%abi.70 =l copy R2
+	%abi.68 =l copy R1
+	%p0 =l alloc8 16
+	%abi.71 =l add %p0, 8
+	storel %abi.70, %abi.71
+	%abi.69 =l add %p0, 0
+	storel %abi.68, %abi.69
+	R32 =l sub R32, 16
+	%abi.72 =l add R32, 0
+	storew 6, %abi.72
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =l copy %p0
+	call $plb, 0021
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn7 ****
+> After Apple pre-ABI:
+function $qfn7() {
+@start
+	%p0 =w par
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	%p4 =w par
+	%p5 =w par
+	%p6 =w par
+	%p7 =l parc :lb
+	argl $ctoqbestr
+	argv
+	argw 7
+	%r0 =w call $printf
+	argl %p7
+	call $plb
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn7() {
+@start
+	%p6 =w copy R7
+	%p5 =w copy R6
+	%p4 =w copy R5
+	%p3 =w copy R4
+	%p2 =w copy R3
+	%p1 =w copy R2
+	%p0 =w copy R1
+	R32 =l sub R32, 16
+	%abi.84 =l add R32, 0
+	storew 7, %abi.84
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =l copy %p7
+	call $plb, 0021
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn8 ****
+> After Apple pre-ABI:
+function $qfn8() {
+@start
+	%p0 =w par
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	%p4 =w par
+	%p5 =w par
+	%p6 =w par
+	%p7 =w par
+	%p8 =l parc :lb
+	argl $ctoqbestr
+	argv
+	argw 8
+	%r0 =w call $printf
+	argl %p8
+	call $plb
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn8() {
+@start
+	%p7 =w copy R8
+	%p6 =w copy R7
+	%p5 =w copy R6
+	%p4 =w copy R5
+	%p3 =w copy R4
+	%p2 =w copy R3
+	%p1 =w copy R2
+	%p0 =w copy R1
+	R32 =l sub R32, 16
+	%abi.92 =l add R32, 0
+	storew 8, %abi.92
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =l copy %p8
+	call $plb, 0021
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn9 ****
+> After Apple pre-ABI:
+function $qfn9() {
+@start
+	%p0 =l parc :big
+	argl $ctoqbestr
+	argv
+	argw 9
+	%r0 =w call $printf
+	argl %p0
+	call $pbig
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn9() {
+@start
+	%p0 =l copy R1
+	R32 =l sub R32, 16
+	%abi.100 =l add R32, 0
+	storew 9, %abi.100
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =l copy %p0
+	call $pbig, 0021
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn10 ****
+> After Apple pre-ABI:
+function $qfn10() {
+@start
+	%p0 =w par
+	%p1 =w par
+	%p2 =w par
+	%p3 =w par
+	%p4 =w par
+	%p5 =w par
+	%p6 =w par
+	%p7 =w par
+	%p8 =l parc :big
+	%p9 =s par
+	%p10 =l par
+	argl $ctoqbestr
+	argv
+	argw 10
+	%r0 =w call $printf
+	argl %p8
+	call $pbig
+	args %p9
+	call $ps
+	argl %p10
+	call $pl
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn10() {
+@start
+	%p10 =l load S-10
+	%p9 =s copy R33
+	%p8 =l load S-2
+	%p7 =w copy R8
+	%p6 =w copy R7
+	%p5 =w copy R6
+	%p4 =w copy R5
+	%p3 =w copy R4
+	%p2 =w copy R3
+	%p1 =w copy R2
+	%p0 =w copy R1
+	R32 =l sub R32, 16
+	%abi.107 =l add R32, 0
+	storew 10, %abi.107
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =l copy %p8
+	call $pbig, 0021
+	copy R1
+	R33 =s copy %p9
+	call $ps, 0201
+	copy R1
+	R1 =l copy %p10
+	call $pl, 0021
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function qfn11 ****
+> After Apple pre-ABI:
+function $qfn11() {
+@start
+	%p0 =l parc :ddd
+	argl $ctoqbestr
+	argv
+	argw 11
+	%r0 =w call $printf
+	argl %p0
+	call $pddd
+	argl $emptystr
+	%r1 =w call $puts
+	ret0
+}
+
+> After ABI lowering:
+function $qfn11() {
+@start
+	%abi.118 =d copy R35
+	%abi.116 =d copy R34
+	%abi.114 =d copy R33
+	%p0 =l alloc8 24
+	%abi.119 =l add %p0, 16
+	stored %abi.118, %abi.119
+	%abi.117 =l add %p0, 8
+	stored %abi.116, %abi.117
+	%abi.115 =l add %p0, 0
+	stored %abi.114, %abi.115
+	R32 =l sub R32, 16
+	%abi.120 =l add R32, 0
+	storew 11, %abi.120
+	R1 =l copy $ctoqbestr
+	call $printf, 0021
+	%r0 =w copy R1
+	R32 =l add R32, 16
+	R1 =l copy %p0
+	call $pddd, 0021
+	copy R1
+	R1 =l copy $emptystr
+	call $puts, 0021
+	%r1 =w copy R1
+	ret0
+}
+
+**** Function main ****
+> After Apple pre-ABI:
+function $main() {
+@start
+	args 0
+	args 0
+	args 0
+	args 0
+	args 0
+	args 0
+	args 0
+	args 0
+	args s_9.900000
+	call $cfn0
+	argw 1
+	args s_2.200000
+	argc :fi1, $fi1
+	call $cfn1
+	argw 1
+	argc :fi2, $fi2
+	args s_3.300000
+	call $cfn2
+	argw 1
+	args s_2.200000
+	argc :fi3, $fi3
+	call $cfn3
+	argc :ss, $ss
+	call $cfn4
+	argd 0
+	argd 0
+	argd 0
+	argd 0
+	argd 0
+	argd 0
+	argd 0
+	argc :ss, $ss
+	args s_9.900000
+	argl 10
+	call $cfn5
+	argc :lb, $lb
+	call $cfn6
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argc :lb, $lb
+	call $cfn7
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argc :lb, $lb
+	call $cfn8
+	argc :big, $big
+	call $cfn9
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argw 0
+	argc :big, $big
+	args s_10.100000
+	argl 11
+	call $cfn10
+	argc :ddd, $ddd
+	call $cfn11
+	retw 0
+}
+
+> After ABI lowering:
+function $main() {
+@start
+	%abi.137 =l alloc4 17
+	%abi.140 =l alloc4 17
+	R32 =l sub R32, 16
+	%abi.152 =l add R32, 0
+	stores s_9.900000, %abi.152
+	R40 =s copy 0
+	R39 =s copy 0
+	R38 =s copy 0
+	R37 =s copy 0
+	R36 =s copy 0
+	R35 =s copy 0
+	R34 =s copy 0
+	R33 =s copy 0
+	call $cfn0, 1001
+	copy R1
+	R32 =l add R32, 16
+	%abi.151 =l add $fi1, 0
+	R2 =l load %abi.151
+	R33 =s copy s_2.200000
+	R1 =w copy 1
+	call $cfn1, 0241
+	copy R1
+	R33 =s copy s_3.300000
+	%abi.150 =l add $fi2, 0
+	R2 =l load %abi.150
+	R1 =w copy 1
+	call $cfn2, 0241
+	copy R1
+	%abi.149 =l add $fi3, 0
+	R2 =l load %abi.149
+	R33 =s copy s_2.200000
+	R1 =w copy 1
+	call $cfn3, 0241
+	copy R1
+	%abi.148 =l add $ss, 4
+	R34 =s load %abi.148
+	%abi.147 =l add $ss, 0
+	R33 =s load %abi.147
+	call $cfn4, 0401
+	copy R1
+	R32 =l sub R32, 16
+	%abi.146 =l add R32, 8
+	stores s_9.900000, %abi.146
+	%abi.145 =l add R32, 0
+	blit0 $ss, %abi.145
+	blit1 8
+	R1 =l copy 10
+	R39 =d copy 0
+	R38 =d copy 0
+	R37 =d copy 0
+	R36 =d copy 0
+	R35 =d copy 0
+	R34 =d copy 0
+	R33 =d copy 0
+	call $cfn5, 0e21
+	copy R1
+	R32 =l add R32, 16
+	%abi.144 =l add $lb, 8
+	R2 =l load %abi.144
+	%abi.143 =l add $lb, 0
+	R1 =l load %abi.143
+	call $cfn6, 0041
+	copy R1
+	R32 =l sub R32, 16
+	%abi.142 =l add R32, 0
+	blit0 $lb, %abi.142
+	blit1 16
+	R7 =w copy 0
+	R6 =w copy 0
+	R5 =w copy 0
+	R4 =w copy 0
+	R3 =w copy 0
+	R2 =w copy 0
+	R1 =w copy 0
+	call $cfn7, 00e1
+	copy R1
+	R32 =l add R32, 16
+	R32 =l sub R32, 16
+	%abi.141 =l add R32, 0
+	blit0 $lb, %abi.141
+	blit1 16
+	R8 =w copy 0
+	R7 =w copy 0
+	R6 =w copy 0
+	R5 =w copy 0
+	R4 =w copy 0
+	R3 =w copy 0
+	R2 =w copy 0
+	R1 =w copy 0
+	call $cfn8, 0101
+	copy R1
+	R32 =l add R32, 16
+	blit0 $big, %abi.140
+	blit1 17
+	R1 =l copy %abi.140
+	call $cfn9, 0021
+	copy R1
+	blit0 $big, %abi.137
+	blit1 17
+	R32 =l sub R32, 16
+	%abi.139 =l add R32, 8
+	storel 11, %abi.139
+	%abi.138 =l add R32, 0
+	storel %abi.137, %abi.138
+	R33 =s copy s_10.100000
+	R8 =w copy 0
+	R7 =w copy 0
+	R6 =w copy 0
+	R5 =w copy 0
+	R4 =w copy 0
+	R3 =w copy 0
+	R2 =w copy 0
+	R1 =w copy 0
+	call $cfn10, 0301
+	copy R1
+	R32 =l add R32, 16
+	%abi.136 =l add $ddd, 16
+	R35 =d load %abi.136
+	%abi.135 =l add $ddd, 8
+	R34 =d load %abi.135
+	%abi.134 =l add $ddd, 0
+	R33 =d load %abi.134
+	call $cfn11, 0601
+	copy R1
+	R1 =w copy 0
+	ret0 0001
+}
+

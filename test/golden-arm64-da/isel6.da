@@ -1,0 +1,38 @@
+**** Function main ****
+> After Apple pre-ABI:
+function $main() {
+@_0
+	argl 1
+	argl 2
+	argl 3
+	argl 4
+	argl 5
+	argl 6
+	argl 7
+	argl 8
+	argl 9223372036854775807
+	%_1 =w call $myfunc
+	retw 0
+}
+
+> After ABI lowering:
+function $main() {
+@_0
+	R32 =l sub R32, 16
+	%abi.1 =l add R32, 0
+	storel 9223372036854775807, %abi.1
+	R8 =l copy 8
+	R7 =l copy 7
+	R6 =l copy 6
+	R5 =l copy 5
+	R4 =l copy 4
+	R3 =l copy 3
+	R2 =l copy 2
+	R1 =l copy 1
+	call $myfunc, 0101
+	%_1 =w copy R1
+	R32 =l add R32, 16
+	R1 =w copy 0
+	ret0 0001
+}
+

@@ -1,0 +1,24 @@
+**** Function test ****
+> After Apple pre-ABI:
+function $test() {
+@start
+	%x =l alloc16 16
+	%y =l add %x, 8
+	%m =w rem %y, 16
+	storew %m, %y
+	%n =w loadsw %y
+	storew %n, $a
+	ret0
+}
+
+> After ABI lowering:
+function $test() {
+@start
+	%x =l alloc16 16
+	%y =l add %x, 8
+	%m =w rem %y, 16
+	storew %m, %y
+	storew %m, $a
+	ret0
+}
+

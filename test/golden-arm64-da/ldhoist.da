@@ -1,0 +1,37 @@
+**** Function f ****
+> After Apple pre-ABI:
+function $f() {
+@start
+	%n =w par
+	%p =l par
+	%r =w copy 0
+@loop
+	%n =w sub %n, 1
+	%c =w csgew %n, 0
+	jnz %c, @loop1, @end
+@loop1
+	%r =w loadsw %p
+	jmp @loop
+@end
+	retw %r
+}
+
+> After ABI lowering:
+function $f() {
+@start
+	%p =l copy R2
+	%n.1 =w copy R1
+@loop
+	%r.3 =w phi @start 0, @loop1 %r.6
+	%n.4 =w phi @start %n.1, @loop1 %n.5
+	%n.5 =w sub %n.4, 1
+	%c =w csgew %n.5, 0
+	jnz %c, @loop1, @end
+@loop1
+	%r.6 =w loadsw %p
+	jmp @loop
+@end
+	R1 =w copy %r.3
+	ret0 0001
+}
+

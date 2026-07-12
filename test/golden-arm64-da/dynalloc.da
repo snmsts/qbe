@@ -1,0 +1,65 @@
+**** Function g ****
+> After Apple pre-ABI:
+function $g() {
+@start
+	ret0
+}
+
+> After ABI lowering:
+function $g() {
+@start
+	ret0
+}
+
+**** Function f ****
+> After Apple pre-ABI:
+function $f() {
+@start
+	%arg =w par
+	call $g
+@alloc
+	%r =l alloc8 16
+	storel 180388626474, %r
+	%r8 =l add 8, %r
+	storel 180388626474, %r8
+	retw %arg
+}
+
+> After ABI lowering:
+function $f() {
+@start
+	%arg =w copy R1
+	call $g, 0001
+	copy R1
+	%r =l alloc8 16
+	storel 180388626474, %r
+	%r8 =l add %r, 8
+	storel 180388626474, %r8
+	R1 =w copy %arg
+	ret0 0001
+}
+
+**** Function main ****
+> After Apple pre-ABI:
+function $main() {
+@start
+	argw 0
+	%a =w call $f
+	argw 0
+	%b =w call $f
+	retw %a
+}
+
+> After ABI lowering:
+function $main() {
+@start
+	R1 =w copy 0
+	call $f, 0021
+	%a =w copy R1
+	R1 =w copy 0
+	call $f, 0021
+	%b =w copy R1
+	R1 =w copy %a
+	ret0 0001
+}
+

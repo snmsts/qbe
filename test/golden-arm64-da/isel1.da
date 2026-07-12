@@ -1,0 +1,28 @@
+**** Function f ****
+> After Apple pre-ABI:
+function $f() {
+@start
+	%i =l par
+	%j =l par
+	%off1 =l mul %i, 8
+	%a_i =l add $a, %off1
+	%off2 =l mul %j, 4
+	%a_ij =l add %a_i, %off2
+	%x =w loadsw %a_ij
+	retw %x
+}
+
+> After ABI lowering:
+function $f() {
+@start
+	%j =l copy R2
+	%i =l copy R1
+	%off1 =l mul %i, 8
+	%a_i =l add %off1, $a
+	%off2 =l mul %j, 4
+	%a_ij =l add %a_i, %off2
+	%x =w loadsw %a_ij
+	R1 =w copy %x
+	ret0 0001
+}
+

@@ -1,0 +1,238 @@
+**** Function main ****
+> After Apple pre-ABI:
+function $main() {
+@start
+	%pthr =l alloc8 8
+	%rval =l alloc8 8
+	argl %pthr
+	argl 0
+	argl $thread
+	argl 0
+	call $pthread_create
+	%t =l load %pthr
+	argl %t
+	argl %rval
+	call $pthread_join
+	%i0 =w loadsw thread $i
+	argl $fmti
+	argv
+	argw 0
+	argw %i0
+	call $printf
+	%i1 =w load %rval
+	argl $fmti
+	argv
+	argw 1
+	argw %i1
+	call $printf
+	%a0 =l call $xaddr
+	%x0 =w load %a0
+	argl $fmtx
+	argv
+	argw 0
+	argw %x0
+	call $printf
+	%a4 =l call $xaddroff4
+	%x4 =w load %a4
+	argl $fmtx
+	argv
+	argw 4
+	argw %x4
+	call $printf
+	argl 8
+	%a8 =l call $xaddroff
+	%x8 =w load %a8
+	argl $fmtx
+	argv
+	argw 8
+	argw %x8
+	call $printf
+	argl 3
+	%xc =l call $xvalcnt
+	argl $fmtx
+	argv
+	argw 12
+	argw %xc
+	call $printf
+	retw 0
+}
+
+> After ABI lowering:
+function $main() {
+@start
+	%pthr =l alloc8 8
+	%rval =l alloc8 8
+	R4 =l copy 0
+	R3 =l copy $thread
+	R2 =l copy 0
+	R1 =l copy %pthr
+	call $pthread_create, 0081
+	copy R1
+	%t =l load %pthr
+	R2 =l copy %rval
+	R1 =l copy %t
+	call $pthread_join, 0041
+	copy R1
+	%i0 =w loadsw thread $i
+	R32 =l sub R32, 16
+	%abi.12 =l add R32, 8
+	storew %i0, %abi.12
+	%abi.11 =l add R32, 0
+	storew 0, %abi.11
+	R1 =l copy $fmti
+	call $printf, 0021
+	copy R1
+	R32 =l add R32, 16
+	%i1 =w load %rval
+	R32 =l sub R32, 16
+	%abi.10 =l add R32, 8
+	storew %i1, %abi.10
+	%abi.9 =l add R32, 0
+	storew 1, %abi.9
+	R1 =l copy $fmti
+	call $printf, 0021
+	copy R1
+	R32 =l add R32, 16
+	call $xaddr, 0001
+	%a0 =l copy R1
+	%x0 =w load %a0
+	R32 =l sub R32, 16
+	%abi.8 =l add R32, 8
+	storew %x0, %abi.8
+	%abi.7 =l add R32, 0
+	storew 0, %abi.7
+	R1 =l copy $fmtx
+	call $printf, 0021
+	copy R1
+	R32 =l add R32, 16
+	call $xaddroff4, 0001
+	%a4 =l copy R1
+	%x4 =w load %a4
+	R32 =l sub R32, 16
+	%abi.6 =l add R32, 8
+	storew %x4, %abi.6
+	%abi.5 =l add R32, 0
+	storew 4, %abi.5
+	R1 =l copy $fmtx
+	call $printf, 0021
+	copy R1
+	R32 =l add R32, 16
+	R1 =l copy 8
+	call $xaddroff, 0021
+	%a8 =l copy R1
+	%x8 =w load %a8
+	R32 =l sub R32, 16
+	%abi.4 =l add R32, 8
+	storew %x8, %abi.4
+	%abi.3 =l add R32, 0
+	storew 8, %abi.3
+	R1 =l copy $fmtx
+	call $printf, 0021
+	copy R1
+	R32 =l add R32, 16
+	R1 =l copy 3
+	call $xvalcnt, 0021
+	%xc =l copy R1
+	R32 =l sub R32, 16
+	%abi.2 =l add R32, 8
+	storew %xc, %abi.2
+	%abi.1 =l add R32, 0
+	storew 12, %abi.1
+	R1 =l copy $fmtx
+	call $printf, 0021
+	copy R1
+	R32 =l add R32, 16
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function thread ****
+> After Apple pre-ABI:
+function $thread() {
+@start
+	%arg =l par
+	%i3 =l add thread $i, 3
+	storeb 24, %i3
+	%ret =l loadsw thread $i
+	retl %ret
+}
+
+> After ABI lowering:
+function $thread() {
+@start
+	%arg =l copy R1
+	storeb 24, thread $i+3
+	%ret =l loadsw thread $i
+	R1 =l copy %ret
+	ret0 0001
+}
+
+**** Function xaddr ****
+> After Apple pre-ABI:
+function $xaddr() {
+@start
+	retl thread $x
+}
+
+> After ABI lowering:
+function $xaddr() {
+@start
+	R1 =l copy thread $x
+	ret0 0001
+}
+
+**** Function xaddroff4 ****
+> After Apple pre-ABI:
+function $xaddroff4() {
+@start
+	%a =l add 4, thread $x
+	retl %a
+}
+
+> After ABI lowering:
+function $xaddroff4() {
+@start
+	R1 =l copy thread $x+4
+	ret0 0001
+}
+
+**** Function xaddroff ****
+> After Apple pre-ABI:
+function $xaddroff() {
+@start
+	%off =l par
+	%a =l add thread $x, %off
+	retl %a
+}
+
+> After ABI lowering:
+function $xaddroff() {
+@start
+	%off =l copy R1
+	%a =l add %off, thread $x
+	R1 =l copy %a
+	ret0 0001
+}
+
+**** Function xvalcnt ****
+> After Apple pre-ABI:
+function $xvalcnt() {
+@start
+	%cnt =l par
+	%o =l mul 4, %cnt
+	%a =l add thread $x, %o
+	%x =w load %a
+	retw %x
+}
+
+> After ABI lowering:
+function $xvalcnt() {
+@start
+	%cnt =l copy R1
+	%o =l mul %cnt, 4
+	%a =l add %o, thread $x
+	%x =w load %a
+	R1 =w copy %x
+	ret0 0001
+}
+

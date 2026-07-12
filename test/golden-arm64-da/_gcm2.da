@@ -1,0 +1,78 @@
+**** Function gcm_test ****
+> After Apple pre-ABI:
+function $gcm_test() {
+@start
+	%a =w par
+	%i.0 =w copy 0
+@loop
+	%i.1 =w phi @start %i.0, @loop %i.2
+	%b =w add %a, 1
+	%i.2 =w add %i.1, %b
+	%c =w mul %i.2, 2
+	%x =w csltw %i.2, 10
+	jnz %x, @loop, @end
+@end
+	retw %c
+}
+
+> After ABI lowering:
+function $gcm_test() {
+@start
+	%a =w copy R1
+	%b =w add %a, 1
+@loop
+	%i.1 =w phi @start 0, @loop %i.2
+	%i.2 =w add %i.1, %b
+	%x =w csltw %i.2, 10
+	jnz %x, @loop, @end
+@end
+	%c.1 =w mul %i.2, 2
+	R1 =w copy %c.1
+	ret0 0001
+}
+
+**** Function gcm_test2 ****
+> After Apple pre-ABI:
+function $gcm_test2() {
+@start
+	%a =w par
+	%f =w copy 1
+	%x =w copy 0
+	%s.0 =w copy 0
+@loop
+	%s.1 =w phi @start %s.0, @if_false %s.2
+	jnz %a, @if, @end
+@if
+	jnz %f, @if_true, @if_false
+@if_true
+	%f =w copy 0
+	%x =w add %x, 1
+@if_false
+	%s.2 =w add %s.1, %x
+	jmp @loop
+@end
+	ret0
+}
+
+> After ABI lowering:
+function $gcm_test2() {
+@start
+	%a =w copy R1
+@loop
+	%x.6 =w phi @start 0, @if_false %x.8
+	%f.7 =w phi @start 1, @if_false %f.9
+	%s.1 =w phi @start 0, @if_false %s.2
+	jnz %a, @if, @end
+@if
+	jnz %f.7, @if_true, @if_false
+@if_true
+	%x.11 =w add %x.6, 1
+@if_false
+	%x.8 =w phi @if %x.6, @if_true %x.11
+	%f.9 =w phi @if %f.7, @if_true 0
+	%s.2 =w add %s.1, %x.8
+	jmp @loop
+@end
+	ret0
+}
+

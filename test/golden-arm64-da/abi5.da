@@ -1,0 +1,321 @@
+**** Function test ****
+> After Apple pre-ABI:
+function $test() {
+@start
+	%r1 =l call $t1, :st1
+	argl $fmt1
+	argv
+	argl %r1
+	%i1 =w call $printf
+	%r2 =l call $t2, :st2
+	%w2 =w loadsw %r2
+	argl $fmt2
+	argv
+	argw %w2
+	%i2 =w call $printf
+	%r3 =l call $t3, :st3
+	%s3 =s load %r3
+	%r34 =l add %r3, 4
+	%w3 =w loadsw %r34
+	%p3 =d exts %s3
+	argl $fmt3
+	argv
+	argd %p3
+	argw %w3
+	%i3 =w call $printf
+	%r4 =l call $t4, :st4
+	%w4 =w loadsw %r4
+	%r48 =l add 8, %r4
+	%d4 =d load %r48
+	argl $fmt4
+	argv
+	argw %w4
+	argd %d4
+	%i4 =w call $printf
+	%r5 =l call $t5, :st5
+	%s5 =s load %r5
+	%d5 =d exts %s5
+	%r58 =l add %r5, 8
+	%l5 =l load %r58
+	argl $fmt5
+	argv
+	argd %d5
+	argl %l5
+	%i5 =w call $printf
+	%r6 =l call $t6, :st6
+	argl $fmt6
+	argv
+	argl %r6
+	%i6 =w call $printf
+	%r7 =l call $t7, :st7
+	%s7 =s load %r7
+	%d71 =d exts %s7
+	%r78 =l add %r7, 8
+	%d72 =d load %r78
+	argl $fmt7
+	argv
+	argd %d71
+	argd %d72
+	%i7 =w call $printf
+	%r8 =l call $t8, :st8
+	%r84 =l add 4, %r8
+	%r88 =l add 4, %r84
+	%r812 =l add 4, %r88
+	%w81 =w loadsw %r8
+	%w82 =w loadsw %r84
+	%w83 =w loadsw %r88
+	%w84 =w loadsw %r812
+	argl $fmt8
+	argv
+	argw %w81
+	argw %w82
+	argw %w83
+	argw %w84
+	%i8 =w call $printf
+	%r9 =l call $t9, :st9
+	%r94 =l add 4, %r9
+	%w9 =w loadsw %r9
+	%s9 =s load %r94
+	%d9 =d exts %s9
+	argl $fmt9
+	argv
+	argw %w9
+	argd %d9
+	%i9 =w call $printf
+	%ra =l call $ta, :sta
+	%ra4 =l add 4, %ra
+	%wa =w loadsb %ra
+	%sa =s load %ra4
+	%da =d exts %sa
+	argl $fmta
+	argv
+	argw %wa
+	argd %da
+	%ia =w call $printf
+	%rb =l call $tb, :stb
+	%rb1 =l add 1, %rb
+	%rb4 =l add 4, %rb
+	%w0b =w loadsb %rb
+	%w1b =w loadsb %rb1
+	%sb =s load %rb4
+	%db =d exts %sb
+	argl $fmtb
+	argv
+	argw %w0b
+	argw %w1b
+	argd %db
+	%ib =w call $printf
+	ret0
+}
+
+> After ABI lowering:
+function $test() {
+@start
+	%rb =l alloc4 8
+	%ra =l alloc4 8
+	%r9 =l alloc4 8
+	%r8 =l alloc4 16
+	%r7 =l alloc8 16
+	%r6 =l alloc4 16
+	%r5 =l alloc8 16
+	%r4 =l alloc8 16
+	%r3 =l alloc4 8
+	%r2 =l alloc4 8
+	%r1 =l alloc4 17
+	R9 =l copy %r1
+	call $t1, 2001
+	copy R1
+	R32 =l sub R32, 16
+	%abi.52 =l add R32, 0
+	storel %r1, %abi.52
+	R1 =l copy $fmt1
+	call $printf, 0021
+	%i1 =w copy R1
+	R32 =l add R32, 16
+	call $t2, 0001
+	%abi.50 =l copy R1
+	%abi.51 =l add %r2, 0
+	storel %abi.50, %abi.51
+	%w2 =w loadsw %r2
+	R32 =l sub R32, 16
+	%abi.49 =l add R32, 0
+	storew %w2, %abi.49
+	R1 =l copy $fmt2
+	call $printf, 0021
+	%i2 =w copy R1
+	R32 =l add R32, 16
+	call $t3, 0001
+	%abi.47 =l copy R1
+	%abi.48 =l add %r3, 0
+	storel %abi.47, %abi.48
+	%s3 =s load %r3
+	%r34 =l add %r3, 4
+	%w3 =w loadsw %r34
+	%p3 =d exts %s3
+	R32 =l sub R32, 16
+	%abi.46 =l add R32, 8
+	storew %w3, %abi.46
+	%abi.45 =l add R32, 0
+	stored %p3, %abi.45
+	R1 =l copy $fmt3
+	call $printf, 0021
+	%i3 =w copy R1
+	R32 =l add R32, 16
+	call $t4, 0002
+	%abi.43 =l copy R2
+	%abi.41 =l copy R1
+	%abi.44 =l add %r4, 8
+	storel %abi.43, %abi.44
+	%abi.42 =l add %r4, 0
+	storel %abi.41, %abi.42
+	%w4 =w loadsw %r4
+	%r48 =l add %r4, 8
+	%d4 =d load %r48
+	R32 =l sub R32, 16
+	%abi.40 =l add R32, 8
+	stored %d4, %abi.40
+	%abi.39 =l add R32, 0
+	storew %w4, %abi.39
+	R1 =l copy $fmt4
+	call $printf, 0021
+	%i4 =w copy R1
+	R32 =l add R32, 16
+	call $t5, 0002
+	%abi.37 =l copy R2
+	%abi.35 =l copy R1
+	%abi.38 =l add %r5, 8
+	storel %abi.37, %abi.38
+	%abi.36 =l add %r5, 0
+	storel %abi.35, %abi.36
+	%s5 =s load %r5
+	%d5 =d exts %s5
+	%r58 =l add %r5, 8
+	%l5 =l load %r58
+	R32 =l sub R32, 16
+	%abi.34 =l add R32, 8
+	storel %l5, %abi.34
+	%abi.33 =l add R32, 0
+	stored %d5, %abi.33
+	R1 =l copy $fmt5
+	call $printf, 0021
+	%i5 =w copy R1
+	R32 =l add R32, 16
+	call $t6, 0002
+	%abi.31 =l copy R2
+	%abi.29 =l copy R1
+	%abi.32 =l add %r6, 8
+	storel %abi.31, %abi.32
+	%abi.30 =l add %r6, 0
+	storel %abi.29, %abi.30
+	R32 =l sub R32, 16
+	%abi.28 =l add R32, 0
+	storel %r6, %abi.28
+	R1 =l copy $fmt6
+	call $printf, 0021
+	%i6 =w copy R1
+	R32 =l add R32, 16
+	call $t7, 0002
+	%abi.26 =l copy R2
+	%abi.24 =l copy R1
+	%abi.27 =l add %r7, 8
+	storel %abi.26, %abi.27
+	%abi.25 =l add %r7, 0
+	storel %abi.24, %abi.25
+	%s7 =s load %r7
+	%d71 =d exts %s7
+	%r78 =l add %r7, 8
+	%d72 =d load %r78
+	R32 =l sub R32, 16
+	%abi.23 =l add R32, 8
+	stored %d72, %abi.23
+	%abi.22 =l add R32, 0
+	stored %d71, %abi.22
+	R1 =l copy $fmt7
+	call $printf, 0021
+	%i7 =w copy R1
+	R32 =l add R32, 16
+	call $t8, 0002
+	%abi.20 =l copy R2
+	%abi.18 =l copy R1
+	%abi.21 =l add %r8, 8
+	storel %abi.20, %abi.21
+	%abi.19 =l add %r8, 0
+	storel %abi.18, %abi.19
+	%r84 =l add %r8, 4
+	%r88 =l add %r8, 8
+	%r812 =l add %r8, 12
+	%w81 =w loadsw %r8
+	%w82 =w loadsw %r84
+	%w83 =w loadsw %r88
+	%w84 =w loadsw %r812
+	R32 =l sub R32, 32
+	%abi.17 =l add R32, 24
+	storew %w84, %abi.17
+	%abi.16 =l add R32, 16
+	storew %w83, %abi.16
+	%abi.15 =l add R32, 8
+	storew %w82, %abi.15
+	%abi.14 =l add R32, 0
+	storew %w81, %abi.14
+	R1 =l copy $fmt8
+	call $printf, 0021
+	%i8 =w copy R1
+	R32 =l add R32, 32
+	call $t9, 0001
+	%abi.12 =l copy R1
+	%abi.13 =l add %r9, 0
+	storel %abi.12, %abi.13
+	%r94 =l add %r9, 4
+	%w9 =w loadsw %r9
+	%s9 =s load %r94
+	%d9 =d exts %s9
+	R32 =l sub R32, 16
+	%abi.11 =l add R32, 8
+	stored %d9, %abi.11
+	%abi.10 =l add R32, 0
+	storew %w9, %abi.10
+	R1 =l copy $fmt9
+	call $printf, 0021
+	%i9 =w copy R1
+	R32 =l add R32, 16
+	call $ta, 0001
+	%abi.8 =l copy R1
+	%abi.9 =l add %ra, 0
+	storel %abi.8, %abi.9
+	%ra4 =l add %ra, 4
+	%wa =w loadsb %ra
+	%sa =s load %ra4
+	%da =d exts %sa
+	R32 =l sub R32, 16
+	%abi.7 =l add R32, 8
+	stored %da, %abi.7
+	%abi.6 =l add R32, 0
+	storew %wa, %abi.6
+	R1 =l copy $fmta
+	call $printf, 0021
+	%ia =w copy R1
+	R32 =l add R32, 16
+	call $tb, 0001
+	%abi.4 =l copy R1
+	%abi.5 =l add %rb, 0
+	storel %abi.4, %abi.5
+	%rb1 =l add %rb, 1
+	%rb4 =l add %rb, 4
+	%w0b =w loadsb %rb
+	%w1b =w loadsb %rb1
+	%sb =s load %rb4
+	%db =d exts %sb
+	R32 =l sub R32, 32
+	%abi.3 =l add R32, 16
+	stored %db, %abi.3
+	%abi.2 =l add R32, 8
+	storew %w1b, %abi.2
+	%abi.1 =l add R32, 0
+	storew %w0b, %abi.1
+	R1 =l copy $fmtb
+	call $printf, 0021
+	%ib =w copy R1
+	R32 =l add R32, 32
+	ret0
+}
+

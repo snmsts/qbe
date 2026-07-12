@@ -1,0 +1,26 @@
+**** Function main ****
+> After Apple pre-ABI:
+function $main() {
+@start
+	%r =d copy d_1.200000
+	argl $fmt
+	argv
+	argd %r
+	%x =w call $printf
+	retw 0
+}
+
+> After ABI lowering:
+function $main() {
+@start
+	R32 =l sub R32, 16
+	%abi.1 =l add R32, 0
+	stored d_1.200000, %abi.1
+	R1 =l copy $fmt
+	call $printf, 0021
+	%x =w copy R1
+	R32 =l add R32, 16
+	R1 =w copy 0
+	ret0 0001
+}
+

@@ -1,0 +1,30 @@
+**** Function sum ****
+> After Apple pre-ABI:
+function $sum() {
+@start
+	%p =l parc :fps
+	%f1 =s load %p
+	%p8 =l add 8, %p
+	%f2 =s load %p8
+	%s =s add %f1, %f2
+	rets %s
+}
+
+> After ABI lowering:
+function $sum() {
+@start
+	%abi.3 =l copy R2
+	%abi.1 =l copy R1
+	%p =l alloc4 16
+	%abi.4 =l add %p, 8
+	storel %abi.3, %abi.4
+	%abi.2 =l add %p, 0
+	storel %abi.1, %abi.2
+	%f1 =s load %p
+	%p8 =l add %p, 8
+	%f2 =s load %p8
+	%s =s add %f1, %f2
+	R33 =s copy %s
+	ret0 0004
+}
+

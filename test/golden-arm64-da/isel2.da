@@ -1,0 +1,278 @@
+**** Function lt ****
+> After Apple pre-ABI:
+function $lt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cltd %x, %y
+	retw %r
+}
+
+> After ABI lowering:
+function $lt() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w cltd %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function le ****
+> After Apple pre-ABI:
+function $le() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cled %x, %y
+	retw %r
+}
+
+> After ABI lowering:
+function $le() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w cled %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function gt ****
+> After Apple pre-ABI:
+function $gt() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cgtd %x, %y
+	retw %r
+}
+
+> After ABI lowering:
+function $gt() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w cgtd %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function ge ****
+> After Apple pre-ABI:
+function $ge() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cged %x, %y
+	retw %r
+}
+
+> After ABI lowering:
+function $ge() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w cged %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function eq1 ****
+> After Apple pre-ABI:
+function $eq1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	retw %r
+}
+
+> After ABI lowering:
+function $eq1() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w ceqd %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function eq2 ****
+> After Apple pre-ABI:
+function $eq2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+> After ABI lowering:
+function $eq2() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	R1 =w copy 1
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function eq3 ****
+> After Apple pre-ABI:
+function $eq3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	retw %r
+@false
+	retw 0
+}
+
+> After ABI lowering:
+function $eq3() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w ceqd %x, %y
+	jnz %r, @true, @false
+@true
+	%snk.3 =w ceqd %x, %y
+	R1 =w copy %snk.3
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function ne1 ****
+> After Apple pre-ABI:
+function $ne1() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	retw %r
+}
+
+> After ABI lowering:
+function $ne1() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w cned %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function ne2 ****
+> After Apple pre-ABI:
+function $ne2() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw 1
+@false
+	retw 0
+}
+
+> After ABI lowering:
+function $ne2() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	R1 =w copy 1
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function ne3 ****
+> After Apple pre-ABI:
+function $ne3() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	retw %r
+@false
+	retw 0
+}
+
+> After ABI lowering:
+function $ne3() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w cned %x, %y
+	jnz %r, @true, @false
+@true
+	%snk.7 =w cned %x, %y
+	R1 =w copy %snk.7
+	ret0 0001
+@false
+	R1 =w copy 0
+	ret0 0001
+}
+
+**** Function o ****
+> After Apple pre-ABI:
+function $o() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cod %x, %y
+	retw %r
+}
+
+> After ABI lowering:
+function $o() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w cod %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+
+**** Function uo ****
+> After Apple pre-ABI:
+function $uo() {
+@start
+	%x =d par
+	%y =d par
+	%r =w cuod %x, %y
+	retw %r
+}
+
+> After ABI lowering:
+function $uo() {
+@start
+	%y =d copy R34
+	%x =d copy R33
+	%r =w cuod %x, %y
+	R1 =w copy %r
+	ret0 0001
+}
+

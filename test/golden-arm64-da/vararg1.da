@@ -1,0 +1,61 @@
+**** Function f ****
+> After Apple pre-ABI:
+function $f() {
+@start
+	%x =l par
+	%vp =l alloc8 32
+	vastart %vp
+	%i =l vaarg %vp
+	%n =d vaarg %vp
+	retd %n
+}
+
+> After ABI lowering:
+function $f() {
+@start
+	%x =l copy R1
+	%vp =l alloc8 32
+	%abi.5 =l addr S-1
+	%abi.6 =l add %abi.5, 0
+	storel %abi.6, %vp
+	%abi.4 =l load %vp
+	%i =l load %abi.4
+	%abi.3 =l add %abi.4, 8
+	storel %abi.3, %vp
+	%abi.2 =l load %vp
+	%n =d load %abi.2
+	%abi.1 =l add %abi.2, 8
+	storel %abi.1, %vp
+	R33 =d copy %n
+	ret0 0004
+}
+
+**** Function g ****
+> After Apple pre-ABI:
+function $g() {
+@start
+	%fmt =l par
+	%vp =l alloc8 32
+	vastart %vp
+	argl %fmt
+	argl %vp
+	%r =w call $print
+	retw %r
+}
+
+> After ABI lowering:
+function $g() {
+@start
+	%fmt =l copy R1
+	%vp =l alloc8 32
+	%abi.15 =l addr S-1
+	%abi.16 =l add %abi.15, 0
+	storel %abi.16, %vp
+	R2 =l copy %vp
+	R1 =l copy %fmt
+	call $print, 0041
+	%r =w copy R1
+	R1 =w copy %r
+	ret0 0001
+}
+
