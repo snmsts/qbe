@@ -62,8 +62,8 @@
 
 (defun ra-radd (m t* r)
   (assert (or (>= t* +tmp0+) (= t* r)))
-  (assert (or (and (<= +gpr0+ r) (< r (+ +gpr0+ +ngpr+)))
-              (and (<= +fpr0+ r) (< r (+ +fpr0+ +nfpr+)))))
+  (assert (or (and (<= (tg-gpr0) r) (< r (+ (tg-gpr0) (tg-ngpr))))
+              (and (<= (tg-fpr0) r) (< r (+ (tg-fpr0) (tg-nfpr))))))
   (assert (not (bs-has (rmap-b m) t*)))
   (assert (not (bs-has (rmap-b m) r)))
   (bs-set (rmap-b m) t*) (bs-set (rmap-b m) r)
@@ -83,8 +83,8 @@
          (when try (return-from ra-ralloctry nil))
          (let* ((regs (logior (tmp-hint-m (ra-tmp (phicls t* *ra-tmp*)))
                               (bs-regmask (rmap-b m))))
-                (r0 (if (= (cls-base (tmp-cls (ra-tmp t*))) 0) +gpr0+ +fpr0+))
-                (r1 (+ r0 (if (= (cls-base (tmp-cls (ra-tmp t*))) 0) +ngpr+ +nfpr+))))
+                (r0 (if (= (cls-base (tmp-cls (ra-tmp t*))) 0) (tg-gpr0) (tg-fpr0)))
+                (r1 (+ r0 (if (= (cls-base (tmp-cls (ra-tmp t*))) 0) (tg-ngpr) (tg-nfpr)))))
            (setf r
                  (or (loop for rr from r0 below r1
                            when (not (logbitp rr regs)) return rr)
@@ -103,7 +103,7 @@
 
 (defun ra-rfree (m t*)
   "Remove t*'s mapping; return its register (or -1 if unmapped)."
-  (assert (or (>= t* +tmp0+) (not (logbitp t* +rglob+))))
+  (assert (or (>= t* +tmp0+) (not (logbitp t* (tg-rglob)))))
   (if (not (bs-has (rmap-b m) t*))
       -1
       (let ((i 0))
@@ -207,10 +207,10 @@ the run's first index (rega.c dopm)."
       (if (and (> i 0) (ra-regcpy (aref vec (1- i)))) (decf i) (return)))
     (when (and (> i 0) (eq (ins-op (aref vec (1- i))) :call))
       (let ((def (logior (reduce (lambda (a rid) (logior a (ash 1 rid)))
-                                 (sysv-retregs (call-ref-val (ins-arg1 (aref vec (1- i)))))
+                                 (tg-retregs (call-ref-val (ins-arg1 (aref vec (1- i)))))
                                  :initial-value 0)
-                         +rglob+)))
-        (loop for rid across *sysv-rsave*
+                         (tg-rglob))))
+        (loop for rid across (tg-rsave)
               when (not (logbitp rid def)) do (ra-move rid nil m))))
     (setf *ra-npm* 0)
     (dotimes (n (rmap-n m))
@@ -264,8 +264,8 @@ the run's first index (rega.c dopm)."
         (block dispatch
           (case (ins-op i)
             (:call
-             (let ((rs (logior (ra-idmask (sysv-argregs (call-ref-val (ins-arg1 i)))) +rglob+)))
-               (loop for rid across *sysv-rsave*
+             (let ((rs (logior (ra-idmask (tg-argregs (call-ref-val (ins-arg1 i)))) (tg-rglob))))
+               (loop for rid across (tg-rsave)
                      unless (logbitp rid rs) do (ra-rfree cur rid))))
             (:copy
              (when (ra-regcpy i)
@@ -326,7 +326,7 @@ rf (or -1 if none / kept), or :dropped if the instruction is dead and dropped."
     (if (null to)
         -1
         (let ((r (ref-tid to)))
-          (if (and (< r +tmp0+) (logbitp r +rglob+))
+          (if (and (< r +tmp0+) (logbitp r (tg-rglob)))
               -1                                  ; rglob def: keep
               (let ((rf (ra-rfree cur r)))
                 (if (= rf -1)

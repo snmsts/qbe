@@ -39,6 +39,56 @@
 
 (defconstant +rax+ 1) (defconstant +xmm0+ 17)
 
+;;; amd64 register ids (amd64/all.h), the ones the ABI/spill/rega model needs.
+(defconstant +rcx+ 2) (defconstant +rdx+ 3)
+(defconstant +rsi+ 4) (defconstant +rdi+ 5) (defconstant +r8+ 6)
+(defconstant +r9+ 7) (defconstant +r10+ 8) (defconstant +r11+ 9)
+(defconstant +rbp+ 15) (defconstant +rsp+ 16)
+(defconstant +xmm15+ 32)
+
+(defconstant +amd64-ngpr+ 16)   ; RAX..RSP
+(defconstant +amd64-nfpr+ 15)   ; XMM0..XMM14 (reserve XMM15)
+(defparameter *amd64-rglob* (logior (ash 1 +rbp+) (ash 1 +rsp+)))
+;; caller-save order (amd64_sysv_rsave): gp then sse; the two counts feed nrsave.
+(defparameter *sysv-rsave*
+  (coerce (append (list +rdi+ +rsi+ +rdx+ +rcx+ +r8+ +r9+ +r10+ +r11+ +rax+)
+                  (loop for i below +amd64-nfpr+ collect (+ +xmm0+ i)))
+          'vector))
+(defparameter *amd64-nrsave* (vector 9 +amd64-nfpr+))   ; {NGPS_SYSV, NFPS}
+(defparameter *amd64-rsave-mask*
+  (reduce (lambda (m id) (logior m (ash 1 id))) *sysv-rsave* :initial-value 0)
+  "Bitmask of all caller-save registers (rsave).")
+
+;;; amd64 memargs (ops.h X(NMemArgs,...)): how many operands may be a memory
+;;; operand (reloaded straight from a slot rather than forced into a register).
+(defparameter *amd64-memargs*
+  (let ((h (make-hash-table)))
+    (dolist (op '(:add :sub :mul :and :or :xor)) (setf (gethash op h) 2))
+    (dolist (op '(:neg :sar :shr :shl :swap :xidiv :xdiv :xcmp :xtest))
+      (setf (gethash op h) 1))
+    h))
+(defun amd64-memargs (op) (gethash op *amd64-memargs* 0))
+
+;;; RCall mask decoders (amd64/sysv.c retregs/argregs).  Each returns
+;;; (values reg-id-list ngp nfp) where the counts feed nlive bookkeeping.
+(defun amd64-retregs (mask)
+  (let ((ni (logand mask 3)) (nf (logand (ash mask -2) 3)) (regs '()))
+    (when (>= ni 1) (push +rax+ regs))
+    (when (>= ni 2) (push +rdx+ regs))
+    (when (>= nf 1) (push +xmm0+ regs))
+    (when (>= nf 2) (push (+ +xmm0+ 1) regs))
+    (values regs ni nf)))
+
+(defun amd64-argregs (mask)
+  (let ((ni (logand (ash mask -4) 15))
+        (nf (logand (ash mask -8) 15))
+        (ra (logand (ash mask -12) 1))
+        (regs '()))
+    (dotimes (j ni) (push (aref *sysv-rsave* j) regs))
+    (dotimes (j nf) (push (+ +xmm0+ j) regs))
+    (when (= ra 1) (push +rax+ regs))
+    (values regs (+ ni ra) nf)))
+
 ;;; rarg register sequence (amd64_sysv_rsave), integer part then sse.
 (defparameter *sysv-int-args* #(5 4 3 2 6 7))   ; RDI RSI RDX RCX R8 R9
 (defparameter *sysv-nint* 6)
@@ -288,7 +338,7 @@
          (nins (vector 0 0)))
     (multiple-value-bind (fa acs env) (abi-argsclass pars aret t)
       (setf (fn-reg fn)
-            (let ((m 0)) (dolist (r (sysv-argregs fa) m) (setf m (logior m (ash 1 r))))))
+            (let ((m 0)) (dolist (r (amd64-argregs fa) m) (setf m (logior m (ash 1 r))))))
       ;; aggregate params passed in registers: alloc a slot + store the halves
       (loop for i in pars for idx from 0
             for a = (aref acs idx) do

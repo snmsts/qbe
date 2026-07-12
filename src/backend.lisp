@@ -26,42 +26,11 @@
 (in-package #:qbe)
 
 ;;; ------------------------------------------------------ target register model
-;;; amd64 register ids (amd64/all.h): RAX=1 .. RSP=16, XMM0=17 .. XMM15=32.
-
-(defconstant +tmp0+ 64 "NBit: first user-temp id; regs occupy [0,+tmp0+).")
-
-;; +rax+ (=1) and +xmm0+ (=17) come from amd64-abi.lisp; the rest are local.
-(defconstant +rcx+ 2) (defconstant +rdx+ 3)
-(defconstant +rsi+ 4) (defconstant +rdi+ 5) (defconstant +r8+ 6)
-(defconstant +r9+ 7) (defconstant +r10+ 8) (defconstant +r11+ 9)
-(defconstant +rbp+ 15) (defconstant +rsp+ 16)
-(defconstant +xmm15+ 32)
-
-(defconstant +gpr0+ +rax+)  (defconstant +ngpr+ 16)   ; RAX..RSP
-(defconstant +fpr0+ +xmm0+) (defconstant +nfpr+ 15)   ; XMM0..XMM14 (reserve XMM15)
-(defconstant +rglob+ (logior (ash 1 +rbp+) (ash 1 +rsp+)))
-;; caller-save order (amd64_sysv_rsave): gp then sse; the two counts feed nrsave.
-(defparameter *sysv-rsave*
-  (coerce (append (list +rdi+ +rsi+ +rdx+ +rcx+ +r8+ +r9+ +r10+ +r11+ +rax+)
-                  (loop for i below +nfpr+ collect (+ +xmm0+ i)))
-          'vector))
-(defparameter *nrsave* (vector 9 +nfpr+))   ; {NGPS_SYSV, NFPS}
-
-(defun reg-fp-p (id) (and (<= +fpr0+ id) (< id (+ +fpr0+ +nfpr+))))
-(defun kwide (cls) (and (member cls '(:l :d)) t))   ; KWIDE: Kl/Kd occupy 8 bytes
-(defparameter +rsave-mask+
-  (reduce (lambda (m id) (logior m (ash 1 id))) *sysv-rsave* :initial-value 0)
-  "Bitmask of all caller-save registers (rsave).")
-
-;;; amd64 memargs (ops.h X(NMemArgs,...)): how many operands may be a memory
-;;; operand (reloaded straight from a slot rather than forced into a register).
-(defparameter *memargs*
-  (let ((h (make-hash-table)))
-    (dolist (op '(:add :sub :mul :and :or :xor)) (setf (gethash op h) 2))
-    (dolist (op '(:neg :sar :shr :shl :swap :xidiv :xdiv :xcmp :xtest))
-      (setf (gethash op h) 1))
-    h))
-(defun memargs (op) (gethash op *memargs* 0))
+;;; The register model (register counts/ids, rglob, rsave/rclob, retregs/
+;;; argregs/memargs) now lives in the `target` struct (target.lisp); each
+;;; target builds its instance in its targ file (amd64: amd64.lisp).  The
+;;; generic passes below read it through the `tg-*` accessors.  +tmp0+, kwide,
+;;; and reg-fp-p are target-independent and live in target.lisp.
 
 ;;; extra bitset ops used by spill/rega (ssa.lisp has make/copy/zero/union/...).
 (defun bs-inter (dst src) (bit-and dst src dst))    ; dst &= src
@@ -72,26 +41,6 @@
   (let ((m 0)) (dotimes (i +tmp0+) (when (bs-has bs i) (setf m (logior m (ash 1 i))))) m))
 (defun bs-set-regmask (bs mask) (dotimes (i +tmp0+) (when (logbitp i mask) (bs-set bs i))))
 (defun bs-clr-regmask (bs mask) (dotimes (i +tmp0+) (when (logbitp i mask) (bs-clr bs i))))
-
-;;; RCall mask decoders (amd64/sysv.c retregs/argregs).  Each returns
-;;; (values reg-id-list ngp nfp) where the counts feed nlive bookkeeping.
-(defun sysv-retregs (mask)
-  (let ((ni (logand mask 3)) (nf (logand (ash mask -2) 3)) (regs '()))
-    (when (>= ni 1) (push +rax+ regs))
-    (when (>= ni 2) (push +rdx+ regs))
-    (when (>= nf 1) (push +xmm0+ regs))
-    (when (>= nf 2) (push (+ +xmm0+ 1) regs))
-    (values regs ni nf)))
-
-(defun sysv-argregs (mask)
-  (let ((ni (logand (ash mask -4) 15))
-        (nf (logand (ash mask -8) 15))
-        (ra (logand (ash mask -12) 1))
-        (regs '()))
-    (dotimes (j ni) (push (aref *sysv-rsave* j) regs))
-    (dotimes (j nf) (push (+ +xmm0+ j) regs))
-    (when (= ra 1) (push +rax+ regs))
-    (values regs (+ ni ra) nf)))
 
 ;;; ------------------------------------------------------------ ref <-> temp id
 ;;; An operand is a user temp (tmp struct), a register (reg struct), or other.
@@ -104,7 +53,7 @@
 
 (defun tid-ref (tid fn)
   "The operand denoting temp id TID: a reg struct for a register, else the tmp."
-  (if (< tid +tmp0+) (rg tid) (aref (fn-tmp fn) tid)))
+  (if (< tid +tmp0+) (tg-rg tid) (aref (fn-tmp fn) tid)))
 
 ;; RMem addressing mode (isel slice d): an operand may be a `mem` struct whose
 ;; base and index are the live temps contributing to the address.
@@ -178,14 +127,14 @@ Distinct from ssa.lisp's pre-isel fill-live (which omits registers)."
           (when (blk-s2 b) (live-on v b (blk-s2 b)) (bs-union (blk-out b) v))
           (unless (bs-equal (blk-out b) u) (setf chg t))
           (fill nlv 0)
-          (bs-set (blk-out b) +rbp+) (bs-set (blk-out b) +rsp+)   ; |= rglob
+          (bs-set-regmask (blk-out b) (tg-rglob))                 ; |= rglob
           (bs-copy (blk-in b) (blk-out b))
           (dotimes (tid nt)
             (when (bs-has (blk-in b) tid)
               (incf (aref nlv (cls-base (tmp-cls (aref (fn-tmp fn) tid)))))))
           (let ((ja (blk-jmp-arg b)))
             (if (call-ref-p ja)
-                (multiple-value-bind (regs ni nf) (sysv-retregs (call-ref-val ja))
+                (multiple-value-bind (regs ni nf) (tg-retregs (call-ref-val ja))
                   (dolist (rid regs) (bs-set (blk-in b) rid))
                   (setf (aref nlv 0) ni (aref nlv 1) nf))
                 (be-bset ja b nlv fn)))
@@ -193,18 +142,18 @@ Distinct from ssa.lisp's pre-isel fill-live (which omits registers)."
           (dolist (i (reverse (blk-ins b)))
             ;; caller-save pressure across a call (retregs off, argregs on)
             (when (call-ins-p i)
-              (multiple-value-bind (rr ni nf) (sysv-retregs (call-ref-val (ins-arg1 i)))
+              (multiple-value-bind (rr ni nf) (tg-retregs (call-ref-val (ins-arg1 i)))
                 (dolist (rid rr) (bs-clr (blk-in b) rid))
                 (decf (aref nlv 0) ni) (decf (aref nlv 1) nf))
               (dotimes (k 2)
-                (incf (aref nlv k) (aref *nrsave* k))
+                (incf (aref nlv k) (aref (tg-nrsave) k))
                 (when (> (aref nlv k) (nth k (blk-nlive b)))
                   (setf (nth k (blk-nlive b)) (aref nlv k))))
-              (multiple-value-bind (ar ni nf) (sysv-argregs (call-ref-val (ins-arg1 i)))
+              (multiple-value-bind (ar ni nf) (tg-argregs (call-ref-val (ins-arg1 i)))
                 (setf (aref m 0) ni (aref m 1) nf)
                 (dolist (rid ar) (bs-set (blk-in b) rid)))
               (dotimes (k 2)
-                (decf (aref nlv k) (aref *nrsave* k))
+                (decf (aref nlv k) (aref (tg-nrsave) k))
                 (incf (aref nlv k) (aref m k))))
             (let ((to (ins-to i)))
               (let ((tid (ref-tid to)))

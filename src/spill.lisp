@@ -77,8 +77,8 @@ spill the rest (spill.c limit)."
   (let ((b2 (bs-copy-new b1)))
     (bs-inter b1 (aref *sp-mask* 0))
     (bs-inter b2 (aref *sp-mask* 1))
-    (sp-limit b1 (- +ngpr+ k1) f)
-    (sp-limit b2 (- +nfpr+ k2) f)
+    (sp-limit b1 (- (tg-ngpr) k1) f)
+    (sp-limit b2 (- (tg-nfpr) k2) f)
     (bs-union b1 b2)))
 
 ;;; ------------------------------------------------------- hints / reloads / store
@@ -129,10 +129,10 @@ loopy as BV) or bring only V's still-unspilled temps."
     (bs-copy u v)
     (if (and (> i 0) (eq (ins-op (aref vec (1- i))) :call))
         (let ((mask (call-ref-val (ins-arg1 (aref vec (1- i))))))
-          (dolist (rid (sysv-retregs mask)) (bs-clr v rid))
-          (sp-limit2 v (aref *nrsave* 0) (aref *nrsave* 1) nil)
-          (setf r +rsave-mask+)
-          (dolist (rid (sysv-argregs mask)) (bs-set v rid)))
+          (dolist (rid (tg-retregs mask)) (bs-clr v rid))
+          (sp-limit2 v (aref (tg-nrsave) 0) (aref (tg-nrsave) 1) nil)
+          (setf r (tg-rsave-mask))
+          (dolist (rid (tg-argregs mask)) (bs-set v rid)))
         (progn (sp-limit2 v 0 0 nil) (setf r (bs-regmask v))))
     (sp-sethint v r)
     (sp-reloads u v)
@@ -150,7 +150,7 @@ in place and replaces in/out with register-resident sets (spill.c spill)."
     ;; class masks: reg gp/fp by id range, user temps by KBASE(cls)
     (dotimes (tid nt)
       (let ((k 0))
-        (when (and (>= tid +fpr0+) (< tid (+ +fpr0+ +nfpr+))) (setf k 1))
+        (when (and (>= tid (tg-fpr0)) (< tid (+ (tg-fpr0) (tg-nfpr)))) (setf k 1))
         (when (>= tid +tmp0+) (setf k (cls-base (tmp-cls (aref (fn-tmp fn) tid)))))
         (bs-set (aref *sp-mask* k) tid)))
     (loop for n from (1- (fn-nblk fn)) downto 0
@@ -163,9 +163,9 @@ in place and replaces in/out with register-resident sets (spill.c spill)."
         (cond
           (hd                             ; back-edge into a loop header
            (bs-zero v)
-           (bs-set (blk-gen hd) +rbp+) (bs-set (blk-gen hd) +rsp+)   ; don't spill regs
+           (bs-set-regmask (blk-gen hd) (tg-rglob))                  ; don't spill regs
            (dotimes (k 2)
-             (let ((count (if (= k 0) +ngpr+ +nfpr+)))
+             (let ((count (if (= k 0) (tg-ngpr) (tg-nfpr))))
                (bs-copy u (blk-out b)) (bs-inter u (aref *sp-mask* k))
                (bs-copy w u) (bs-inter u (blk-gen hd)) (bs-diff w (blk-gen hd))
                (if (< (bs-count u) count)
@@ -182,7 +182,7 @@ in place and replaces in/out with register-resident sets (spill.c spill)."
           (t                              ; return / no successor
            (bs-copy v (blk-out b))
            (when (call-ref-p (blk-jmp-arg b))
-             (dolist (rid (sysv-retregs (call-ref-val (blk-jmp-arg b)))) (bs-set v rid))))))
+             (dolist (rid (tg-retregs (call-ref-val (blk-jmp-arg b)))) (bs-set v rid))))))
       ;; jump argument (jnz/switch cond) must be in a register
       (let ((ja (blk-jmp-arg b)))
         (when (tmp-p ja)
@@ -213,7 +213,7 @@ in place and replaces in/out with register-resident sets (spill.c spill)."
                            (bs-clr v tid)
                            (progn (assert (>= tid +tmp0+))
                                   (bs-set v tid) (bs-set w tid))))))
-                 (let ((j (memargs (ins-op i))))
+                 (let ((j (tg-memargs (ins-op i))))
                    (dolist (a (list (ins-arg0 i) (ins-arg1 i)))
                      (when (mem-ref-p a) (decf j)))
                    (loop for slot-k from 0 below 2
@@ -249,8 +249,8 @@ in place and replaces in/out with register-resident sets (spill.c spill)."
                  (let ((r (bs-regmask v))) (unless (zerop r) (sp-sethint v r))))))))
         ;; invariant: only rglob (+ params at start) remain in registers
         (if (eq b (fn-start fn))
-            (assert (= (bs-regmask v) (logior +rglob+ (fn-reg fn))))
-            (assert (= (bs-regmask v) +rglob+)))
+            (assert (= (bs-regmask v) (logior (tg-rglob) (fn-reg fn))))
+            (assert (= (bs-regmask v) (tg-rglob))))
         ;; phis: store if register-resident, else demote live phi to a slot
         (dolist (p (blk-phis b))
           (let ((tid (tmp-id (phi-to p))))

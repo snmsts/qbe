@@ -421,8 +421,9 @@
       (:zero (format s "~C.zero ~d~%" #\Tab (second it)))))
   (format s "~%"))
 
-(defun be-emit-module (module)
-  "Run the backend per function and return the module's amd64 assembly string."
+(defun be-emit-module (module &optional (*target* *amd64-sysv-target*))
+  "Run the backend per function and return the module's assembly string.
+*target* selects the machine (defaults to amd64 SysV)."
   (let ((s (make-string-output-stream)) (id0 0))
     (setf *tmp-counter* 0)
     (reset-stash)
