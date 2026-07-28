@@ -61,7 +61,7 @@
    :argregs #'arm64-argregs
    :memargs #'arm64-memargs
    :cansel nil                  ; no if-conversion on arm64 (T.cansel = 0)
-   :vararg-save 0               ; apple: va_list points straight at the overflow area
+   :vararg-abi :stack           ; apple: va_list points straight at the overflow area
    :store-tmp -1                ; x18 is platform-reserved on Apple: no scratch free
    :litsec *a64-macho-litsec*)
   "The arm64 Apple target (QBE T_arm64_apple).")
@@ -79,10 +79,9 @@
 ;;;     store-tmp stays -1 -- do NOT fall into QBE's Linux path, which uses x18
 ;;;     as a scratch for the far-store address fixup.
 ;;;   * varargs are neither Apple's (all on the stack) nor AAPCS64's (192-byte
-;;;     save area): Windows spills only x0-x7 into a 64-byte area and uses no
-;;;     FP registers.  The prologue spill is not implemented yet, so vararg-save
-;;;     is NIL and a variadic function raises an explicit error rather than
-;;;     silently miscompiling.
+;;;     save area, GPRs and FPRs both): MS lays the whole variadic call out on
+;;;     one imaginary stack whose first 64 bytes are x0-x7, never using a SIMD
+;;;     register -- so a variadic float travels as raw bits in a GPR.
 (defparameter *arm64-win-target*
   (make-target
    :name "arm64_win"
@@ -105,7 +104,7 @@
    :argregs #'arm64-argregs
    :memargs #'arm64-memargs
    :cansel nil
-   :vararg-save nil             ; TODO: 64-byte x0-x7 spill area + prologue store
+   :vararg-abi :gpr             ; windows: x0-x7 are the first 64 bytes of the list
    :store-tmp -1                ; x18 = TEB on Windows; never use it as a scratch
    :litsec *a64-coff-litsec*)   ; COFF: everything read-only lands in .rdata
   "The Windows on ARM64 target.")

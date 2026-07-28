@@ -88,15 +88,27 @@ export function w $scale(d %x) {
 ")
 
 ;; the CALLER side of varargs.  Apple puts everything after `...` on the stack;
-;; Windows loads the first 64 bytes of that imaginary stack into x0-x7, so
-;; emitting the Apple rule here produces a program that assembles, links, runs,
-;; and prints garbage.  It must raise instead.
+;; Windows keeps walking the GPR sequence (x0-x7 ARE the first 64 bytes of the
+;; imaginary stack), so the Apple rule here assembles, links, runs, and prints
+;; garbage -- these two pin the Windows rule down by running it.
 (defparameter *vararg-call* "
 data $fmt = { b \"got %d and %d\", b 10, b 0 }
 
 export function w $main() {
 @start
 	call $printf(l $fmt, ..., w 42, w 7)
+	ret 0
+}
+")
+
+;; SIMD registers are never used for variadic args, so a double travels in a GPR
+;; as raw bits (`fmov x1, d0`).  %x is a parameter so it cannot be folded away.
+(defparameter *vararg-float* "
+data $fmt = { b \"f=%.1f i=%d\", b 10, b 0 }
+
+export function w $show(d %x, w %n) {
+@start
+	call $printf(l $fmt, ..., d %x, w %n)
 	ret 0
 }
 ")
@@ -162,18 +174,24 @@ export function w $f(w %n, ...) {
                      (ok "apple target still emits varargs"))
   (error (e) (bad "apple target still emits varargs" "~a" e)))
 
-;; ... while Windows refuses loudly instead of emitting a wrong frame, on BOTH
-;; sides.  The caller side is the dangerous one: it would assemble and run.
-(dolist (spec (list (cons "callee (vastart/vaarg)" *vararg-fn*)
-                    (cons "caller (call $printf(..., w 42))" *vararg-call*)))
-  (handler-case (progn (win-asm (cdr spec))
-                       (bad (format nil "win rejects varargs: ~a" (car spec))
-                            "emitted silently"))
-    (error (e)
-      (if (search "not supported" (princ-to-string e))
-          (ok (format nil "win rejects varargs: ~a" (car spec)))
-          (bad (format nil "win rejects varargs: ~a" (car spec))
-               "unexpected error: ~a" e)))))
+;; ... while the Windows CALLEE side is still missing its prologue spill, so it
+;; must refuse rather than hand out a va_list into a save area nobody filled.
+(handler-case (progn (win-asm *vararg-fn*)
+                     (bad "win rejects callee-side varargs" "emitted silently"))
+  (error (e)
+    (if (search "not implemented" (princ-to-string e))
+        (ok "win rejects callee-side varargs")
+        (bad "win rejects callee-side varargs" "unexpected error: ~a" e))))
+
+;; the caller side IS implemented: a variadic call must lower, not raise.
+(handler-case (progn (win-asm *vararg-call*) (ok "win lowers variadic calls"))
+  (error (e) (bad "win lowers variadic calls" "~a" e)))
+
+;; and the float must reach a GPR through a cast, not a SIMD parameter register.
+(let ((asm (win-asm *vararg-float*)))
+  (if (search "fmov	x" asm)
+      (ok "variadic double casts into a GPR (fmov x, d)")
+      (bad "variadic double casts into a GPR (fmov x, d)" "not in:~%~a" asm)))
 
 ;; and Apple must still lower a variadic call rather than raise with it.
 (handler-case (progn (qbe:a64-be-emit-module (qbe:parse-string *vararg-call*)
@@ -226,7 +244,7 @@ export function w $f(w %n, ...) {
 (let ((triple (cc-triple)))
   (cond
     ((not (windows-arm64-cc-p triple))
-     (incf *skip* 4)
+     (incf *skip* 6)
      (format t "~&  skip (cc is ~a, need an aarch64-*-windows cc)~%"
              (or triple "unavailable")))
     (t
@@ -244,6 +262,15 @@ int main(void) { printf(\"%d\\n\", addmul(2, 3, 4)); return 0; }
             :driver "#include <stdio.h>
 int scale(double);
 int main(void) { printf(\"%d\\n\", scale(4.0)); return 0; }
+"
+            :reader #'run-out)
+     ;; the payoff: printf actually reads x1/x2 and finds what we put there.
+     (check "variadic call (ints in x1/x2)" *vararg-call* "got 42 and 7"
+            :reader #'run-out)
+     (check "variadic call (double via fmov into a GPR)" *vararg-float*
+            "f=2.5 i=9"
+            :driver "int show(double, int);
+int main(void) { show(2.5, 9); return 0; }
 "
             :reader #'run-out))))
 

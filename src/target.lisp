@@ -54,7 +54,8 @@
   ;; Windows is a third combination: x18 is platform-reserved (like Apple), but
   ;; varargs use a 64-byte GPR-only save area (unlike either).  Keep them as
   ;; data slots so a new target is a `make-target` call, not new `if` branches.
-  (vararg-save 0)      ; bytes of the variadic register save area; NIL = unsupported
+  (vararg-abi :stack)  ; where variadic args live: :stack (apple) | :gpr (windows)
+                       ; | NIL = this target's vararg lowering is not written yet
   (store-tmp -1)       ; scratch reg id for the far-store address fixup; -1 = none free
   litsec)              ; arm64 emitfin: read-only literal sections by log2 size-4
 
@@ -83,14 +84,24 @@
 (defun tg-store-tmp () (target-store-tmp *target*))
 (defun tg-litsec () (target-litsec *target*))
 
+(defun tg-vararg-abi ()
+  "How the current target passes variadic arguments, or NIL if nobody has
+written that lowering yet."
+  (target-vararg-abi *target*))
+
 (defun tg-vararg-save ()
-  "Bytes of the variadic register save area for the current target.
-Signals an error on targets whose vararg lowering is not implemented yet -- call
-it for that effect alone from the caller side too, where the value is unused but
-emitting Apple's or AAPCS64's rule would be a silent miscompile."
-  (or (target-vararg-save *target*)
-      (error "arm64: variadic calls/functions are not supported on target ~a"
-             (target-name *target*))))
+  "Bytes the callee reserves to spill the argument registers into, so that
+va_list can walk one contiguous array.  Call it for its raising side effect
+alone from the caller side too, where the value is unused but emitting the wrong
+platform's rule would be a silent miscompile."
+  (ecase (tg-vararg-abi)
+    ((nil) (error "arm64: variadic calls/functions are not supported on target ~a"
+                  (target-name *target*)))
+    ;; Apple has no save area: every variadic argument arrives on the stack.
+    (:stack 0)
+    ;; Windows spills x0-x7 immediately below the incoming stack arguments, so
+    ;; the register half and the stack half form one array.
+    (:gpr 64)))
 
 (defun tg-rg (id) (aref (target-regs *target*) id))
 (defun tg-retregs (mask) (funcall (target-retregs *target*) mask))

@@ -214,12 +214,17 @@ Returns the ins (caller hoists it into the start block, QBE's Insl list)."
 
 ;;; ----------------------------------------------------------- argsclass
 
-(defun a64-argsclass (ins-list)
+(defun a64-argsclass (ins-list &optional force-va)
   "arm64/abi.c argsclass.  INS-LIST = par/arg ins.  Returns
-(values cty class-vector env va)."
+(values cty class-vector env va).
+
+FORCE-VA starts the list already in variadic mode.  Windows needs it: MS
+specifies the variadic rules for the WHOLE call, not just the part after `...`,
+so a named `double` of a variadic function travels in a GPR too.  Apple leaves
+its named parameters on the normal AAPCS64 path, so it never passes it."
   (let ((ngp 8) (nfp 8) (gp (make-array 1 :initial-element 0))
         (fp (make-array 1 :initial-element 0))
-        (va nil) (envc 0) (env nil)
+        (va force-va) (envc 0) (env nil)
         (cs (make-array (length ins-list))))
     (loop for i in ins-list for idx from 0 do
       (let* ((op (ins-op i)) (c (make-a64class)))
@@ -228,14 +233,25 @@ Returns the ins (caller hoists it into the start block, QBE's Insl list)."
                  (setf (a64class-size c) size (a64class-align c) size
                        (aref (a64class-cls c) 0) cls)
                  (cond
-                   ;; Apple: everything after `...` goes on the stack in 8-byte
-                   ;; slots.  Windows instead loads the first 64 bytes of that
-                   ;; imaginary stack into x0-x7, so emitting this rule there
-                   ;; would be a silent miscompile -- tg-vararg-save raises for
-                   ;; any target whose vararg lowering is still missing.
+                   ;; Variadic slots are 8 bytes wide on every arm64 platform;
+                   ;; where they LIVE is what differs.  tg-vararg-save raises
+                   ;; for any target whose vararg lowering is still missing, so
+                   ;; the wrong rule is never emitted silently.
                    (va (tg-vararg-save)
-                       (setf (a64class-class c) +a64-cstk+
-                             (a64class-size c) 8 (a64class-align c) 8))
+                       (setf (a64class-size c) 8 (a64class-align c) 8)
+                       (ecase (tg-vararg-abi)
+                         ;; Apple: no register save area -- all of it on the stack.
+                         (:stack (setf (a64class-class c) +a64-cstk+))
+                         ;; Windows: one imaginary stack whose first 64 bytes are
+                         ;; x0-x7.  Variadic args just keep walking the GPR
+                         ;; sequence; SIMD registers are never used, so a float
+                         ;; rides in a GPR as its raw bit pattern (selcall casts).
+                         (:gpr (if (> ngp 0)
+                                   (progn (decf ngp)
+                                          (setf (aref (a64class-reg c) 0)
+                                                (+ +a64-r0+ (aref gp 0)))
+                                          (incf (aref gp 0)))
+                                   (setf (a64class-class c) +a64-cstk+)))))
                    ((and (= (cls-base cls) 0) (> ngp 0))
                     (decf ngp)
                     (setf (aref (a64class-reg c) 0) (+ +a64-r0+ (aref gp 0)))
@@ -322,7 +338,12 @@ Returns the ins (caller hoists it into the start block, QBE's Insl list)."
 (defun a64-selcall (fn args call ilp)
   "arm64/abi.c selcall: lower CALL with preceding ARGS.  Struct blobs (allocs)
 are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
-  (multiple-value-bind (cty cs env va) (a64-argsclass args)
+  ;; On Windows the variadic rules govern the whole call, so a call that has an
+  ;; `...` marker anywhere starts classification already in variadic mode.
+  (multiple-value-bind (cty cs env va)
+      (a64-argsclass args (and (eq (tg-vararg-abi) :gpr)
+                               (find :argv args :key #'ins-op)
+                               t))
     (declare (ignore env va))
     (let ((argl (coerce args 'vector)) (stk 0))
       ;; Cptr args: replace with a pointer to a fresh stack blob; sum stack size.
@@ -366,8 +387,18 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
           (let ((i (aref argl idx)) (c (aref cs idx)))
             (unless (logtest (a64class-class c) +a64-cstk+)
               (when (or (member (ins-op i) '(:arg :arge)) (a64-isargbh (ins-op i)))
-                (emit :copy (aref (a64class-cls c) 0) (a64rg (aref (a64class-reg c) 0))
-                      (ins-arg0 i) nil))
+                (let ((cls (aref (a64class-cls c) 0))
+                      (reg (aref (a64class-reg c) 0)))
+                  (if (and (= (cls-base cls) 1) (< reg +a64-v0+))
+                      ;; Windows variadic: SIMD registers are not used, so the
+                      ;; float rides in a GPR as its raw bit pattern.  NB `emit`
+                      ;; builds the block backwards -- the cast is emitted after
+                      ;; the copy so it lands before it.
+                      (let* ((icls (if (kwide cls) :l :w))
+                             (tmp (newtmp "abi" icls fn)))
+                        (emit :copy icls (a64rg reg) tmp nil)
+                        (emit :cast icls tmp (ins-arg0 i) nil))
+                      (emit :copy cls (a64rg reg) (ins-arg0 i) nil))))
               (when (eq (ins-op i) :argc)
                 (a64-ldregs (a64class-reg c) (a64class-cls c) (a64class-nreg c)
                             (ins-arg1 i) fn)))))
@@ -513,7 +544,14 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
                    (loop while (and (> i0 0) (arg-op-p (ins-op (aref vec (1- i0))))) do (decf i0))
                    (a64-selcall fn (coerce (subseq vec i0 k) 'list) i il)
                    (setf k i0)))
-                ((eq (ins-op i) :vastart) (a64-apple-selvastart fn pstk (ins-arg0 i)))
+                ((eq (ins-op i) :vastart)
+                 ;; The Windows callee still owes its prologue the x0-x7 spill
+                 ;; that va_list walks, so refuse rather than hand out a pointer
+                 ;; into a save area nobody filled.  (The CALLER side is done.)
+                 (when (eq (tg-vararg-abi) :gpr)
+                   (error "arm64: callee-side varargs (vastart) are not implemented ~
+                           for target ~a yet" (target-name *target*)))
+                 (a64-apple-selvastart fn pstk (ins-arg0 i)))
                 ((eq (ins-op i) :vaarg) (a64-apple-selvaarg fn i))
                 (t (push i *emitted*)))))
           ;; start block is processed last: flush accumulated stkblob allocs.
