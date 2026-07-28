@@ -1,5 +1,5 @@
-;;;; arm64-win.lisp --- the arm64_win target: assembler dialect, vararg guard,
-;;;; and (on a Windows ARM64 host) end-to-end native execution.
+;;;; arm64-win.lisp --- the arm64_win target: assembler dialect, varargs, and
+;;;; (on a Windows ARM64 host) end-to-end native execution.
 ;;;;
 ;;;; usage:  ros -Q run -- --script test/arm64-win.lisp
 ;;;;
@@ -8,17 +8,18 @@
 ;;;; with Apple verbatim.  Only three things differ, and this file pins all of
 ;;;; them down:
 ;;;;
-;;;;   1. assembler dialect -- no `_` symbol prefix, `.L` locals, and
-;;;;      `adrp X, sym` + `add X, X, #:lo12:sym` instead of mach-o's
-;;;;      `@page` / `@pageoff`.  (Checked textually: runs on any host.)
-;;;;   2. varargs -- Windows uses neither Apple's all-on-the-stack rule nor
-;;;;      AAPCS64's 192-byte save area, so it is deliberately UNIMPLEMENTED and
-;;;;      must raise rather than silently miscompile.  (Any host.)
-;;;;   3. that the result actually runs.  (Windows ARM64 host only; skipped
-;;;;      elsewhere, detected via `cc -dumpmachine`.)
+;;;;   1. assembler dialect -- no `_` symbol prefix, `.L` locals, mach-o's
+;;;;      `@page` / `@pageoff` replaced by `adrp X, sym` + `#:lo12:sym`, and the
+;;;;      fp pool in `.rdata` rather than __literal4/8/16.
+;;;;   2. varargs -- neither Apple's all-on-the-stack rule nor AAPCS64's
+;;;;      192-byte GPR+FPR save area.  One imaginary stack whose first 64 bytes
+;;;;      are x0-x7, no SIMD register ever used, so a variadic double travels as
+;;;;      raw bits through a GPR and the callee spills x0-x7 in its prologue.
+;;;;   3. that the result actually runs.
 ;;;;
-;;;; Sections 1 and 2 are pure computation and belong in the host-agnostic CI
-;;;; group; section 3 is the `windows` group.
+;;;; 1 and 2 are checked textually and run on any host -- they also guard the
+;;;; Apple side against being refactored away.  3 needs a Windows ARM64 host and
+;;;; self-skips elsewhere, detected via `cc -dumpmachine`.
 (require :asdf)
 (push (truename (merge-pathnames "../" (directory-namestring *load-pathname*))) asdf:*central-registry*)
 (handler-bind ((warning #'muffle-warning))
@@ -123,6 +124,53 @@ export function w $f(w %n, ...) {
 }
 ")
 
+;; the CALLEE side.  The prologue spills x0-x7 into the 64 bytes just below the
+;; incoming stack arguments, so `sumn(9, 1..9)` -- 10 slots, one more than fits
+;; in registers -- only adds up if that area and the stack half are contiguous.
+(defparameter *vararg-callee* "
+export function w $sumn(w %n, ...) {
+@start
+	%ap =l alloc8 32
+	vastart %ap
+	%s =w copy 0
+	%i =w copy 0
+	jmp @loop
+@loop
+	%c =w csltw %i, %n
+	jnz %c, @body, @end
+@body
+	%v =w vaarg %ap
+	%s =w add %s, %v
+	%i =w add %i, 1
+	jmp @loop
+@end
+	ret %s
+}
+")
+
+;; a variadic double arrives as raw bits in a GPR slot, so `vaarg =d` has to
+;; read those 8 bytes back as a double.
+(defparameter *vararg-callee-d* "
+export function d $sumd(w %n, ...) {
+@start
+	%ap =l alloc8 32
+	vastart %ap
+	%s =d copy d_0.0
+	%i =w copy 0
+	jmp @loop
+@loop
+	%c =w csltw %i, %n
+	jnz %c, @body, @end
+@body
+	%v =d vaarg %ap
+	%s =d add %s, %v
+	%i =w add %i, 1
+	jmp @loop
+@end
+	ret %s
+}
+")
+
 ;;; ============================================ 1. assembler dialect (any host)
 (format t "~&--- 1. assembler dialect ---~%")
 
@@ -174,14 +222,11 @@ export function w $f(w %n, ...) {
                      (ok "apple target still emits varargs"))
   (error (e) (bad "apple target still emits varargs" "~a" e)))
 
-;; ... while the Windows CALLEE side is still missing its prologue spill, so it
-;; must refuse rather than hand out a va_list into a save area nobody filled.
-(handler-case (progn (win-asm *vararg-fn*)
-                     (bad "win rejects callee-side varargs" "emitted silently"))
-  (error (e)
-    (if (search "not implemented" (princ-to-string e))
-        (ok "win rejects callee-side varargs")
-        (bad "win rejects callee-side varargs" "unexpected error: ~a" e))))
+;; ... and the Windows callee spills the argument registers in its prologue.
+(let ((asm (win-asm *vararg-fn*)))
+  (if (and (search "stp	x0, x1, [x29," asm) (search "stp	x6, x7, [x29," asm))
+      (ok "win spills x0-x7 in the prologue")
+      (bad "win spills x0-x7 in the prologue" "not in:~%~a" asm)))
 
 ;; the caller side IS implemented: a variadic call must lower, not raise.
 (handler-case (progn (win-asm *vararg-call*) (ok "win lowers variadic calls"))
@@ -244,7 +289,7 @@ export function w $f(w %n, ...) {
 (let ((triple (cc-triple)))
   (cond
     ((not (windows-arm64-cc-p triple))
-     (incf *skip* 6)
+     (incf *skip* 8)
      (format t "~&  skip (cc is ~a, need an aarch64-*-windows cc)~%"
              (or triple "unavailable")))
     (t
@@ -271,6 +316,25 @@ int main(void) { printf(\"%d\\n\", scale(4.0)); return 0; }
             "f=2.5 i=9"
             :driver "int show(double, int);
 int main(void) { show(2.5, 9); return 0; }
+"
+            :reader #'run-out)
+     ;; sumn(9, 1..9) needs 10 slots, so it walks off the register half and into
+     ;; the incoming stack arguments -- the contiguity check.
+     (check "variadic callee (ints, incl. spilling past x7)" *vararg-callee*
+            "60 0 45"
+            :driver "#include <stdio.h>
+int sumn(int, ...);
+int main(void) {
+  printf(\"%d %d %d\\n\", sumn(3,10,20,30), sumn(0), sumn(9,1,2,3,4,5,6,7,8,9));
+  return 0;
+}
+"
+            :reader #'run-out)
+     (check "variadic callee (doubles read back from GPR slots)" *vararg-callee-d*
+            "7.0 0.2"
+            :driver "#include <stdio.h>
+double sumd(int, ...);
+int main(void) { printf(\"%.1f %.1f\\n\", sumd(3,1.5,2.5,3.0), sumd(1,0.25)); return 0; }
 "
             :reader #'run-out))))
 

@@ -553,6 +553,11 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
   (a64-addsub-reg e (if subp 1 0) :l (a64rg +a64-sp+) (a64rg +a64-sp+) (a64rg +a64-ip0+)))
 
 (defun aenc-prologue (e frame fn)
+  ;; The text emitter grows the frame by tg-vararg-save and spills x0-x7 into it;
+  ;; this encoder has no counterpart yet, and the epilogue below already frees
+  ;; those bytes -- so refuse rather than emit an unbalanced frame.
+  (when (and (fn-vararg fn) (plusp (tg-vararg-save)))
+    (abi-unsupported "arm64 enc: variadic functions with a register save area"))
   (a64-hint e 34)
   (cond
     ((<= (+ frame 16) 512)

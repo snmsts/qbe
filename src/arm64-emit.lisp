@@ -311,7 +311,12 @@ spill slots, and locals."
 (defvar *a64-id0* 0 "Running block-label counter across a module's functions.")
 
 (defun a64-emit-prologue (e)
-  (let ((fn (ae-fn e)) (frame (ae-frame e)))
+  ;; The variadic register save area sits between the frame and the incoming
+  ;; stack arguments, which is exactly where a64-slot already places slot -1, so
+  ;; allocating it is just a bigger frame.
+  (let* ((fn (ae-fn e))
+         (vsave (if (fn-vararg fn) (tg-vararg-save) 0))
+         (frame (+ (ae-frame e) vsave)))
     (ae-out e "~Chint~C#34~%" #\Tab #\Tab)
     (cond
       ((<= (+ frame 16) 512)
@@ -325,6 +330,17 @@ spill slots, and locals."
                  #\Tab #\Tab (logand frame #xffff) #\Tab #\Tab (ash frame -16)
                  #\Tab #\Tab #\Tab #\Tab)))
     (ae-out e "~Cmov~Cx29, sp~%" #\Tab #\Tab)
+    ;; Windows varargs: spill x0-x7 into that area, immediately below the
+    ;; incoming stack arguments, so va_list walks one contiguous array of
+    ;; 8-byte slots across the register half and the stack half.  x0-x7 are
+    ;; still pristine here -- the par copies have not run yet.
+    (when (and (fn-vararg fn) (eq (tg-vararg-abi) :gpr))
+      (let ((base (+ 16 (ae-frame e))))            ; = a64-slot of S-1
+        (unless (<= (+ base 56) 32760)             ; stp imm7 is scaled by 8
+          (abi-unsupported "arm64_win vararg save area beyond stp range"))
+        (loop for n from 0 below 8 by 2
+              do (ae-out e "~Cstp~Cx~d, x~d, [x29, ~d]~%" #\Tab #\Tab
+                         n (1+ n) (+ base (* 8 n))))))
     ;; save callee-clobbered registers into the top of the frame
     (let ((sc (floor (- (ae-frame e) (ae-padding e)) 4)))
       (loop for rc across *arm64-rclob*

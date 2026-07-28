@@ -441,7 +441,11 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
 ;;; ------------------------------------------------------------ abi1: selpar
 (defun a64-selpar (fn pars)
   "arm64/abi.c selpar: lower PARS (leading par run).  Returns (values stk ngp nfp)."
-  (multiple-value-bind (cty cs env va) (a64-argsclass pars)
+  ;; A variadic function's NAMED parameters follow the variadic rules too on
+  ;; Windows -- there is one imaginary stack for the whole call -- so a named
+  ;; `double` arrives in a GPR.  Apple leaves them on the normal AAPCS64 path.
+  (multiple-value-bind (cty cs env va)
+      (a64-argsclass pars (and (eq (tg-vararg-abi) :gpr) (fn-vararg fn) t))
     (declare (ignore env va))
     (setf (fn-reg fn) (let ((m 0))
                         (dolist (rid (arm64-argregs cty) m)
@@ -521,14 +525,14 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
   "arm64/abi.c arm64_abi (abi1): lower params, returns, calls.  Rewrites FN."
   (dolist (b (fn-blocks fn)) (setf (blk-visit b) 0))
   (let ((il (make-array 1 :initial-element nil))   ; shared Insl (stkblob) list
-        (*a64-par-tmps* nil) (pstk 0))              ; pstk = Params.stk for vastart
+        (*a64-par-tmps* nil) (pstk 0) (pgp 0))      ; Params.stk / ngp, for vastart
     ;; 1. lower parameters (leading par run of the start block)
     (let* ((start (fn-start fn)) (pars '()) (rest nil))
       (dolist (i (blk-ins start))
         (if (and (null rest) (ispar-a64 (ins-op i))) (push i pars) (push i rest)))
       (setf pars (nreverse pars) rest (nreverse rest))
       (let ((*emitted* nil))
-        (setf pstk (a64-selpar fn pars))
+        (multiple-value-setq (pstk pgp) (a64-selpar fn pars))
         (setf (blk-ins start) (append *emitted* rest))))
     ;; 2. lower returns / calls / varargs; start block LAST, then flush `il`.
     (let* ((blocks (fn-blocks fn)) (start (car blocks)))
@@ -545,13 +549,15 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
                    (a64-selcall fn (coerce (subseq vec i0 k) 'list) i il)
                    (setf k i0)))
                 ((eq (ins-op i) :vastart)
-                 ;; The Windows callee still owes its prologue the x0-x7 spill
-                 ;; that va_list walks, so refuse rather than hand out a pointer
-                 ;; into a save area nobody filled.  (The CALLER side is done.)
-                 (when (eq (tg-vararg-abi) :gpr)
-                   (error "arm64: callee-side varargs (vastart) are not implemented ~
-                           for target ~a yet" (target-name *target*)))
-                 (a64-apple-selvastart fn pstk (ins-arg0 i)))
+                 ;; Both platforms want `*ap = &S(-1) + off`; only `off` differs.
+                 ;;   apple  S(-1) is the incoming stack args, and the named
+                 ;;          params' stack bytes are what to skip.
+                 ;;   win    S(-1) is the register save area the prologue filled,
+                 ;;          and the imaginary stack counts the named params'
+                 ;;          register slots first, then their stack bytes.
+                 (a64-apple-selvastart
+                  fn (if (eq (tg-vararg-abi) :gpr) (+ (* 8 pgp) pstk) pstk)
+                  (ins-arg0 i)))
                 ((eq (ins-op i) :vaarg) (a64-apple-selvaarg fn i))
                 (t (push i *emitted*)))))
           ;; start block is processed last: flush accumulated stkblob allocs.
