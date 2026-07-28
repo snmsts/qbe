@@ -48,7 +48,14 @@
   ;; --- RCall-mask decoders + misc (QBE Target.{retregs,argregs,memargs}) ---
   retregs argregs      ; (mask) -> (values reg-id-list ngp nfp)
   memargs              ; (op)   -> how many operands may stay memory (0..2)
-  cansel)              ; if-conversion enabled for this target?
+  cansel               ; if-conversion enabled for this target?
+  ;; --- platform variance the `apple` boolean cannot express ---------------
+  ;; QBE has exactly two arm64 targets, so arm64/emit.c keys these off T.apple.
+  ;; Windows is a third combination: x18 is platform-reserved (like Apple), but
+  ;; varargs use a 64-byte GPR-only save area (unlike either).  Keep them as
+  ;; data slots so a new target is a `make-target` call, not new `if` branches.
+  (vararg-save 0)      ; bytes of the variadic register save area; NIL = unsupported
+  (store-tmp -1))      ; scratch reg id for the far-store address fixup; -1 = none free
 
 ;;; The active target.  Bound (usually let-bound per compile) by the driver.
 (defvar *target*)
@@ -72,6 +79,14 @@
 
 (defun tg-apple () (target-apple *target*))
 (defun tg-asloc () (target-asloc *target*))
+(defun tg-store-tmp () (target-store-tmp *target*))
+
+(defun tg-vararg-save ()
+  "Bytes of the variadic register save area for the current target.
+Signals an error on targets whose vararg lowering is not implemented yet."
+  (or (target-vararg-save *target*)
+      (error "arm64: variadic functions are not supported on target ~a"
+             (target-name *target*))))
 
 (defun tg-rg (id) (aref (target-regs *target*) id))
 (defun tg-retregs (mask) (funcall (target-retregs *target*) mask))

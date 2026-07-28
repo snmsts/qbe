@@ -98,9 +98,9 @@
   (let ((s (slot-ref-n r)) (fn (ae-fn e)))
     (cond
       ((= s -1) (+ 16 (ae-frame e)))
-      ((< s 0) (if (and (fn-vararg fn) (not (tg-apple)))
-                   (+ 16 (ae-frame e) 192 (- (+ s 2)))
-                   (+ 16 (ae-frame e) (- (+ s 2)))))
+      ((< s 0) (+ 16 (ae-frame e)
+                  (if (fn-vararg fn) (tg-vararg-save) 0)
+                  (- (+ s 2))))
       (t (+ 16 (ae-padding e) (* 4 s))))))
 
 ;;; ------------------------------------------------------------------ emitf
@@ -256,7 +256,7 @@ then look the op up in omap."
     (when (isload-op op)
       (a64-emit-fixarg i 0 (loadsz i) +a64-ip1+ e))
     (when (isstore-op op)
-      (let ((tid (if (tg-apple) -1 +a64-r18+)))
+      (let ((tid (tg-store-tmp)))
         (when (a64-emit-fixarg i 1 (storesz i) tid e)
           ;; the address needs a scratch but only IP1 is free and it may hold the
           ;; value; bounce the value through V31, then re-fix with IP1.
@@ -345,7 +345,7 @@ spill slots, and locals."
                               :to (a64rg rc) :arg0 (make-slot-ref sc) :arg1 nil) e)))
     (when (fn-dynalloc fn) (ae-out e "~Cmov sp, x29~%" #\Tab))
     (let ((o (+ (ae-frame e) 16)))
-      (when (and (fn-vararg fn) (not (tg-apple))) (incf o 192))
+      (when (fn-vararg fn) (incf o (tg-vararg-save)))
       (cond
         ((<= o 504) (ae-out e "~Cldp~Cx29, x30, [sp], ~d~%" #\Tab #\Tab o))
         ((<= (- o 16) 4095)

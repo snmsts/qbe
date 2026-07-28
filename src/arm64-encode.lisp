@@ -585,7 +585,7 @@ logical-immediate ORR, then MOVZ+MOVK lanes."
   (when (fn-dynalloc fn)                                            ; mov sp, x29
     (a64-addsub-imm e 0 :l (a64rg +a64-sp+) (a64rg +a64-fp+) 0))
   (let ((o (+ frame 16)))
-    (when (and (fn-vararg fn) (not (tg-apple))) (incf o 192))
+    (when (fn-vararg fn) (incf o (tg-vararg-save)))
     (cond
       ((<= o 504) (a64-ldstp e 1 nil o (a64rg +a64-fp+) (a64rg +a64-lr+) (a64rg +a64-sp+)))
       (t (a64-ldstp e 1 nil 16 (a64rg +a64-fp+) (a64rg +a64-lr+) (a64rg +a64-sp+))  ; ldp [sp],16

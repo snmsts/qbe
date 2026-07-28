@@ -60,5 +60,50 @@
    :retregs #'arm64-retregs
    :argregs #'arm64-argregs
    :memargs #'arm64-memargs
-   :cansel nil)                 ; no if-conversion on arm64 (T.cansel = 0)
+   :cansel nil                  ; no if-conversion on arm64 (T.cansel = 0)
+   :vararg-save 0               ; apple: va_list points straight at the overflow area
+   :store-tmp -1)               ; x18 is platform-reserved on Apple: no scratch free
   "The arm64 Apple target (QBE T_arm64_apple).")
+
+;;; ------------------------------------------------------- arm64_win instance
+;;; Windows on ARM64.  MS documents the non-variadic ABI as plain AAPCS64, so
+;;; the register model, isel, abi1 and emit passes are shared verbatim with
+;;; Apple; only the assembler dialect and two platform numbers differ.
+;;;
+;;;   * symbols carry no `_` prefix and locals use `.L` (ELF/GNU dialect, which
+;;;     is what clang's integrated assembler wants for aarch64-w64-windows).
+;;;   * `apple` is NIL so a64-loadaddr emits `adrp X, sym` + `add X, X, #:lo12:sym`
+;;;     instead of the mach-o `@page` / `@pageoff` relocation syntax.
+;;;   * x18 is the platform register (TEB) on Windows exactly as on Apple, so
+;;;     store-tmp stays -1 -- do NOT fall into QBE's Linux path, which uses x18
+;;;     as a scratch for the far-store address fixup.
+;;;   * varargs are neither Apple's (all on the stack) nor AAPCS64's (192-byte
+;;;     save area): Windows spills only x0-x7 into a 64-byte area and uses no
+;;;     FP registers.  The prologue spill is not implemented yet, so vararg-save
+;;;     is NIL and a variadic function raises an explicit error rather than
+;;;     silently miscompiling.
+(defparameter *arm64-win-target*
+  (make-target
+   :name "arm64_win"
+   :apple nil
+   :asloc ".L"
+   :assym ""
+   :gpr0 +a64-r0+ :ngpr +a64-ngpr+
+   :fpr0 +a64-v0+ :nfpr +a64-nfpr+
+   :rglob *arm64-rglob* :nrglob 4
+   :rsave *arm64-rsave* :nrsave *arm64-nrsave*
+   :rclob *arm64-rclob*
+   :rsave-mask *arm64-rsave-mask*
+   :regs *arm64-regs*
+   :abi0 #'a64-apple-extsb
+   :abi1 #'arm64-abi
+   :isel #'arm64-isel
+   :emitfn #'a64-be-emit-fn
+   :emitfin #'a64-emit-fin
+   :retregs #'arm64-retregs
+   :argregs #'arm64-argregs
+   :memargs #'arm64-memargs
+   :cansel nil
+   :vararg-save nil             ; TODO: 64-byte x0-x7 spill area + prologue store
+   :store-tmp -1)               ; x18 = TEB on Windows; never use it as a scratch
+  "The Windows on ARM64 target.")
