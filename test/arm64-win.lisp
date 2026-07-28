@@ -213,6 +213,33 @@ export function d $sumd(w %n, ...) {
       (ok "apple fp pool still mach-o")
       (bad "apple fp pool still mach-o" "no __literal8 section in:~%~a" asm)))
 
+;; a frame of a page or more needs a __chkstk probe on Windows; without one the
+;; store that skips the guard page faults.  Not implemented (it wants the pair
+;; saved before the probe, hence an sp-relative frame), so it must refuse.
+(defparameter *big-frame* "
+export function w $bigframe(w %n) {
+@start
+	%p =l alloc4 102400
+	%q =l add %p, 102396
+	storew %n, %q
+	%r =w loadw %q
+	ret %r
+}
+")
+
+(handler-case (progn (win-asm *big-frame*)
+                     (bad "win refuses a frame needing __chkstk" "emitted silently"))
+  (error (e)
+    (if (search "__chkstk" (princ-to-string e))
+        (ok "win refuses a frame needing __chkstk")
+        (bad "win refuses a frame needing __chkstk" "unexpected error: ~a" e))))
+
+;; Apple has no guard-page dance, so the same function must still emit there.
+(handler-case (progn (qbe:a64-be-emit-module (qbe:parse-string *big-frame*)
+                                             qbe:*arm64-apple-target*)
+                     (ok "apple still emits a large frame"))
+  (error (e) (bad "apple still emits a large frame" "~a" e)))
+
 ;;; ============================================== 2. vararg guard (any host)
 (format t "~&--- 2. vararg guard ---~%")
 

@@ -317,6 +317,19 @@ spill slots, and locals."
   (let* ((fn (ae-fn e))
          (vsave (if (fn-vararg fn) (tg-vararg-save) 0))
          (frame (+ (ae-frame e) vsave)))
+    ;; Windows grows the stack through guard pages, so a frame of a page or more
+    ;; must touch every page on the way down -- `mov x15,#(n/16); bl __chkstk;
+    ;; sub sp,sp,x15,lsl #4` -- or the store that skips the guard page faults.
+    ;; Implementing it here needs the prologue restructured: `bl` clobbers x30,
+    ;; so the {x29,x30} pair has to be saved BEFORE the probe, which puts it at
+    ;; the top of the frame (as clang does) and makes the frame sp-relative
+    ;; rather than x29-relative.  Until then, refuse: a compile-time error beats
+    ;; an access violation at run time.
+    (let ((probe (tg-stack-probe)))
+      (when (and probe (>= (+ frame 16) probe))
+        (abi-unsupported
+         (format nil "arm64_win frame of ~d bytes needs a __chkstk stack probe"
+                 (+ frame 16)))))
     (ae-out e "~Chint~C#34~%" #\Tab #\Tab)
     (cond
       ((<= (+ frame 16) 512)

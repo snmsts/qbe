@@ -57,6 +57,8 @@
   (vararg-abi :stack)  ; where variadic args live: :stack (apple) | :gpr (windows)
                        ; | NIL = this target's vararg lowering is not written yet
   (store-tmp -1)       ; scratch reg id for the far-store address fixup; -1 = none free
+  (stack-probe nil)    ; frame size at/above which the platform demands a stack
+                       ; probe before moving sp; NIL = the platform has none
   litsec)              ; arm64 emitfin: read-only literal sections by log2 size-4
 
 ;;; The active target.  Bound (usually let-bound per compile) by the driver.
@@ -83,6 +85,7 @@
 (defun tg-asloc () (target-asloc *target*))
 (defun tg-store-tmp () (target-store-tmp *target*))
 (defun tg-litsec () (target-litsec *target*))
+(defun tg-stack-probe () (target-stack-probe *target*))
 
 (defun tg-vararg-abi ()
   "How the current target passes variadic arguments, or NIL if nobody has

@@ -106,5 +106,6 @@
    :cansel nil
    :vararg-abi :gpr             ; windows: x0-x7 are the first 64 bytes of the list
    :store-tmp -1                ; x18 = TEB on Windows; never use it as a scratch
+   :stack-probe 4096            ; a page or more of frame needs __chkstk
    :litsec *a64-coff-litsec*)   ; COFF: everything read-only lands in .rdata
   "The Windows on ARM64 target.")
