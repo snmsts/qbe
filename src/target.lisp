@@ -55,7 +55,8 @@
   ;; varargs use a 64-byte GPR-only save area (unlike either).  Keep them as
   ;; data slots so a new target is a `make-target` call, not new `if` branches.
   (vararg-save 0)      ; bytes of the variadic register save area; NIL = unsupported
-  (store-tmp -1))      ; scratch reg id for the far-store address fixup; -1 = none free
+  (store-tmp -1)       ; scratch reg id for the far-store address fixup; -1 = none free
+  litsec)              ; arm64 emitfin: read-only literal sections by log2 size-4
 
 ;;; The active target.  Bound (usually let-bound per compile) by the driver.
 (defvar *target*)
@@ -80,6 +81,7 @@
 (defun tg-apple () (target-apple *target*))
 (defun tg-asloc () (target-asloc *target*))
 (defun tg-store-tmp () (target-store-tmp *target*))
+(defun tg-litsec () (target-litsec *target*))
 
 (defun tg-vararg-save ()
   "Bytes of the variadic register save area for the current target.

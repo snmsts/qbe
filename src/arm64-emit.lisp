@@ -473,9 +473,16 @@ SSA, mid-end, abi1, isel, then spill/rega and simpljmp."
     "__TEXT,__literal16,16byte_literals")
   "arm64/emit.c macho_emitfin sec[]: mach-o literal sections by log2 size-4.")
 
+(defparameter *a64-coff-litsec*
+  #(".rdata,\"dr\"" ".rdata,\"dr\"" ".rdata,\"dr\"")
+  "COFF has no size-classed literal sections (mach-o's __literal4/8/16 exist so
+the linker can dedupe fixed-width constants); everything read-only goes to
+`.rdata` and .p2align does the rest.  Kept as a 3-vector so the emitter indexes
+it exactly like the mach-o one.")
+
 (defun a64-emit-fin (stream)
   "arm64/emit.c macho_emitfin -> emitfin: the fp-constant pool, grouped by size
-(16/8/4) but labelled by insertion index, in mach-o literal sections."
+(16/8/4) but labelled by insertion index, in the target's literal sections."
   (when (> (fill-pointer *stash*) 0)
     (format stream "/* floating point constants */~%")
     (loop for lg from 4 downto 2 do
@@ -483,7 +490,7 @@ SSA, mid-end, abi1, isel, then spill/rega and simpljmp."
         (let ((b (aref *stash* i)))
           (when (= (cdr b) (ash 1 lg))
             (format stream ".section ~a~%.p2align ~d~%~afp~d:"
-                    (aref *a64-macho-litsec* (- lg 2)) lg (tg-asloc) i)
+                    (aref (tg-litsec) (- lg 2)) lg (tg-asloc) i)
             (ecase lg
               (4 (format stream "~%~C.quad ~d~%~C.quad 0~%~%" #\Tab (car b) #\Tab))
               (3 (format stream "~%~C.quad ~d~%~%" #\Tab (car b)))

@@ -75,6 +75,18 @@ export function w $addmul(w %a, w %b, w %c) {
 }
 ")
 
+;; the fp constants must survive GVN, so they have to meet a non-constant
+;; operand -- hence the double parameter and the C driver.
+(defparameter *fp-pool* "
+export function w $scale(d %x) {
+@start
+	%a =d mul %x, d_10.0
+	%b =d add %a, d_2.5
+	%i =w dtosi %b
+	ret %i
+}
+")
+
 (defparameter *vararg-fn* "
 export function w $f(w %n, ...) {
 @start
@@ -110,6 +122,22 @@ export function w $f(w %n, ...) {
   (if (search ".L" asm)
       (ok "`.L` local labels")
       (bad "`.L` local labels" "missing in:~%~a" asm)))
+
+;; the fp constant pool: mach-o's size-classed __literal4/8/16 sections do not
+;; exist on COFF; everything read-only goes to .rdata.
+(let ((asm (win-asm *fp-pool*)))
+  (cond
+    ((search "__literal" asm) (bad "fp pool in .rdata" "still mach-o:~%~a" asm))
+    ((not (search ".section .rdata" asm))
+     (bad "fp pool in .rdata" "no .rdata section in:~%~a" asm))
+    (t (ok "fp pool in .rdata"))))
+
+;; ... and the mach-o side must not have been refactored away with it.
+(let ((asm (qbe:a64-be-emit-module (qbe:parse-string *fp-pool*)
+                                   qbe:*arm64-apple-target*)))
+  (if (search "__TEXT,__literal8" asm)
+      (ok "apple fp pool still mach-o")
+      (bad "apple fp pool still mach-o" "no __literal8 section in:~%~a" asm)))
 
 ;;; ============================================== 2. vararg guard (any host)
 (format t "~&--- 2. vararg guard ---~%")
@@ -173,7 +201,7 @@ export function w $f(w %n, ...) {
 (let ((triple (cc-triple)))
   (cond
     ((not (windows-arm64-cc-p triple))
-     (incf *skip* 3)
+     (incf *skip* 4)
      (format t "~&  skip (cc is ~a, need an aarch64-*-windows cc)~%"
              (or triple "unavailable")))
     (t
@@ -184,6 +212,13 @@ export function w $f(w %n, ...) {
             :driver "#include <stdio.h>
 int addmul(int, int, int);
 int main(void) { printf(\"%d\\n\", addmul(2, 3, 4)); return 0; }
+"
+            :reader #'run-out)
+     ;; 4.0 * 10.0 + 2.5 = 42.5 -> 42, with both constants read from .rdata
+     (check "fp pool (.rdata constants, double arg/return)" *fp-pool* "42"
+            :driver "#include <stdio.h>
+int scale(double);
+int main(void) { printf(\"%d\\n\", scale(4.0)); return 0; }
 "
             :reader #'run-out))))
 
