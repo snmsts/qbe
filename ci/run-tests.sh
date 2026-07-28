@@ -5,6 +5,12 @@
 #                           # amd64 native-exec + amd64 byte-exact-vs-`as`
 #   ci/run-tests.sh macos   # arm64/Apple native-exec + arm64 byte-exact-vs-`as`
 #                           # (needs an Apple Silicon host)
+#   ci/run-tests.sh windows # host-agnostic golden/unit + arm64_win native-exec
+#                           # (needs a Windows ARM64 host whose `cc` is an
+#                           #  aarch64-*-windows one -- e.g. MSYS2 CLANGARM64.
+#                           #  The amd64 tests are SysV + ELF pseudo-ops, which
+#                           #  a native Windows `as` cannot assemble at all, so
+#                           #  they are simply not part of this group.)
 #
 # Every listed test is a self-contained `--script` that exits 0 on success, with
 # ONE exception: `rega` is a partial parity metric (qbe-cl's -dR vs real QBE's
@@ -42,11 +48,16 @@ rega_metric() {                               # rega: pass iff norm >= baseline
 }
 
 echo "=== qbe-cl CI: $OS ==="
+# -dP + per-pass golden/unit for BOTH targets.  Pure computation: no external
+# tool is needed, so every host runs these.  `arm64-win` self-skips its native
+# section unless `cc` is an aarch64-*-windows one.
+PURE="run ssa gvn gcm dom live spill coalesce isel simplcfg promote loadopt \
+      depth abi arm64-isel arm64-abi arm64-rega arm64-win"
+
 case "$OS" in
   linux)
-    # host-agnostic: -dP + per-pass golden/unit for BOTH targets (pure compute)
-    for t in run ssa gvn gcm dom live spill coalesce isel emit simplcfg \
-             promote loadopt depth abi m1 arm64-isel arm64-abi arm64-rega; do run "$t"; done
+    for t in $PURE; do run "$t"; done
+    for t in emit m1; do run "$t"; done       # need a working amd64 `cc`/`as`
     rega_metric
     # amd64-native: runs x86-64 code / diffs vs the host `as`
     for t in e2e corpus-e2e minic-e2e encode encode-corpus; do run "$t"; done
@@ -56,7 +67,11 @@ case "$OS" in
     for t in arm64-m1 arm64-corpus-e2e arm64-minic-e2e arm64-jit-smoke \
              arm64-encode arm64-encode-corpus arm64-encode-data; do run "$t"; done
     ;;
-  *) echo "usage: $0 {linux|macos}"; exit 2;;
+  windows)
+    for t in $PURE; do run "$t"; done
+    rega_metric
+    ;;
+  *) echo "usage: $0 {linux|macos|windows}"; exit 2;;
 esac
 
 echo "=================================================="
