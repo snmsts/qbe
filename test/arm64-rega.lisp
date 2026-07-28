@@ -20,7 +20,7 @@
     (if (probe-file g)
         (uiop:read-file-string g)
         (multiple-value-bind (out err)
-            (uiop:run-program (list *qbe-path* "-t" "arm64_apple" "-dR" "-o" "/dev/null"
+            (uiop:run-program (list *qbe-path* "-t" "arm64_apple" "-dR" "-o" *null-device*
                                     (namestring ssa-path))
                               :output :string :error-output :string :ignore-error-status t)
           (declare (ignore out)) err))))

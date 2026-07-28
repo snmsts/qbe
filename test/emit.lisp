@@ -25,7 +25,7 @@
   (uiop:with-temporary-file (:pathname sf :type "s")
     (with-open-file (s sf :direction :output :if-exists :supersede) (write-string asm s))
     (multiple-value-bind (out err code)
-        (uiop:run-program (list "cc" "-c" (namestring sf) "-o" "/dev/null")
+        (uiop:run-program (list "cc" "-c" (namestring sf) "-o" *null-device*)
                           :output :string :error-output :string :ignore-error-status t)
       (declare (ignore out))
       (values (zerop code) err))))

@@ -8,9 +8,15 @@
 
 (defpackage #:qbe-test
   (:use #:cl #:qbe)
-  (:export #:*qbe-path* #:diff-file #:run-corpus #:capture-goldens
+  (:export #:*qbe-path* #:*null-device* #:diff-file #:run-corpus #:capture-goldens
            #:corpus-files #:golden-for))
 (in-package #:qbe-test)
+
+(defparameter *null-device*
+  (uiop:native-namestring (uiop:null-device-pathname))
+  "The OS null device as a string, for the `-o` argument handed to external
+tools (qbe / cc / as).  `/dev/null` on unix, `NUL` on Windows -- a native
+Windows `as` cannot create `/dev/null` and dies with a fatal error.")
 
 (defparameter *qbe-path*
   (or (uiop:getenv "QBE_BIN") "qbe")
@@ -32,7 +38,7 @@ committed goldens let the suite run without it.")
 (defun qbe-dp (ssa-path)
   "Run `qbe -dP` on SSA-PATH; return its stderr (the after-parsing dump)."
   (multiple-value-bind (out err)
-      (uiop:run-program (list *qbe-path* "-dP" "-o" "/dev/null" (namestring ssa-path))
+      (uiop:run-program (list *qbe-path* "-dP" "-o" *null-device* (namestring ssa-path))
                         :output :string :error-output :string :ignore-error-status t)
     (declare (ignore out))
     err))

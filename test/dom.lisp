@@ -48,7 +48,7 @@ dom-tree children, `%10s:` name then the children (in dlink order)."
     (if (probe-file g)
         (uiop:read-file-string g)
         (multiple-value-bind (out err)
-            (uiop:run-program (list *qbe-path* "-dN" "-o" "/dev/null" (namestring ssa-path))
+            (uiop:run-program (list *qbe-path* "-dN" "-o" *null-device* (namestring ssa-path))
                               :output :string :error-output :string :ignore-error-status t)
           (declare (ignore out)) err))))
 
