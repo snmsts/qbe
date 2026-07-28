@@ -63,6 +63,7 @@
    :cansel nil                  ; no if-conversion on arm64 (T.cansel = 0)
    :vararg-abi :stack           ; apple: va_list points straight at the overflow area
    :store-tmp -1                ; x18 is platform-reserved on Apple: no scratch free
+   :objfmt :macho
    :litsec *a64-macho-litsec*)
   "The arm64 Apple target (QBE T_arm64_apple).")
 
@@ -107,5 +108,6 @@
    :vararg-abi :gpr             ; windows: x0-x7 are the first 64 bytes of the list
    :store-tmp -1                ; x18 = TEB on Windows; never use it as a scratch
    :stack-probe 4096            ; a page or more of frame needs __chkstk
+   :objfmt :coff
    :litsec *a64-coff-litsec*)   ; COFF: everything read-only lands in .rdata
   "The Windows on ARM64 target.")

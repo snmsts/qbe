@@ -164,9 +164,17 @@
                       "~Cadrp~CR, S@tlvppage~%~Cldr~CR, [R, S@tlvppageoff]~%"
                       (error "arm64 emit: elf TLS unsupported")))
                  ((member :ext st)
-                  (if (tg-apple)
-                      "~Cadrp~CR, S@gotpage~%~Cldr~CR, [R, S@gotpageoff]~%"
-                      (error "arm64 emit: elf GOT unsupported")))
+                  ;; Reaching an extern symbol's address needs one indirection
+                  ;; through a linker-built pointer.  Same two instructions
+                  ;; everywhere; only the name of the pointer differs.
+                  (ecase (tg-objfmt)
+                    (:macho "~Cadrp~CR, S@gotpage~%~Cldr~CR, [R, S@gotpageoff]~%")
+                    ;; COFF has no GOT; the linker synthesises a `.refptr.<sym>`
+                    ;; COMDAT holding the address (a dllimport would be
+                    ;; `__imp_<sym>`, but that needs source-level knowledge the
+                    ;; IL does not carry, and .refptr works for both).
+                    (:coff "~Cadrp~CR, .refptr.S~%~Cldr~CR, [R, #:lo12:.refptr.S]~%")
+                    (:elf (error "arm64 emit: elf GOT unsupported"))))
                  (t                              ; SGlo: plain global
                   (if (tg-apple)
                       "~Cadrp~CR, S@pageO~%~Cadd~CR, R, S@pageoffO~%"
@@ -174,6 +182,9 @@
          (l (con-symname c))
          (pfx (if (and (> (length l) 0) (char= (char l 0) #\")) "" (target-assym *target*)))
          (out (ae-stream e)) (i 0) (m (length tmpl)))
+    ;; a64-emit-fin defines the .refptr COMDATs this function referenced.
+    (when (and (member :ext st) (eq (tg-objfmt) :coff))
+      (pushnew (concatenate 'string pfx l) *a64-refptrs* :test #'string=))
     (loop while (< i m) do
       (let ((ch (char tmpl i)))
         (incf i)
@@ -487,7 +498,7 @@ SSA, mid-end, abi1, isel, then spill/rega and simpljmp."
   "Run the arm64 backend per function and return the module's mach-o assembly."
   (let ((s (make-string-output-stream)) (*a64-id0* 0))
     (setf *tmp-counter* 0)
-    (reset-stash)
+    (reset-stash) (setf *a64-refptrs* nil)
     (dolist (fn (module-funcs module))
       (a64-backend-pipeline fn)
       (a64-be-emit-fn fn s))
@@ -509,9 +520,23 @@ the linker can dedupe fixed-width constants); everything read-only goes to
 `.rdata` and .p2align does the rest.  Kept as a 3-vector so the emitter indexes
 it exactly like the mach-o one.")
 
+(defvar *a64-refptrs* nil
+  "Extern symbols this module reached through a COFF `.refptr` indirection.")
+
+(defun a64-emit-refptrs (stream)
+  "Define the `.refptr.<sym>` COMDATs that a64-loadaddr's COFF template reads.
+One discardable .rdata section per symbol, holding its address -- the shape the
+platform toolchain uses, so duplicates across objects fold together."
+  (dolist (s (sort (copy-list *a64-refptrs*) #'string<))
+    (format stream ".section~C.rdata$.refptr.~a,\"dr\",discard,.refptr.~a~%~
+                    .p2align~C3, 0x0~%.globl~C.refptr.~a~%.refptr.~a:~%~C.xword~C~a~%"
+            #\Tab s s #\Tab #\Tab s s #\Tab #\Tab s)))
+
 (defun a64-emit-fin (stream)
   "arm64/emit.c macho_emitfin -> emitfin: the fp-constant pool, grouped by size
-(16/8/4) but labelled by insertion index, in the target's literal sections."
+(16/8/4) but labelled by insertion index, in the target's literal sections;
+then any COFF .refptr indirections."
+  (a64-emit-refptrs stream)
   (when (> (fill-pointer *stash*) 0)
     (format stream "/* floating point constants */~%")
     (loop for lg from 4 downto 2 do

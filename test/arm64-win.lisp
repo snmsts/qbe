@@ -213,6 +213,34 @@ export function d $sumd(w %n, ...) {
       (ok "apple fp pool still mach-o")
       (bad "apple fp pool still mach-o" "no __literal8 section in:~%~a" asm)))
 
+;; `extern $sym` reaches an address through one linker-built indirection:
+;; mach-o uses the GOT, COFF a `.refptr.<sym>` COMDAT the object defines itself.
+(defparameter *extern-ref* "
+export function l $get_addr() {
+@start
+	%p =l copy extern $myglobal
+	ret %p
+}
+")
+
+(let ((asm (win-asm *extern-ref*)))
+  (flet ((has (needle) (search needle asm)))
+    (if (and (has "adrp	x0, .refptr.myglobal")
+             (has "ldr	x0, [x0, #:lo12:.refptr.myglobal]"))
+        (ok "extern goes through .refptr")
+        (bad "extern goes through .refptr" "not in:~%~a" asm))
+    (if (and (has ".rdata$.refptr.myglobal") (has "discard,.refptr.myglobal")
+             (has ".xword	myglobal"))
+        (ok "the .refptr COMDAT is defined")
+        (bad "the .refptr COMDAT is defined" "not in:~%~a" asm))))
+
+;; mach-o must still take the GOT path.
+(let ((asm (qbe:a64-be-emit-module (qbe:parse-string *extern-ref*)
+                                   qbe:*arm64-apple-target*)))
+  (if (and (search "@gotpage" asm) (not (search ".refptr" asm)))
+      (ok "apple extern still uses the GOT")
+      (bad "apple extern still uses the GOT" "not in:~%~a" asm)))
+
 ;; a frame of a page or more needs a __chkstk probe on Windows; without one the
 ;; store that skips the guard page faults.  Not implemented (it wants the pair
 ;; saved before the probe, hence an sp-relative frame), so it must refuse.
@@ -316,7 +344,7 @@ export function w $bigframe(w %n) {
 (let ((triple (cc-triple)))
   (cond
     ((not (windows-arm64-cc-p triple))
-     (incf *skip* 8)
+     (incf *skip* 9)
      (format t "~&  skip (cc is ~a, need an aarch64-*-windows cc)~%"
              (or triple "unavailable")))
     (t
@@ -362,6 +390,19 @@ int main(void) {
             :driver "#include <stdio.h>
 double sumd(int, ...);
 int main(void) { printf(\"%.1f %.1f\\n\", sumd(3,1.5,2.5,3.0), sumd(1,0.25)); return 0; }
+"
+            :reader #'run-out)
+     ;; the .refptr has to land on the very address the C side sees.
+     (check "extern via .refptr resolves to the C address" *extern-ref*
+            "same 1234"
+            :driver "#include <stdio.h>
+int myglobal = 1234;
+void *get_addr(void);
+int main(void) {
+  void *ours = get_addr(), *theirs = (void *)&myglobal;
+  printf(\"%s %d\\n\", ours == theirs ? \"same\" : \"DIFFERENT\", *(int *)ours);
+  return 0;
+}
 "
             :reader #'run-out))))
 
