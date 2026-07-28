@@ -87,6 +87,20 @@ export function w $scale(d %x) {
 }
 ")
 
+;; the CALLER side of varargs.  Apple puts everything after `...` on the stack;
+;; Windows loads the first 64 bytes of that imaginary stack into x0-x7, so
+;; emitting the Apple rule here produces a program that assembles, links, runs,
+;; and prints garbage.  It must raise instead.
+(defparameter *vararg-call* "
+data $fmt = { b \"got %d and %d\", b 10, b 0 }
+
+export function w $main() {
+@start
+	call $printf(l $fmt, ..., w 42, w 7)
+	ret 0
+}
+")
+
 (defparameter *vararg-fn* "
 export function w $f(w %n, ...) {
 @start
@@ -148,13 +162,24 @@ export function w $f(w %n, ...) {
                      (ok "apple target still emits varargs"))
   (error (e) (bad "apple target still emits varargs" "~a" e)))
 
-;; ... while Windows refuses loudly instead of emitting a wrong frame.
-(handler-case (progn (win-asm *vararg-fn*)
-                     (bad "win target rejects varargs" "emitted silently"))
-  (error (e)
-    (if (search "not supported" (princ-to-string e))
-        (ok "win target rejects varargs" (princ-to-string e))
-        (bad "win target rejects varargs" "unexpected error: ~a" e))))
+;; ... while Windows refuses loudly instead of emitting a wrong frame, on BOTH
+;; sides.  The caller side is the dangerous one: it would assemble and run.
+(dolist (spec (list (cons "callee (vastart/vaarg)" *vararg-fn*)
+                    (cons "caller (call $printf(..., w 42))" *vararg-call*)))
+  (handler-case (progn (win-asm (cdr spec))
+                       (bad (format nil "win rejects varargs: ~a" (car spec))
+                            "emitted silently"))
+    (error (e)
+      (if (search "not supported" (princ-to-string e))
+          (ok (format nil "win rejects varargs: ~a" (car spec)))
+          (bad (format nil "win rejects varargs: ~a" (car spec))
+               "unexpected error: ~a" e)))))
+
+;; and Apple must still lower a variadic call rather than raise with it.
+(handler-case (progn (qbe:a64-be-emit-module (qbe:parse-string *vararg-call*)
+                                             qbe:*arm64-apple-target*)
+                     (ok "apple target still emits variadic calls"))
+  (error (e) (bad "apple target still emits variadic calls" "~a" e)))
 
 ;;; ================================ 3. native execution (Windows ARM64 only)
 (format t "~&--- 3. native execution ---~%")

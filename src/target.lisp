@@ -85,9 +85,11 @@
 
 (defun tg-vararg-save ()
   "Bytes of the variadic register save area for the current target.
-Signals an error on targets whose vararg lowering is not implemented yet."
+Signals an error on targets whose vararg lowering is not implemented yet -- call
+it for that effect alone from the caller side too, where the value is unused but
+emitting Apple's or AAPCS64's rule would be a silent miscompile."
   (or (target-vararg-save *target*)
-      (error "arm64: variadic functions are not supported on target ~a"
+      (error "arm64: variadic calls/functions are not supported on target ~a"
              (target-name *target*))))
 
 (defun tg-rg (id) (aref (target-regs *target*) id))

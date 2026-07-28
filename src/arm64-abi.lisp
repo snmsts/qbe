@@ -228,7 +228,13 @@ Returns the ins (caller hoists it into the start block, QBE's Insl list)."
                  (setf (a64class-size c) size (a64class-align c) size
                        (aref (a64class-cls c) 0) cls)
                  (cond
-                   (va (setf (a64class-class c) +a64-cstk+
+                   ;; Apple: everything after `...` goes on the stack in 8-byte
+                   ;; slots.  Windows instead loads the first 64 bytes of that
+                   ;; imaginary stack into x0-x7, so emitting this rule there
+                   ;; would be a silent miscompile -- tg-vararg-save raises for
+                   ;; any target whose vararg lowering is still missing.
+                   (va (tg-vararg-save)
+                       (setf (a64class-class c) +a64-cstk+
                              (a64class-size c) 8 (a64class-align c) 8))
                    ((and (= (cls-base cls) 0) (> ngp 0))
                     (decf ngp)
