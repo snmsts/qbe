@@ -265,7 +265,12 @@ its named parameters on the normal AAPCS64 path, so it never passes it."
             ((:argsb :argub :parsb :parub) (scalar 1 :w))
             ((:argsh :arguh :parsh :paruh) (scalar 2 :w))
             ((:par :arg)
-             (scalar (if (kwide (ins-cls i)) 8 4) (ins-cls i)))  ; apple: size 4 for non-wide
+             ;; arm64/abi.c: a stack argument occupies a full 8-byte slot; Apple
+             ;; is the exception that packs a non-wide scalar into 4.  Getting
+             ;; this Apple-only rule wrong elsewhere shifts every stack argument
+             ;; after the first sub-word one (abi1.ssa: `n` lands 8 bytes low).
+             (scalar (if (and (tg-apple) (not (kwide (ins-cls i)))) 4 8)
+                     (ins-cls i)))
             ((:argc :parc)
              (a64-typclass c (ins-arg0 i) (aref gp 0) (aref fp 0))
              (cond

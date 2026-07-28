@@ -80,14 +80,20 @@ pre-ABI:\") for each function in DUMP."
 (defun our-a64-abi (fn)
   "Full arm64 pre-abi1 pipeline (main.c func for T.cansel=0, so NO ifconvert):
 abi0, SSA, mid-end (loadopt/coalesce/gvn/simplcfg/gcm), then abi1."
-  (qbe:a64-apple-extsb fn)
+  (progn
+   (qbe:a64-apple-extsb fn)
   (qbe:fill-cfg fn) (qbe:fill-use fn) (qbe:promote fn) (qbe:fill-use fn)
   (qbe:ssa fn) (qbe:fill-use fn)
   (qbe:fill-alias fn) (qbe:loadopt fn) (qbe:fill-use fn) (qbe:fill-alias fn)
   (qbe:coalesce fn) (qbe:fill-use fn) (qbe:fill-dom fn)
   (qbe:gvn fn) (qbe:fill-cfg fn) (qbe:simplcfg fn)
   (qbe:fill-use fn) (qbe:fill-dom fn) (qbe:gcm fn) (qbe:fill-use fn)
-  (qbe:arm64-abi fn)
+   ;; abi1 reads the active target: a stack argument occupies 8 bytes
+   ;; everywhere except Apple, which packs a non-wide scalar into 4.  The
+   ;; mid-end above is deliberately left on the default target so this stays a
+   ;; pure abi1 diff, matching how the goldens were captured.
+   (let ((qbe::*target* qbe:*arm64-apple-target*))
+     (qbe:arm64-abi fn)))
   (qbe:print-fn-to-string fn))
 
 (defun diff-abi1 (ssa-path)

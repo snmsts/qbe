@@ -70,6 +70,8 @@ case "$OS" in
   windows)
     for t in $PURE; do run "$t"; done
     rega_metric
+    # arm64_win native-exec: the corpus programs actually run and print
+    run arm64-win-corpus-e2e
     ;;
   *) echo "usage: $0 {linux|macos|windows}"; exit 2;;
 esac
