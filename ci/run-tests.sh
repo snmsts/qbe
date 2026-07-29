@@ -52,7 +52,7 @@ echo "=== qbe-cl CI: $OS ==="
 # tool is needed, so every host runs these.  `arm64-win` self-skips its native
 # section unless `cc` is an aarch64-*-windows one.
 PURE="run ssa gvn gcm dom live spill coalesce isel simplcfg promote loadopt \
-      depth abi arm64-isel arm64-abi arm64-rega arm64-win"
+      depth abi winabi winabi-smoke arm64-isel arm64-abi arm64-rega arm64-win"
 
 case "$OS" in
   linux)
@@ -70,8 +70,11 @@ case "$OS" in
   windows)
     for t in $PURE; do run "$t"; done
     rega_metric
-    # arm64_win native-exec: the corpus programs actually run and print
+    # native-exec: the corpus programs actually run and print.  amd64_win goes
+    # through the OS's x64 emulation on an ARM64 host, so it needs an x86_64
+    # Windows cc (AMD64_CC, or MSYS2 UCRT64's gcc); it self-skips without one.
     run arm64-win-corpus-e2e
+    run amd64-win-corpus-e2e
     ;;
   *) echo "usage: $0 {linux|macos|windows}"; exit 2;;
 esac
