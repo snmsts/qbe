@@ -146,9 +146,10 @@
                    (+ (* 4 (- s)) -8 (es-fsz e) (* (es-nclob e) 8))
                    (* 4 (- s))))
       ((= (es-fp e) +rsp+) (+ (* 4 s) (* (es-nclob e) 8)))
-      ;; vararg frames put the 176-byte register-save area below rbp, so locals
-      ;; sit below that (emit.c slot: -176 + -4*(slot-s))
-      ((fn-vararg fn) (+ -176 (* -4 (- (fn-slot fn) s))))
+      ;; A SysV vararg frame puts the 176-byte register-save area below rbp, so
+      ;; locals sit below that.  Win64 spills its four argument registers into
+      ;; the caller's shadow space instead, above rbp, so nothing moves here.
+      ((and (fn-vararg fn) (not (tg-windows))) (+ -176 (* -4 (- (fn-slot fn) s))))
       (t (* -4 (- (fn-slot fn) s))))))
 
 (defparameter *clstoa* #("l" "q" "ss" "sd"))   ; %k by cls w/l/s/d
@@ -221,6 +222,7 @@
                 (reg-p to) (<= 0 (con-value t0) #xffffffff))
            (be-emitf "movl %W0, %W=" i e))
           ((and (reg-p to) (con-p t0) (eq (con-kind t0) :addr))
+           (be-win-check-sym t0)
            (be-emitf "lea%k %M0, %=" i e))
           ;; slot<-slot/mem: x86 has no mem->mem mov; bounce through xmm15
           ((and (slot-ref-p to) (or (slot-ref-p t0) (mem-ref-p t0)))
@@ -257,12 +259,24 @@
     (setf (ins-arg0 i) (ins-to i)))
   (be-emitf (omap-match :div (ins-cls i)) i e))
 
+(defun be-win-check-sym (con)
+  "amd64/emit.c: `if (T.windows && con->sym.type != SGlo) die(...)`.  COFF has
+neither a PLT nor the ELF TLS model, and QBE has no Win64 replacement for
+either, so refuse rather than emit something that cannot link."
+  (when (and (tg-windows) (con-symtype con))
+    (error "emit: extern/thread symbol ~a unsupported on amd64_win"
+           (con-symname con))))
+
 (defun be-emit-call (i e)
   (let ((a0 (ins-arg0 i)))
     (cond
       ((con-p a0)
+       (when (eq (con-kind a0) :addr) (be-win-check-sym a0))
        (es-out e "~Ccallq " #\Tab) (be-emitcon a0 e)
-       (when (and (eq (con-kind a0) :addr) (member :ext (con-symtype a0)))
+       ;; mach-o resolves through a stub the linker synthesises, so `@plt` is an
+       ;; ELF-only decoration (emit.c: SExt && !T.apple).
+       (when (and (eq (con-kind a0) :addr) (member :ext (con-symtype a0))
+                  (not (tg-apple)))
          (es-out e "@plt"))
        (write-char #\Newline (es-stream e)))
       ((reg-p a0) (be-emitf "callq *%L0" i e))
@@ -286,47 +300,59 @@
                (be-emitf (format nil "cmov~a %1, %=" suf1) i e)))))
 
 ;;; ------------------------------------------------------- frame + prologue
+;;; sysv_framesz and winabi_framesz are the same computation over a different
+;;; callee-save set, minus one term: the SysV vararg register-save area lives
+;;; inside the frame, Win64's spill target is the caller's shadow space.
 (defun be-framesz (e)
-  "amd64/emit.c sysv_framesz: stack bytes to reserve (locals + save parity)."
-  (let* ((fn (es-fn e)) (o 0) (f (fn-slot fn)))
+  "amd64/emit.c sysv_framesz / winabi_framesz: stack bytes to reserve."
+  (let* ((fn (es-fn e)) (o 0) (f (fn-slot fn)) (rclob (tg-rclob)))
     (unless (es-leaf e)
-      (loop for rc across *rclob* do (setf o (logxor o (ash (fn-reg fn) (- rc)))))
+      (loop for rc across rclob do (setf o (logxor o (ash (fn-reg fn) (- rc)))))
       (setf o (logand o 1)))
     (setf f (logand (+ f 3) -4))
     (when (and (> f 0) (= (es-fp e) +rsp+) (= (fn-salign fn) 4)) (incf f 2))
-    (setf (es-fsz e) (+ (* 4 f) (* 8 o) (* 176 (if (fn-vararg fn) 1 0))))))
+    (setf (es-fsz e)
+          (+ (* 4 f) (* 8 o)
+             (if (tg-windows) 0 (* 176 (if (fn-vararg fn) 1 0)))))))
 
 (defun be-emit-epilogue (e)
-  (let ((s (es-stream e)) (fn (es-fn e)))
+  (let ((s (es-stream e)) (fn (es-fn e)) (rclob (tg-rclob)))
     ;; a dynalloc function moved rsp; restore it to the fixed frame before leave
     (when (fn-dynalloc fn)
       (format s "~Cmovq %rbp, %rsp~%~Csubq $~d, %rsp~%" #\Tab #\Tab
               (+ (es-fsz e) (* (es-nclob e) 8))))
-    (loop for k from (1- (length *rclob*)) downto 0
-          for rc = (aref *rclob* k)
+    (loop for k from (1- (length rclob)) downto 0
+          for rc = (aref rclob k)
           when (logbitp rc (fn-reg fn))
           do (format s "~Cpopq %~a~%" #\Tab (regtoa rc +slong+)))
     (cond ((= (es-fp e) +rbp+) (format s "~Cleave~%" #\Tab))
           ((> (es-fsz e) 0) (format s "~Caddq $~d, %rsp~%" #\Tab (es-fsz e))))
     (format s "~Cret~%" #\Tab)))
 
+(defconstant +ncmpi+ 10 "NCmpI: integer comparison codes come before the float ones.")
+
 (defun be-emit-jmp (b e id0)
   "Emit B's terminator; return the lbl flag for the next block (emit.c switch)."
-  (let ((s (es-stream e)))
+  (let ((s (es-stream e)) (l (tg-asloc)))
     (case (blk-jmp-type b)
       (:hlt (format s "~Cud2~%" #\Tab) t)
       (:ret0 (be-emit-epilogue e) t)
       (:jmp (cond ((not (eq (blk-s1 b) (blk-link b)))
-                   (format s "~Cjmp .Lbb~d~%" #\Tab (+ id0 (blk-id (blk-s1 b)))) t)
+                   (format s "~Cjmp ~abb~d~%" #\Tab l (+ id0 (blk-id (blk-s1 b)))) t)
                   (t nil)))
       (t (let ((c (gethash (blk-jmp-type b) *jf-jump-code*)) (n 1))
            (unless c (error "emit: unhandled jump ~s" (blk-jmp-type b)))
-           (if (eq (blk-link b) (blk-s2 b))
+           ;; amd64_winabi_emitfn additionally always takes the swapped form for
+           ;; a float comparison (`|| c >= NCmpI`): the negated float condition
+           ;; is not the complement, since unordered makes both false.
+           (if (or (eq (blk-link b) (blk-s2 b))
+                   (and (tg-windows) (>= c +ncmpi+)))
                (progn (rotatef (blk-s1 b) (blk-s2 b)) (setf n 0))
                (setf n 1))
-           (format s "~Cj~a .Lbb~d~%" #\Tab (aref (aref *cc-suffix* c) n) (+ id0 (blk-id (blk-s2 b))))
+           (format s "~Cj~a ~abb~d~%" #\Tab (aref (aref *cc-suffix* c) n) l
+                   (+ id0 (blk-id (blk-s2 b))))
            (cond ((not (eq (blk-s1 b) (blk-link b)))
-                  (format s "~Cjmp .Lbb~d~%" #\Tab (+ id0 (blk-id (blk-s1 b)))) t)
+                  (format s "~Cjmp ~abb~d~%" #\Tab l (+ id0 (blk-id (blk-s1 b)))) t)
                  (t nil)))))))
 
 (defun be-emit-fn (fn stream id0)
@@ -337,15 +363,23 @@
     (format stream ".text~%.balign 16~%")
     (when (fn-export fn) (format stream ".globl ~a~%" (fn-name fn)))
     (format stream "~a:~%~Cendbr64~%" (fn-name fn) #\Tab)
+    ;; Win64 varargs: the four integer argument registers go into the shadow
+    ;; space the CALLER reserved, i.e. above the return address -- so this has
+    ;; to happen before the rbp frame is pushed, and the ABI pass has already
+    ;; duplicated float arguments into those registers.
+    (when (and (tg-windows) (fn-vararg fn))
+      (loop for rid in (list +rcx+ +rdx+ +r8+ +r9+)
+            for off from #x8 by 8
+            do (format stream "~Cmovq %~a, 0x~x(%rsp)~%" #\Tab (regtoa rid +slong+) off)))
     (if (or (not leaf) (fn-vararg fn) (fn-dynalloc fn))
         (progn (setf (es-fp e) +rbp+)
                (format stream "~Cpushq %rbp~%~Cmovq %rsp, %rbp~%" #\Tab #\Tab))
         (setf (es-fp e) +rsp+))
     (be-framesz e)
     (when (> (es-fsz e) 0) (format stream "~Csubq $~d, %rsp~%" #\Tab (es-fsz e)))
-    ;; variadic: save the argument registers into the register-save area
-    ;; (amd64/emit.c: RDI..R9 at -176(%rbp), XMM0..7 above them)
-    (when (fn-vararg fn)
+    ;; SysV variadic: save the argument registers into the frame's register-save
+    ;; area (amd64/emit.c: RDI..R9 at -176(%rbp), XMM0..7 above them)
+    (when (and (fn-vararg fn) (not (tg-windows)))
       (let ((o -176))
         (dolist (rid (list +rdi+ +rsi+ +rdx+ +rcx+ +r8+ +r9+))
           (format stream "~Cmovq %~a, ~d(%rbp)~%" #\Tab (regtoa rid +slong+) o)
@@ -353,20 +387,25 @@
         (dotimes (n 8)
           (format stream "~Cmovaps %xmm~d, ~d(%rbp)~%" #\Tab n o)
           (incf o 16))))
-    (loop for rc across *rclob*
+    (loop for rc across (tg-rclob)
           when (logbitp rc (fn-reg fn))
           do (format stream "~Cpushq %~a~%" #\Tab (regtoa rc +slong+))
              (incf (es-nclob e)))
-    (let ((lbl nil))
+    (let ((lbl nil) (l (tg-asloc)))
       (loop for b = (fn-start fn) then (blk-link b) while b do
         (when (or lbl (> (length (blk-preds b)) 1))
-          (when (some (lambda (p) (>= (blk-id p) (blk-id b))) (blk-preds b))
+          ;; amd64_winabi_emitfn has no loop-header alignment; only the SysV
+          ;; emitter pads a block that a back edge reaches.
+          (when (and (not (tg-windows))
+                     (some (lambda (p) (>= (blk-id p) (blk-id b))) (blk-preds b)))
             (format stream ".p2align 4~%"))
-          (format stream ".Lbb~d:~%" (+ id0 (blk-id b))))
+          (format stream "~abb~d:~%" l (+ id0 (blk-id b))))
         (dolist (i (blk-ins b)) (be-emitins i e))
         (setf lbl (be-emit-jmp b e id0))))
-    (format stream ".type ~a, @function~%.size ~a, .-~a~%/* end function ~a */~%~%"
-            (fn-name fn) (fn-name fn) (fn-name fn) (fn-name fn))
+    ;; elf_emitfnfin; amd64_winabi_emitfn emits no symbol-size footer at all.
+    (unless (tg-windows)
+      (format stream ".type ~a, @function~%.size ~a, .-~a~%" (fn-name fn) (fn-name fn) (fn-name fn)))
+    (format stream "/* end function ~a */~%~%" (fn-name fn))
     (+ id0 (fn-nblk fn))))
 
 ;;; ------------------------------------------------------------ module driver
@@ -379,23 +418,27 @@
   (gvn fn) (fill-cfg fn) (simplcfg fn)
   (fill-use fn) (fill-dom fn) (gcm fn) (fill-use fn)
   (ifconvert fn) (fill-cfg fn) (fill-use fn) (fill-dom fn)
-  (amd64-abi fn) (simpl fn) (fill-cfg fn) (fill-use fn)
-  (amd64-isel fn)
+  ;; abi1/isel through the target, as main.c's func() does -- amd64_sysv and
+  ;; amd64_win share every other pass but differ here.
+  (funcall (target-abi1 *target*) fn) (simpl fn) (fill-cfg fn) (fill-use fn)
+  (funcall (target-isel *target*) fn)
   (materialize-regs fn)
   (fill-cfg fn) (be-fill-live fn) (fill-loop fn) (fill-cost fn)
   (spill fn) (rega fn)
   (fill-cfg fn) (simpljmp fn) (fill-cfg fn))
 
 (defun emit-fin (stream)
-  "emit.c emitfin (elf): the .rodata pool of stashed fp constants, grouped by
-   size (16/8/4) but labelled by insertion index."
+  "emit.c elf_emitfin / pe_emitfin: the .rodata pool of stashed fp constants,
+   grouped by size (16/8/4) but labelled by insertion index.  Both formats put
+   everything in .rodata; only the label prefix and the trailing GNU-stack note
+   differ (the latter is be-emit-module's business)."
   (when (> (fill-pointer *stash*) 0)
     (format stream "/* floating point constants */~%")
     (loop for lg from 4 downto 2 do
       (dotimes (i (fill-pointer *stash*))
         (let ((b (aref *stash* i)))
           (when (= (cdr b) (ash 1 lg))
-            (format stream ".section .rodata~%.p2align ~d~%.Lfp~d:" lg i)
+            (format stream ".section .rodata~%.p2align ~d~%~afp~d:" lg (tg-asloc) i)
             (ecase lg
               (4 (format stream "~%~c.quad ~d~%~c.quad 0~%~%" #\Tab (car b) #\Tab))
               (3 (format stream "~%~c.quad ~d~%~%" #\Tab (car b)))
@@ -432,5 +475,7 @@
       (setf id0 (be-emit-fn fn s id0)))
     (dolist (d (module-data module)) (be-emit-data d s))
     (emit-fin s)
-    (format s ".section .note.GNU-stack,\"\",@progbits~%")
+    ;; elf_emitfin's trailer; pe_emitfin has none.
+    (unless (tg-windows)
+      (format s ".section .note.GNU-stack,\"\",@progbits~%"))
     (get-output-stream-string s)))

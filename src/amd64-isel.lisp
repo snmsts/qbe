@@ -104,7 +104,8 @@
       ;; (x86 has no fp immediates); stash its bits and address them rip-relative
       ((and (con-p r) (= (cls-base k) 1))
        (let ((n (stashbits (con-rawbits r) (if (kwide k) 8 4))))
-         (make-mem :offset (make-con :kind :addr :symname (format nil "\".Lfp~d\"" n)
+         (make-mem :offset (make-con :kind :addr
+                                     :symname (format nil "\"~afp~d\"" (tg-asloc) n)
                                      :symtype nil :off 0)
                    :base nil :index nil :scale 0)))
       ;; [B] a constant (non-address) call target becomes an indirect call

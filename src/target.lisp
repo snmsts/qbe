@@ -33,6 +33,8 @@
   ;; --- identity / asm dialect ---
   name                 ; "amd64_sysv" | "arm64_apple" | ...
   apple                ; boolean: Apple (mach-o) conventions in abi0/emit
+  windows              ; boolean: QBE Target.windows -- the flag amd64/emit.c
+                       ; keys the Win64 frame/vararg/extern rules off
   asloc                ; local-label prefix (".L" elf / "L" apple)
   assym                ; symbol prefix ("" elf / "_" apple)
   ;; --- register model (data; QBE Target.{gpr0,ngpr,fpr0,nfpr,rglob,...}) ---
@@ -84,6 +86,7 @@
 (defun tg-rsave-mask () (target-rsave-mask *target*))
 
 (defun tg-apple () (target-apple *target*))
+(defun tg-windows () (target-windows *target*))
 (defun tg-asloc () (target-asloc *target*))
 (defun tg-store-tmp () (target-store-tmp *target*))
 (defun tg-litsec () (target-litsec *target*))
