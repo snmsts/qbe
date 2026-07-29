@@ -72,16 +72,43 @@
 
 ## 検証の道具立て（確認済み）
 
+### ★ パス単位のオラクルが効く（これが一番大事）
+
+**`qbe -t amd64_win -dA` が ABI lowering 直後のダンプを出す。** つまり
+いま移植しているパスそのものに、コーパス全ファイルで使えるバイト比較オラクルが
+ある。**e2e が動くまで待つ必要は無い。**
+
+```
+~/work/qbe-upstream/qbe -t amd64_win -dA -o /dev/null test/corpus/x.ssa
+```
+
+`test/abi.lisp` が SysV 版でまさにこれをやっている（`qbe -dA` を走らせ、
+我々の `amd64-abi` の出力と突き合わせ、`raw` / `norm` の2段で比較。未対応は
+mismatch ではなく skip として数える）。**`test/winabi.lisp` はその複製でよい** —
+`(qbe:amd64-abi fn)` を `(qbe:amd64-winabi-abi fn)` に、`-dA` に `-t amd64_win`
+を足すだけ。
+
+これがあるので `lower_call` を写した時点で「77 本中いくつ一致するか」が測れる。
+`lower_block_return` を足せばまた増える。**今日 ime 側でやっていた「段ごとに
+数字が出る」やり方が、そのまま使える。**
+
+### e2e（最後の砦）
+
 - **x64 バイナリはこの ARM64 機でビルドも実行もできる**
   `PATH=/c/msys64/ucrt64/bin:$PATH; gcc x.c -o x.exe && ./x.exe` が通る
-- 本家 `~/work/qbe-upstream/qbe -t amd64_win` が**バイト比較のオラクル**
 - コーパスは `test/corpus/*.ssa` 77 本。各々に C ドライバと期待出力が埋まっている。
   基準は「組み上がる」ではなく「**走って正しく出力する**」
   (`test/arm64-win-corpus-e2e.lisp` の冒頭コメント参照)
+- こちらは `emitfn` と `*amd64-win-target*` が要るので後
 
 ## 次の一手
 
-`lower_call` から。`winabi.c:259` を頭から写す。書き終えるまで動かないので、
-先に `*amd64-win-target*` と コーパス e2e の枠だけ作っておき、
-`lower_call` が入った時点で最小のコーパス（引数なしの `main` だけのもの）が
-通るかを見るのが早い。
+1. **`test/winabi.lisp` を `test/abi.lisp` から複製する**（これを先にやる）。
+   `amd64-winabi-abi` はまだ無いので全件エラー = 0/77 から始まる。**その 0 が
+   出発点の計測になる。**
+2. `winabi.c:740` の `amd64_winabi_abi` の骨格 + `lower_func_parameters` を写す。
+   引数を取らない関数だけでも一致し始めるはず。
+3. `lower_block_return` → `lower_call` → vararg の順に足し、そのたびに
+   `test/winabi.lisp` の一致数を見る。
+4. 一致数が頭打ちになったら `amd64_winabi_emitfn` と `*amd64-win-target*` を作り、
+   `test/amd64-win-corpus-e2e.lisp` で実際に走らせる。
