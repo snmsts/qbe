@@ -33,6 +33,8 @@
    #:fill-alias #:loadopt #:coalesce
    ;; amd64 abi lowering (M3/B1)
    #:amd64-abi #:amd64-isel #:simpl #:reg #:reg-p #:reg-id #:call-ref #:call-ref-p #:slot-ref-p
+   ;; amd64 Win64 abi lowering (winabi.c)
+   #:amd64-winabi-abi #:amd64-winabi-retregs #:amd64-winabi-argregs
    ;; backend (M4): register materialization, liveness, spill costs
    #:materialize-regs #:be-fill-live #:fill-cost #:ref-tid #:tid-ref #:+tmp0+
    #:spill #:rega #:simpljmp #:be-emit-module #:be-backend-pipeline #:be-emit-fn

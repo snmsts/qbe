@@ -200,3 +200,300 @@ Returns (values warg-vector env-ref)."
         (when (aref (wusage-regs-passed u) 1 i)
           (setf (aref (wusage-regs-passed u) 0 i) t))))
     (values acs env)))
+
+;;; -------------------------------------------------------------- lowering
+;;; winabi.c lower_call / lower_block_return / lower_vastart / lower_vaarg /
+;;; lower_func_parameters / amd64_winabi_abi.
+;;;
+;;; Structural note: winabi.c is not a fork of sysv.c but an independent
+;;; rewrite, so the function boundaries do not line up with amd64-abi.lisp's
+;;; sel-call / sel-par / sel-ret.  Each upstream function is transcribed as-is
+;;; rather than folded into the SysV shape -- the oracle is a byte diff of the
+;;; `-dA` dump, so matching the structure is what makes a mismatch readable.
+;;;
+;;; As everywhere in the backend, QBE emits instructions *backward*: `emit`
+;;; pushes onto *emitted*, so writing the emits in upstream's order reproduces
+;;; upstream's final order.
+
+(defvar *win-extra-alloc* nil
+  "winabi.c ExtraAlloc list: allocas requested by other blocks, to be hoisted
+into the start block.  Pushed at the head, exactly like upstream's linked list,
+so replaying it with PUSH onto *emitted* lands the oldest first.")
+
+(defun win-push-extra-alloc (ins)
+  (push ins *win-extra-alloc*)
+  ins)
+
+(defun win-alloc8 (to size fn)
+  (make-instance 'ins :op :alloc8 :cls :l :to to :arg0 (getcon size fn) :arg1 nil))
+
+(defun align-up (n a) (logand (+ n a -1) (- a)))
+
+(defun win-lower-call (fn args call)
+  "winabi.c lower_call.  ARGS is the arg ins run preceding CALL, source order."
+  (let* ((argv (coerce args 'vector))
+         (num-args (length argv))
+         (u (make-wusage))
+         (ret-size 0)
+         (il-has-struct-return (and (ins-arg1 call) t))
+         (is-struct-return nil))
+    ;; Ocall's arg[1] is the return type when the function returns an aggregate.
+    (when il-has-struct-return
+      (let ((rt (ins-arg1 call)))
+        (setf is-struct-return (winabi-by-copy-p rt))
+        (when is-struct-return
+          (winabi-assign u (make-warg) nil t))
+        (setf ret-size (typ-size rt))))
+    (multiple-value-bind (acs env) (winabi-classify u args)
+      ;; Stack bytes for whatever did not fit in the four argument registers.
+      ;; Aggregates copied by pointer are alloca'd separately and contribute
+      ;; only their 8-byte pointer here.
+      (let ((stack-usage 0))
+        (dotimes (idx num-args)
+          (let ((a (aref acs idx)))
+            (case (warg-style a)
+              (:inline-on-stack
+               (when (> (warg-align a) 4) (abi-unsupported "alignment > 16"))
+               (incf stack-usage (warg-size a)))
+              (:copy-and-pointer-on-stack (incf stack-usage 8)))))
+        (setf stack-usage (align-up stack-usage 16))
+        ;; We are logically *after* the call here (emission is backward), so
+        ;; this negative salloc is the post-call cleanup.
+        (emit :salloc :l nil (getcon (- (+ stack-usage +shadow-space-size+)) fn) nil)
+        (let ((return-pad nil))
+          (cond
+            (is-struct-return
+             (setf return-pad
+                   (win-push-extra-alloc
+                    (win-alloc8 (newtmp "abi.ret_pad" :l fn) ret-size fn)))
+             (setf (wusage-rax-returned u) t)
+             (emit :copy (ins-cls call) (ins-to call) (rg +rax+) nil))
+            (il-has-struct-return
+             ;; The IL says "struct return" but the calling convention does not
+             ;; pass it by pointer.  Later IL still treats the result as a
+             ;; pointer, so store the returned value into an alloca.
+             (win-push-extra-alloc (win-alloc8 (ins-to call) 8 fn))
+             (let ((copy (newtmp "abi.copy" :l fn)))
+               (emit :storel :w nil copy (ins-to call))
+               (emit :copy :l copy (rg +rax+) nil))
+             (setf (wusage-rax-returned u) t))
+            ((= 0 (cls-base (ins-cls call)))
+             (emit :copy (ins-cls call) (ins-to call) (rg +rax+) nil)
+             (setf (wusage-rax-returned u) t))
+            (t
+             (emit :copy (ins-cls call) (ins-to call) (rg +xmm0+) nil)
+             (setf (wusage-xmm0-returned u) t)))
+          ;; The call itself: no `to` left (it is register traffic now), arg0 is
+          ;; the callee and arg1 the RCall register-usage mask.
+          (emit :call (ins-cls call) nil (ins-arg0 call)
+                (make-call-ref (winabi-call-arg-value u)))
+          (when env
+            (emit :copy :l (rg +rax+) env nil))
+          ;; A variadic call duplicates float arguments into the matching
+          ;; integer register so the callee can spill without a prototype.
+          (when (wusage-is-varargs-call u)
+            (loop for idx from 0 below +winabi-nargregs+
+                  when (aref (wusage-regs-passed u) 1 idx)
+                    do (emit :cast :l (rg (aref *winabi-int-args* idx))
+                             (rg (aref *winabi-sse-args* idx)) nil)))
+          (let ((reg-counter 0))
+            (when is-struct-return
+              (emit :copy :l (winabi-reg-for-arg :l reg-counter) (ins-to return-pad) nil)
+              (incf reg-counter))
+            ;; Now the values themselves, into registers or stack slots.
+            (let ((arg-stack-slots (newtmp "abi.args" :l fn))
+                  (slot-offset +shadow-space-size+))
+              (dotimes (idx num-args)
+                (let ((i (aref argv idx)) (a (aref acs idx)))
+                  (ecase (warg-style a)
+                    (:register
+                     (let ((into (winabi-reg-for-arg (warg-cls a) reg-counter)))
+                       (incf reg-counter)
+                       (if (eq (ins-op i) :argc)
+                           ;; A small aggregate by value: the instruction holds a
+                           ;; pointer, the register wants the pointee.
+                           (emit :load (warg-cls a) into (ins-arg1 i) nil)
+                           (emit :copy (ins-cls i) into (ins-arg0 i) nil))))
+                    (:inline-on-stack
+                     (let ((slot (newtmp "abi.off" :l fn)))
+                       (if (eq (ins-op i) :argc)
+                           ;; Small aggregate again -- load through the pointer,
+                           ;; then store into the slot (emitted backward, so the
+                           ;; store is written first).
+                           (let ((smalltmp (newtmp "abi.smalltmp" (warg-cls a) fn)))
+                             (emit :storel :w nil smalltmp slot)
+                             (emit :load (warg-cls a) smalltmp (ins-arg1 i) nil))
+                           (emit :storel :w nil (ins-arg0 i) slot))
+                       (emit :add :l slot arg-stack-slots (getcon slot-offset fn))
+                       (incf slot-offset (warg-size a))))
+                    ((:copy-and-pointer-in-register :copy-and-pointer-on-stack)
+                     ;; Alloca a copy and blit into it, then pass its address.
+                     (let ((copy-ref (newtmp "abi.copy" :l fn)))
+                       (win-push-extra-alloc (win-alloc8 copy-ref (warg-size a) fn))
+                       (emit :blit1 :w nil (warg-size a) nil)
+                       (emit :blit0 :w nil (ins-arg1 i) copy-ref)
+                       (if (eq (warg-style a) :copy-and-pointer-in-register)
+                           (let ((into (winabi-reg-for-arg (warg-cls a) reg-counter)))
+                             (incf reg-counter)
+                             (emit :copy :l into copy-ref nil))
+                           (let ((slot (newtmp "abi.off" :l fn)))
+                             (emit :storel :w nil copy-ref slot)
+                             (emit :add :l slot arg-stack-slots (getcon slot-offset fn))
+                             (incf slot-offset 8)))))
+                    ;; Handled at the call site above (env copy / vararg dupes).
+                    ((:env-tag :varargs-tag) nil))))
+              (if (/= 0 stack-usage)
+                  ;; Last thing in emission order = first in call order: reserve
+                  ;; the scratch area the slots above were carved out of.
+                  (emit :salloc :l arg-stack-slots
+                        (getcon (+ stack-usage +shadow-space-size+) fn) nil)
+                  ;; With no scratch there is nothing to name, but the shadow
+                  ;; space still has to be reserved -- emitted without a `to` so
+                  ;; later passes cannot drop it as useless.
+                  (emit :salloc :l nil (getcon +shadow-space-size+ fn) nil)))))))))
+
+(defun win-lower-block-return (fn b)
+  "winabi.c lower_block_return."
+  (let ((j (blk-jmp-type b)))
+    (when (and (isret-jmp j) (not (eq j :ret0)))
+      (let ((ret-arg (blk-jmp-arg b)) (u (make-wusage)))
+        (setf (blk-jmp-type b) :ret0)
+        (if (eq j :retc)
+            (let ((ty (fn-rettyp fn)))
+              (if (winabi-by-copy-p ty)
+                  (progn
+                    (emit :copy :l (rg +rax+) (fn-retr fn) nil)
+                    (emit :blit1 :w nil (typ-size ty) nil)
+                    (emit :blit0 :w nil ret-arg (fn-retr fn)))
+                  (emit :load :l (rg +rax+) ret-arg nil))
+              (setf (wusage-rax-returned u) t))
+            (let ((k (ecase j (:retw :w) (:retl :l) (:rets :s) (:retd :d))))
+              (if (= 0 (cls-base k))
+                  (progn (emit :copy k (rg +rax+) ret-arg nil)
+                         (setf (wusage-rax-returned u) t))
+                  (progn (emit :copy k (rg +xmm0+) ret-arg nil)
+                         (setf (wusage-xmm0-returned u) t)))))
+        (setf (blk-jmp-arg b) (make-call-ref (winabi-call-arg-value u)))))))
+
+(defun win-lower-vastart (fn param-usage valist)
+  "winabi.c lower_vastart.  va_list is one pointer: the integer argument
+registers are already spilled to shadow space (and float arguments duplicated
+into them), and a varargs function always keeps an RBP frame, so `...` simply
+starts past RBP by the number of named arguments actually passed."
+  (unless (fn-vararg fn) (abi-unsupported "vastart in a non-variadic function"))
+  (let ((offset (newtmp "abi.vastart" :l fn)))
+    (emit :storel :w nil offset valist)
+    ;; *8 for sizeof(u64); +16 because the return address and RBP are already
+    ;; pushed by the time the body runs.
+    (emit :add :l offset (rg +rbp+)
+          (getcon (+ (* 8 (wusage-num-named-args-passed param-usage)) 16) fn))))
+
+(defun win-lower-vaarg (fn i)
+  "winabi.c lower_vaarg.  va_list is a void** here, so: load the pointer, load
+the argument through it, bump the pointer.  (Emitted backward, as always.)"
+  (let ((inc (newtmp "abi.vaarg.inc" :l fn))
+        (ptr (newtmp "abi.vaarg.ptr" :l fn)))
+    (emit :storel :w nil inc (ins-arg0 i))
+    (emit :add :l inc ptr (getcon 8 fn))
+    (emit :load (ins-cls i) (ins-to i) ptr nil)
+    (emit :load :l ptr (ins-arg0 i) nil)))
+
+(defun win-lower-args-for-block (fn b param-usage)
+  "winabi.c lower_args_for_block."
+  (let ((*emitted* nil) (vec (coerce (blk-ins b) 'vector)))
+    (win-lower-block-return fn b)
+    (loop with k = (length vec) while (> k 0) do
+      (decf k)
+      (let ((i (aref vec k)))
+        (case (ins-op i)
+          (:call
+           (let ((i0 k))
+             (loop while (and (> i0 0) (arg-op-p (ins-op (aref vec (1- i0)))))
+                   do (decf i0))
+             (win-lower-call fn (coerce (subseq vec i0 k) 'list) i)
+             (setf k i0)))
+          (:vastart (win-lower-vastart fn param-usage (ins-arg0 i)))
+          (:vaarg   (win-lower-vaarg fn i))
+          ((:arg :argc) (abi-unsupported "stray arg outside a call"))
+          (t (push i *emitted*)))))
+    ;; The start block is processed last, so the allocas the other blocks asked
+    ;; for land at its head.
+    (when (eq b (fn-start fn))
+      (dolist (ea *win-extra-alloc*) (push ea *emitted*)))
+    (setf (blk-ins b) *emitted*)))
+
+(defun win-lower-func-parameters (fn)
+  "winabi.c lower_func_parameters: copy registers/stack slots into the named
+parameters.  Returns the RegisterUsage, which lower_vastart needs."
+  (let* ((start (fn-start fn))
+         (pars '()) (rest '()))
+    (dolist (i (blk-ins start))
+      (if (and (null rest) (ispar-op (ins-op i))) (push i pars) (push i rest)))
+    (setf pars (nreverse pars) rest (nreverse rest))
+    (let ((*emitted* nil) (u (make-wusage)) (reg-counter 0))
+      ;; An aggregate return that the convention passes by pointer arrives in
+      ;; RCX, ahead of every declared parameter.
+      (when (and (fn-rettyp fn) (winabi-by-copy-p (fn-rettyp fn)))
+        (winabi-assign u (make-warg) nil t)
+        (let ((ret-ref (newtmp "abi.ret" :l fn)))
+          (emit :copy :l ret-ref (rg +rcx+) nil)
+          (setf (fn-retr fn) ret-ref)
+          (incf reg-counter)))
+      (multiple-value-bind (acs env) (winabi-classify u pars)
+        (setf (fn-reg fn)
+              (let ((m 0))
+                (dolist (r (amd64-winabi-argregs (winabi-call-arg-value u)) m)
+                  (setf m (logior m (ash 1 r))))))
+        ;; SHADOW_SPACE_SIZE/4 + 4: slots are counted in 4-byte words, and the
+        ;; incoming stack arguments sit just past the shadow space.
+        (let ((slot-offset (+ (floor +shadow-space-size+ 4) 4)))
+          (loop for i in pars for idx from 0 do
+            (let ((a (aref acs idx)))
+              (ecase (warg-style a)
+                (:register
+                 (let ((from (winabi-reg-for-arg (warg-cls a) reg-counter)))
+                   (incf reg-counter)
+                   ;; A struct at the IL level needs something to point at, so
+                   ;; the register is spilled into an alloca (same below).
+                   (if (eq (ins-op i) :parc)
+                       (progn
+                         (setf (warg-ref a) (newtmp "abi" :l fn))
+                         (emit :storel :w nil (warg-ref a) (ins-to i))
+                         (emit :copy (ins-cls i) (warg-ref a) from nil)
+                         (emit :alloc8 :l (ins-to i) (getcon (warg-size a) fn) nil))
+                       (emit :copy (ins-cls i) (ins-to i) from nil))))
+                (:inline-on-stack
+                 (if (eq (ins-op i) :parc)
+                     (progn
+                       (setf (warg-ref a) (newtmp "abi" :l fn))
+                       (emit :storel :w nil (warg-ref a) (ins-to i))
+                       (emit :copy (ins-cls i) (warg-ref a) (make-slot-ref (- slot-offset)) nil)
+                       (emit :alloc8 :l (ins-to i) (getcon (warg-size a) fn) nil))
+                     (emit :copy :l (ins-to i) (make-slot-ref (- slot-offset)) nil))
+                 (incf slot-offset 2))
+                (:copy-and-pointer-on-stack
+                 (emit :load :l (ins-to i) (make-slot-ref (- slot-offset)) nil)
+                 (incf slot-offset 2))
+                (:copy-and-pointer-in-register
+                 ;; The copy is ours, so the pointer register is the value.
+                 (let ((from (winabi-reg-for-arg :l reg-counter)))
+                   (incf reg-counter)
+                   (emit :copy :l (ins-to i) from nil)))
+                (:env-tag nil)))))
+        ;; An env parameter arrives in RAX.
+        (when env (emit :copy :l env (rg +rax+) nil)))
+      (setf (blk-ins start) (append *emitted* rest))
+      u)))
+
+(defun amd64-winabi-abi (fn)
+  "QBE amd64_winabi_abi: lower parameters, then returns/calls/varargs per block.
+See the header comment of winabi.c for how the Microsoft convention differs
+from SysV; the short version is four shared-counter argument registers and
+by-pointer aggregates."
+  (let ((*win-extra-alloc* nil))
+    (let ((param-usage (win-lower-func-parameters fn)))
+      ;; The start block goes last so the other blocks' allocas can be added to
+      ;; it -- struct arguments and returns passed by value need those copies.
+      (let* ((blocks (fn-blocks fn)) (start (car blocks)))
+        (dolist (b (append (cdr blocks) (list start)))
+          (win-lower-args-for-block fn b param-usage))))))

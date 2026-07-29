@@ -1,0 +1,50 @@
+**** Function f ****
+> After ABI lowering:
+function $f() {
+@start
+	%abi.copy.4 =l alloc8 12
+	%abi.copy.6 =l alloc8 12
+	%abi.copy.8 =l alloc8 12
+	%d2 =l copy S-12
+	%h3 =l copy R7
+	%d1 =d copy R19
+	%h2 =l copy R3
+	%h1 =l copy R2
+	salloc 32
+	R2 =l copy %abi.copy.8
+	blit0 %h1, %abi.copy.8
+	blit1 12
+	call $phfa3, 0011
+	copy R1
+	salloc -32
+	salloc 32
+	R2 =l copy %abi.copy.6
+	blit0 %h2, %abi.copy.6
+	blit1 12
+	call $phfa3, 0011
+	copy R1
+	salloc -32
+	salloc 32
+	R2 =l copy %abi.copy.4
+	blit0 %h3, %abi.copy.4
+	blit1 12
+	call $phfa3, 0011
+	copy R1
+	salloc -32
+	salloc 32
+	R18 =d copy %d1
+	R2 =l copy $dfmt
+	R3 =l cast R18
+	call $printf, 0231
+	copy R1
+	salloc -32
+	salloc 32
+	R18 =d copy %d2
+	R2 =l copy $dfmt
+	R3 =l cast R18
+	call $printf, 0231
+	copy R1
+	salloc -32
+	ret0
+}
+

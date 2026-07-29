@@ -1,0 +1,196 @@
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@start
+	%rb =l alloc8 8
+	%ra =l alloc8 8
+	%r9 =l alloc8 8
+	%abi.ret_pad.12 =l alloc8 16
+	%abi.ret_pad.15 =l alloc8 16
+	%abi.ret_pad.18 =l alloc8 16
+	%abi.ret_pad.21 =l alloc8 16
+	%abi.ret_pad.24 =l alloc8 16
+	%r3 =l alloc8 8
+	%r2 =l alloc8 8
+	%abi.ret_pad.33 =l alloc8 17
+	salloc 32
+	R2 =l copy %abi.ret_pad.33
+	call $t1, 0011
+	%r1 =l copy R1
+	salloc -32
+	salloc 32
+	R3 =l copy %r1
+	R2 =l copy $fmt1
+	call $printf, 0031
+	%i1 =w copy R1
+	salloc -32
+	salloc 32
+	call $t2, 0001
+	%abi.copy.30 =l copy R1
+	storel %abi.copy.30, %r2
+	salloc -32
+	%w2 =w loadsw %r2
+	salloc 32
+	R3 =w copy %w2
+	R2 =l copy $fmt2
+	call $printf, 0031
+	%i2 =w copy R1
+	salloc -32
+	salloc 32
+	call $t3, 0001
+	%abi.copy.27 =l copy R1
+	storel %abi.copy.27, %r3
+	salloc -32
+	%s3 =s load %r3
+	%r34 =l add %r3, 4
+	%w3 =w loadsw %r34
+	%p3 =d exts %s3
+	salloc 32
+	R6 =w copy %w3
+	R18 =d copy %p3
+	R2 =l copy $fmt3
+	R3 =l cast R18
+	call $printf, 0271
+	%i3 =w copy R1
+	salloc -32
+	salloc 32
+	R2 =l copy %abi.ret_pad.24
+	call $t4, 0011
+	%r4 =l copy R1
+	salloc -32
+	%w4 =w loadsw %r4
+	%r48 =l add %r4, 8
+	%d4 =d load %r48
+	salloc 32
+	R19 =d copy %d4
+	R3 =w copy %w4
+	R2 =l copy $fmt4
+	R6 =l cast R19
+	call $printf, 0471
+	%i4 =w copy R1
+	salloc -32
+	salloc 32
+	R2 =l copy %abi.ret_pad.21
+	call $t5, 0011
+	%r5 =l copy R1
+	salloc -32
+	%s5 =s load %r5
+	%d5 =d exts %s5
+	%r58 =l add %r5, 8
+	%l5 =l load %r58
+	salloc 32
+	R6 =l copy %l5
+	R18 =d copy %d5
+	R2 =l copy $fmt5
+	R3 =l cast R18
+	call $printf, 0271
+	%i5 =w copy R1
+	salloc -32
+	salloc 32
+	R2 =l copy %abi.ret_pad.18
+	call $t6, 0011
+	%r6 =l copy R1
+	salloc -32
+	salloc 32
+	R3 =l copy %r6
+	R2 =l copy $fmt6
+	call $printf, 0031
+	%i6 =w copy R1
+	salloc -32
+	salloc 32
+	R2 =l copy %abi.ret_pad.15
+	call $t7, 0011
+	%r7 =l copy R1
+	salloc -32
+	%s7 =s load %r7
+	%d71 =d exts %s7
+	%r78 =l add %r7, 8
+	%d72 =d load %r78
+	salloc 32
+	R19 =d copy %d72
+	R18 =d copy %d71
+	R2 =l copy $fmt7
+	R6 =l cast R19
+	R3 =l cast R18
+	call $printf, 0671
+	%i7 =w copy R1
+	salloc -32
+	salloc 32
+	R2 =l copy %abi.ret_pad.12
+	call $t8, 0011
+	%r8 =l copy R1
+	salloc -32
+	%r84 =l add %r8, 4
+	%r88 =l add %r8, 8
+	%r812 =l add %r8, 12
+	%w81 =w loadsw %r8
+	%w82 =w loadsw %r84
+	%w83 =w loadsw %r88
+	%w84 =w loadsw %r812
+	%abi.args.10 =l salloc 48
+	%abi.off.11 =l add %abi.args.10, 32
+	storel %w84, %abi.off.11
+	R7 =w copy %w83
+	R6 =w copy %w82
+	R3 =w copy %w81
+	R2 =l copy $fmt8
+	call $printf, 00f1
+	%i8 =w copy R1
+	salloc -48
+	salloc 32
+	call $t9, 0001
+	%abi.copy.8 =l copy R1
+	storel %abi.copy.8, %r9
+	salloc -32
+	%r94 =l add %r9, 4
+	%w9 =w loadsw %r9
+	%s9 =s load %r94
+	%d9 =d exts %s9
+	salloc 32
+	R19 =d copy %d9
+	R3 =w copy %w9
+	R2 =l copy $fmt9
+	R6 =l cast R19
+	call $printf, 0471
+	%i9 =w copy R1
+	salloc -32
+	salloc 32
+	call $ta, 0001
+	%abi.copy.5 =l copy R1
+	storel %abi.copy.5, %ra
+	salloc -32
+	%ra4 =l add %ra, 4
+	%wa =w loadsb %ra
+	%sa =s load %ra4
+	%da =d exts %sa
+	salloc 32
+	R19 =d copy %da
+	R3 =w copy %wa
+	R2 =l copy $fmta
+	R6 =l cast R19
+	call $printf, 0471
+	%ia =w copy R1
+	salloc -32
+	salloc 32
+	call $tb, 0001
+	%abi.copy.2 =l copy R1
+	storel %abi.copy.2, %rb
+	salloc -32
+	%rb1 =l add %rb, 1
+	%rb4 =l add %rb, 4
+	%w0b =w loadsb %rb
+	%w1b =w loadsb %rb1
+	%sb =s load %rb4
+	%db =d exts %sb
+	salloc 32
+	R20 =d copy %db
+	R6 =w copy %w1b
+	R3 =w copy %w0b
+	R2 =l copy $fmtb
+	R7 =l cast R20
+	call $printf, 08f1
+	%ib =w copy R1
+	salloc -32
+	ret0
+}
+

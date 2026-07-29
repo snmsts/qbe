@@ -1,0 +1,11 @@
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@start
+	%x1 =l alloc8 8
+	%x2 =l alloc8 8
+	%r =w cnel %x1, %x2
+	R1 =w copy %r
+	ret0 0001
+}
+

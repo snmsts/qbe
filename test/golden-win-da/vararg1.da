@@ -1,0 +1,38 @@
+**** Function f ****
+> After ABI lowering:
+function $f() {
+@start
+	%x =l copy R2
+	%vp =l alloc8 32
+	%abi.vastart.5 =l add R15, 24
+	storel %abi.vastart.5, %vp
+	%abi.vaarg.ptr.4 =l load %vp
+	%i =l load %abi.vaarg.ptr.4
+	%abi.vaarg.inc.3 =l add %abi.vaarg.ptr.4, 8
+	storel %abi.vaarg.inc.3, %vp
+	%abi.vaarg.ptr.2 =l load %vp
+	%n =d load %abi.vaarg.ptr.2
+	%abi.vaarg.inc.1 =l add %abi.vaarg.ptr.2, 8
+	storel %abi.vaarg.inc.1, %vp
+	R17 =d copy %n
+	ret0 0002
+}
+
+**** Function g ****
+> After ABI lowering:
+function $g() {
+@start
+	%fmt =l copy R2
+	%vp =l alloc8 32
+	%abi.vastart.7 =l add R15, 24
+	storel %abi.vastart.7, %vp
+	salloc 32
+	R3 =l copy %vp
+	R2 =l copy %fmt
+	call $print, 0031
+	%r =w copy R1
+	salloc -32
+	R1 =w copy %r
+	ret0 0001
+}
+

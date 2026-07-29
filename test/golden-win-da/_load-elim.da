@@ -1,0 +1,11 @@
+**** Function f ****
+> After ABI lowering:
+function $f() {
+@start
+	%c =w copy R3
+	%p =l copy R2
+@end
+	R1 =w copy 0
+	ret0 0001
+}
+

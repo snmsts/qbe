@@ -1,0 +1,15 @@
+**** Function main ****
+> After ABI lowering:
+function $main() {
+@start
+	salloc 32
+	R18 =d copy d_1.200000
+	R2 =l copy $fmt
+	R3 =l cast R18
+	call $printf, 0231
+	%x =w copy R1
+	salloc -32
+	R1 =w copy 0
+	ret0 0001
+}
+

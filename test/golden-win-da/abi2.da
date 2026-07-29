@@ -1,0 +1,13 @@
+**** Function sum ****
+> After ABI lowering:
+function $sum() {
+@start
+	%p =l copy R2
+	%f1 =s load %p
+	%p8 =l add %p, 8
+	%f2 =s load %p8
+	%s =s add %f1, %f2
+	R17 =s copy %s
+	ret0 0002
+}
+
