@@ -1,6 +1,6 @@
 # amd64_win 移植の作業メモ
 
-`arm64_win` と同じやり方で、本家 `amd64/winabi.c` を移植している途中の記録。
+`arm64_win` と同じやり方で、本家 `amd64/winabi.c` を移植した記録。
 **次に触る人（あるいは記憶を失った自分）がここから再開できること**が目的。
 
 ## いまどこまで
@@ -8,17 +8,22 @@
 | | 状態 | どこ |
 |---|---|---|
 | レジスタモデル (`rsave` / `rclob` / `retregs` / `argregs`) | **済** | `src/amd64-winabi.lisp` 前半 |
-| 引数の分類 (`classify_arguments` 一式) | **済** | 同 後半 |
-| `lower_call` | 未 | `winabi.c:259-483` |
-| `lower_block_return` | 未 | `winabi.c:484-518` |
-| `lower_vastart` / `lower_vaarg` | 未 | `winabi.c:522-554` |
-| `lower_func_parameters` | 未 | `winabi.c:619-739` |
-| `amd64_winabi_abi` (入口) | 未 | `winabi.c:740-763` |
-| `amd64_winabi_emitfn` | 未 | `amd64/emit.c:789` |
-| `*amd64-win-target*` | 未 | `src/amd64-targ.lisp` に足す |
-| コーパス e2e | 未 | `test/arm64-win-corpus-e2e.lisp` の双子 |
+| 引数の分類 (`classify_arguments` 一式) | **済** | 同 |
+| `lower_call` | **済** | 同 後半 |
+| `lower_block_return` | **済** | 同 |
+| `lower_vastart` / `lower_vaarg` | **済** | 同 |
+| `lower_func_parameters` | **済** | 同 |
+| `amd64_winabi_abi` (入口) | **済** | 同 末尾 |
+| `amd64_winabi_emitfn` | **済** | `src/amd64-emit.lisp` に `T.windows` 分岐として畳んだ |
+| `*amd64-win-target*` | **済** | `src/amd64-targ.lisp` |
+| コーパス e2e | **済** | `test/amd64-win-corpus-e2e.lisp` — 45 passed / 0 failed / 3 skipped |
 
-検証: `ros -Q run -- --script test/winabi-smoke.lisp` (18 件、全通過)
+検証:
+
+- `ros -Q run -- --script test/winabi-smoke.lisp` (18 件、全通過)
+- `ros -Q run -- --script test/winabi.lisp` — `qbe -t amd64_win -dA` とのパス単位オラクル。
+  **180/180 functions が norm 一致**（raw 152/180 は下記の newtmp カウンタずれ）
+- `AMD64_CC=/c/msys64/ucrt64/bin/gcc.exe ros -Q run -- --script test/amd64-win-corpus-e2e.lisp`
 
 ## 本家と qbe-cl の対応（毎回これを探すことになるので）
 
@@ -32,13 +37,14 @@
 | `TMP(RCX)` | `(rg +rcx+)` |
 | `CALL(v)` | `(make-call-ref v)` |
 | `SLOT(-n)` | `(make-slot-ref (- n))` |
+| `INT(n)` | 整数そのもの (RInt) |
 | `R` (空 Ref) | `nil` |
 | `typ[i]` / `type->size` | 型は ins に**オブジェクトとして**入っている。`(ins-arg0 i)` が `typ`、`(typ-size ty)` `(typ-isdark ty)` |
-| `Kw Kl Ks Kd` | `:w :l :s :d`。`KBASE(k)` は `(cls-base k)` |
+| `Kw Kl Ks Kd` | `:w :l :s :d`。`KBASE(k)` は `(cls-base k)`。`emit(…, 0, …)` の `0` は `:w` |
 | `Oadd` `Ocopy` `Ostorel` `Oload` `Oalloc8` `Oblit0/1` `Osalloc` `Ocall` `Ocast` | `:add :copy :storel :load :alloc8 :blit0 :blit1 :salloc :call :cast` |
 | `blk->jmp.type` / `.arg` | `(blk-jmp-type b)` / `(blk-jmp-arg b)` |
-| `func->retty` `retr` `reg` `vararg` | `(fn-retty fn)` `(fn-retr fn)` `(fn-reg fn)` `(fn-vararg fn)` |
-| `ExtraAlloc` の連結リスト | SysV 側の `*abi-ral*` と同じ形でよい (`abi-push-ral` 参照) |
+| `func->retty` `retr` `reg` `vararg` | `(fn-rettyp fn)` `(fn-retr fn)` `(fn-reg fn)` `(fn-vararg fn)`。**`retty >= 0` は `(fn-rettyp fn)` が non-nil** |
+| `ExtraAlloc` の連結リスト | `*win-extra-alloc*`（SysV 側 `*abi-ral*` と同じ形。push が head なので、start ブロックで `(dolist … (push … *emitted*))` すると本家と同じ順に落ちる） |
 
 **SysV 側 (`src/amd64-abi.lisp`) の `sel-call` / `sel-par` / `amd64-abi` が最良の
 お手本**。やっていることは違うが、IR をいじる作法は全部そこにある。
@@ -48,6 +54,9 @@
 `winabi.c` は `sysv.c` の改造ではなく**別人による書き直し**なので、関数の切り方が
 違う。SysV 側の `sel-call` に対応するものを探すのではなく、`winabi.c` の関数を
 そのまま1つずつ写す方が早い（オラクルがバイト差分なので、構造を合わせる利益もある）。
+実際そうやって、`win-lower-call` / `win-lower-block-return` / `win-lower-vastart` /
+`win-lower-vaarg` / `win-lower-args-for-block` / `win-lower-func-parameters` と
+本家の関数名を1対1で残してある。
 
 特に:
 
@@ -69,46 +78,68 @@
 - 上流の `winabi.c` は subword par (`parsb`/`parub`/`parsh`/`paruh`) を扱わない。
   こちらは黙って通さず `abi-unsupported` で止めている
 - 上流の `retregs` は `nf` に `r.val & 2` を返す (0 か 2、0/1 ではない)。写してある
+- **golden を採るときは `tr -d '\r'` を通す。** `qbe.exe` の stderr は Windows の
+  テキストモードで CRLF になり、行比較が全部外れて 0/180 になる（1回これで溶かした）
+
+### emitfn 側で踏んだもの
+
+- `T.asloc` が amd64_win では **`"L"`（`.L` ではない）**。`Lbb0` / `Lfp0` になる。
+  `amd64-isel.lisp` の fp 定数プールのラベルも `(tg-asloc)` 経由にした
+- 可変長引数の退避は**プロローグの一番最初**、`pushq %rbp` より前。
+  積み先は呼び出し元が確保した shadow space なので `0x8(%rsp)`〜`0x20(%rsp)`
+- したがって `winabi_framesz` に SysV の `176*vararg` 項が無い。`be-slot` の
+  vararg 分岐（`-176 + …`）も Windows では通らない
+- `amd64_winabi_emitfn` は `.p2align 4` を出さず、`elf_emitfnfin`
+  （`.type` / `.size`）も呼ばない。`pe_emitfin` は `.note.GNU-stack` を出さない
+- 分岐の反転条件だけ SysV と違う: `if (b->link == b->s2 || c >= NCmpI)`。
+  浮動小数比較は否定が補集合にならないので常に swap する
 
 ## 検証の道具立て（確認済み）
 
 ### ★ パス単位のオラクルが効く（これが一番大事）
 
 **`qbe -t amd64_win -dA` が ABI lowering 直後のダンプを出す。** つまり
-いま移植しているパスそのものに、コーパス全ファイルで使えるバイト比較オラクルが
+移植しているパスそのものに、コーパス全ファイルで使えるバイト比較オラクルが
 ある。**e2e が動くまで待つ必要は無い。**
 
 ```
 ~/work/qbe-upstream/qbe -t amd64_win -dA -o /dev/null test/corpus/x.ssa
 ```
 
-`test/abi.lisp` が SysV 版でまさにこれをやっている（`qbe -dA` を走らせ、
-我々の `amd64-abi` の出力と突き合わせ、`raw` / `norm` の2段で比較。未対応は
-mismatch ではなく skip として数える）。**`test/winabi.lisp` はその複製でよい** —
-`(qbe:amd64-abi fn)` を `(qbe:amd64-winabi-abi fn)` に、`-dA` に `-t amd64_win`
-を足すだけ。
+`test/winabi.lisp` がこれをやっている（`test/abi.lisp` の複製）。golden は
+`test/golden-win-da/*.da` に採ってある。差分が出たら `SHOW=1` を付けると
+ours / theirs を並べて出す。
 
-これがあるので `lower_call` を写した時点で「77 本中いくつ一致するか」が測れる。
-`lower_block_return` を足せばまた増える。**今日 ime 側でやっていた「段ごとに
-数字が出る」やり方が、そのまま使える。**
+`raw` が 152/180 なのは SysV 側 (151/180) と同じ理由 — QBE の newtmp カウンタが
+run 単位のグローバルで、先行する関数の backend 一時変数の分だけ番号がずれる。
+構造の信号は `norm` の方。
 
 ### e2e（最後の砦）
 
-- **x64 バイナリはこの ARM64 機でビルドも実行もできる**
-  `PATH=/c/msys64/ucrt64/bin:$PATH; gcc x.c -o x.exe && ./x.exe` が通る
-- コーパスは `test/corpus/*.ssa` 77 本。各々に C ドライバと期待出力が埋まっている。
-  基準は「組み上がる」ではなく「**走って正しく出力する**」
-  (`test/arm64-win-corpus-e2e.lisp` の冒頭コメント参照)
-- こちらは `emitfn` と `*amd64-win-target*` が要るので後
+- **x64 バイナリはこの ARM64 機でビルドも実行もできる。** ただし
+  **`/c/msys64/ucrt64/bin` を PATH に入れること** — mingw の gcc は自分の隣の
+  DLL を読むので、PATH に無いと**何のメッセージも出さずに exit 1** する
+  （`test/amd64-win-corpus-e2e.lisp` は cc のディレクトリを自分で PATH に足す）
+- コーパスは `test/corpus/*.ssa` 77 本、うち driver 付きが 47 本。基準は
+  「組み上がる」ではなく「**走って正しく出力する**」
+- 現状 **45 passed / 0 failed / 3 skipped**。skip 3 本はすべて corpus 側の
+  `# skip amd64_win` マーカーで、しかも**理由がこちらのバックエンドではない**:
+  conaddr は「no signals on win32」(driver が POSIX シグナルを使う)、dark は
+  arch (`# skip arm64 arm64_apple rv64 amd64_win`)、tls は「pthread and tls not
+  implemented」。**つまり e2e は既に天井** — 走ると宣言されている 45 本が
+  全部走っている。arm64_win と同じ水準
 
 ## 次の一手
 
-1. **`test/winabi.lisp` を `test/abi.lisp` から複製する**（これを先にやる）。
-   `amd64-winabi-abi` はまだ無いので全件エラー = 0/77 から始まる。**その 0 が
-   出発点の計測になる。**
-2. `winabi.c:740` の `amd64_winabi_abi` の骨格 + `lower_func_parameters` を写す。
-   引数を取らない関数だけでも一致し始めるはず。
-3. `lower_block_return` → `lower_call` → vararg の順に足し、そのたびに
-   `test/winabi.lisp` の一致数を見る。
-4. 一致数が頭打ちになったら `amd64_winabi_emitfn` と `*amd64-win-target*` を作り、
-   `test/amd64-win-corpus-e2e.lisp` で実際に走らせる。
+ABI とコード生成は一巡した。残っているのは:
+
+1. **extern / TLS。** 本家も `die("extern/thread unsupported on amd64_win")` で
+   止まる。こちらも `be-win-check-sym` で同じ所で止めてある。**コーパスでは
+   計測できない**（上記のとおり skip 3 本の理由は別）ので、arm64_win と同じく
+   専用テストで押さえる必要がある。COFF なら `.refptr` COMDAT がそのまま効く
+   はず（`src/arm64-emit.lisp` の `a64-emit-fin` が実装）。TLS は arm64_win でも
+   未着手
+2. **`amd64-encode.lisp`（JIT/オブジェクト直吐き）は SysV 固定。** `*rclob*` を
+   直接見ているので、Windows で JIT したくなったらここも `(tg-rclob)` に回す
+3. 大きいフレームの `__chkstk`。arm64_win では拒否する形で決着させた
+   （`:stack-probe 4096`）。amd64_win の target にはまだ入れていない
