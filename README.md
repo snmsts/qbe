@@ -11,7 +11,10 @@ ARM64 Windows で走る x64 エミュレーションのアプリを覆うため�
 一巡した。ABI lowering は `qbe -t amd64_win -dA` に対して **180/180 functions
 一致** (`test/winabi.lisp`)、コーパスは **45 passed / 0 failed / 3 skipped**
 で実際に走る (`test/amd64-win-corpus-e2e.lisp`)。skip 3 本は corpus 側の
-`# skip amd64_win` マーカー。
+`# skip amd64_win` マーカーで、理由はどれもこちらのバックエンドではない。
+方言・Win64 固有の規則・extern は `test/amd64-win.lisp` が 27 件（うち 6 件は
+実際にリンクして走らせる）。extern アドレスは本家が `die` するところを COFF の
+`.refptr` COMDAT で通してある。
 
-残: extern / TLS（本家も `die` する。COFF `.refptr` を通せば埋まる）、
-`amd64-encode.lisp` (JIT) の SysV 固定、大フレームの `__chkstk`。
+残: TLS（本家も `die`。arm64_win でも未着手）、`amd64-encode.lisp` (JIT) の
+SysV 固定、大フレームの `__chkstk`。

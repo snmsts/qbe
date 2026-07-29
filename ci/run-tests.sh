@@ -50,9 +50,11 @@ rega_metric() {                               # rega: pass iff norm >= baseline
 echo "=== qbe-cl CI: $OS ==="
 # -dP + per-pass golden/unit for BOTH targets.  Pure computation: no external
 # tool is needed, so every host runs these.  `arm64-win` self-skips its native
-# section unless `cc` is an aarch64-*-windows one.
+# section unless `cc` is an aarch64-*-windows one, and `amd64-win` unless there
+# is an x86_64 Windows cc (AMD64_CC); the textual half of each runs anywhere.
 PURE="run ssa gvn gcm dom live spill coalesce isel simplcfg promote loadopt \
-      depth abi winabi winabi-smoke arm64-isel arm64-abi arm64-rega arm64-win"
+      depth abi winabi winabi-smoke amd64-win arm64-isel arm64-abi arm64-rega \
+      arm64-win"
 
 case "$OS" in
   linux)

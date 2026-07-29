@@ -89,6 +89,9 @@
 ;;; emit state
 (defstruct (es (:conc-name es-)) stream fn (fp +rsp+) (fsz 0) (nclob 0) leaf)
 
+(defvar *amd64-refptrs* nil
+  "Extern symbols this module reached through a COFF `.refptr` indirection.")
+
 (defun es-out (e fmt &rest args) (apply #'format (es-stream e) fmt args))
 
 (defun be-emitcon (con e)
@@ -203,6 +206,7 @@
       ((eq op :salloc)                    ; dynamic stack alloc: rsp -= size
        (be-emitf "subq %L0, %%rsp" i e)
        (when (ins-to i) (be-emitcopy (ins-to i) (rg +rsp+) :l e)))
+      ((and (eq op :addr) (be-emit-addr-op i e)))   ; NIL => fall to the table
       ((eq op :swap) (be-emit-swap i e))
       ((find op *xsel-ops*) (be-emit-xsel i e))
       ((gethash op *flag-op-code*)
@@ -260,23 +264,62 @@
   (be-emitf (omap-match :div (ins-cls i)) i e))
 
 (defun be-win-check-sym (con)
-  "amd64/emit.c: `if (T.windows && con->sym.type != SGlo) die(...)`.  COFF has
-neither a PLT nor the ELF TLS model, and QBE has no Win64 replacement for
-either, so refuse rather than emit something that cannot link."
+  "amd64/emit.c: `if (T.windows && con->sym.type != SGlo) die(...)`.  We do
+better than upstream for extern (see be-emit-addr-op), but an extern symbol
+must reach here as its own :addr instruction -- a bare `lea` of one would be a
+link-time constant, which is exactly what it is not.  TLS stays refused."
   (when (and (tg-windows) (con-symtype con))
-    (error "emit: extern/thread symbol ~a unsupported on amd64_win"
+    (error "emit: extern/thread symbol ~a unsupported here on amd64_win"
            (con-symname con))))
+
+(defun be-sym-prefix (sym)
+  "The assembler's symbol prefix, unless the name is already quoted (a quoted
+name is emitted verbatim, which is how the fp-pool labels dodge Apple's `_`)."
+  (if (and (plusp (length sym)) (char= (char sym 0) #\")) "" (target-assym *target*)))
+
+(defun be-emit-addr-op (i e)
+  "amd64/emit.c Oaddr: an address that is NOT a link-time constant, so it cannot
+be an `lea` of the symbol.  Returns T when it emitted the load, NIL to leave the
+instruction to the omap table (which is the plain-global case).
+
+Upstream dies here for anything but SGlo on amd64_win.  COFF does have an
+answer, though, and arm64_win already uses it: the linker synthesises a
+`.refptr.<sym>` COMDAT holding the address.  (`__imp_<sym>` would be the
+dllimport form, but that needs source-level knowledge the IL does not carry;
+`.refptr` works for both.)"
+  (let ((c (ins-arg0 i)) (to (ins-to i)))
+    (when (and (con-p c) (eq (con-kind c) :addr) (reg-p to) (con-symtype c))
+      (let* ((st (con-symtype c))
+             (sym (concatenate 'string (be-sym-prefix (con-symname c)) (con-symname c)))
+             (rn (regtoa (reg-id to) +slong+)))
+        (cond
+          ((tg-windows)
+           (when (member :thr st)
+             (error "emit: thread-local ~a unsupported on amd64_win" sym))
+           (pushnew sym *amd64-refptrs* :test #'string=)
+           (es-out e "~Cmovq .refptr.~a(%rip), %~a~%" #\Tab sym rn)
+           t)
+          ;; ELF SExt: load the address out of the GOT.  (The two TLS forms,
+          ;; SThr and SExtThr, are not written here -- isel refuses SExtThr, and
+          ;; plain SThr still falls through to the table as it always has.)
+          ((and (member :ext st) (not (member :thr st)) (not (tg-apple)))
+           (es-out e "~Cmovq ~a@gotpcrel(%rip), %~a~%" #\Tab sym rn)
+           t))))))
 
 (defun be-emit-call (i e)
   (let ((a0 (ins-arg0 i)))
     (cond
       ((con-p a0)
-       (when (eq (con-kind a0) :addr) (be-win-check-sym a0))
+       ;; A call needs no indirection on COFF: the linker resolves a direct
+       ;; `callq` to another object, and synthesises the thunk when the target
+       ;; turns out to be imported.  Only TLS has no answer.
+       (when (and (eq (con-kind a0) :addr) (tg-windows) (member :thr (con-symtype a0)))
+         (error "emit: thread-local ~a unsupported on amd64_win" (con-symname a0)))
        (es-out e "~Ccallq " #\Tab) (be-emitcon a0 e)
        ;; mach-o resolves through a stub the linker synthesises, so `@plt` is an
        ;; ELF-only decoration (emit.c: SExt && !T.apple).
        (when (and (eq (con-kind a0) :addr) (member :ext (con-symtype a0))
-                  (not (tg-apple)))
+                  (not (tg-apple)) (not (tg-windows)))
          (es-out e "@plt"))
        (write-char #\Newline (es-stream e)))
       ((reg-p a0) (be-emitf "callq *%L0" i e))
@@ -427,6 +470,22 @@ either, so refuse rather than emit something that cannot link."
   (spill fn) (rega fn)
   (fill-cfg fn) (simpljmp fn) (fill-cfg fn))
 
+(defun emit-refptrs (stream)
+  "Define the `.refptr.<sym>` COMDATs that be-emit-addr-op's COFF form reads.
+One discardable .rdata section per symbol, holding its address -- the shape the
+platform toolchain uses, so duplicates across objects fold together.
+
+The arm64_win twin (a64-emit-refptrs) declares the COMDAT through `.section`
+attributes (`,discard,.refptr.<sym>`).  That is aarch64 gas; the i386/x86-64 PE
+backend does not parse it and reports `junk at end of line` on the .section
+line.  There the COMDAT is a separate `.linkonce discard` directive, which is
+also what mingw's own gcc emits.  Both produce the same LINK_ONCE_DISCARD
+section, so the difference is purely assembler dialect."
+  (dolist (s (sort (copy-list *amd64-refptrs*) #'string<))
+    (format stream ".section~C.rdata$.refptr.~a,\"dr\"~%.globl~C.refptr.~a~%~
+                    .linkonce~Cdiscard~%.p2align~C3~%.refptr.~a:~%~C.quad~C~a~%"
+            #\Tab s #\Tab s #\Tab #\Tab s #\Tab #\Tab s)))
+
 (defun emit-fin (stream)
   "emit.c elf_emitfin / pe_emitfin: the .rodata pool of stashed fp constants,
    grouped by size (16/8/4) but labelled by insertion index.  Both formats put
@@ -469,11 +528,12 @@ either, so refuse rather than emit something that cannot link."
 *target* selects the machine (defaults to amd64 SysV)."
   (let ((s (make-string-output-stream)) (id0 0))
     (setf *tmp-counter* 0)
-    (reset-stash)
+    (reset-stash) (setf *amd64-refptrs* nil)
     (dolist (fn (module-funcs module))
       (be-backend-pipeline fn)
       (setf id0 (be-emit-fn fn s id0)))
     (dolist (d (module-data module)) (be-emit-data d s))
+    (emit-refptrs s)
     (emit-fin s)
     ;; elf_emitfin's trailer; pe_emitfin has none.
     (unless (tg-windows)

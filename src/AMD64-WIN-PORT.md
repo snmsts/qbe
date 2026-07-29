@@ -17,13 +17,18 @@
 | `amd64_winabi_emitfn` | **済** | `src/amd64-emit.lisp` に `T.windows` 分岐として畳んだ |
 | `*amd64-win-target*` | **済** | `src/amd64-targ.lisp` |
 | コーパス e2e | **済** | `test/amd64-win-corpus-e2e.lisp` — 45 passed / 0 failed / 3 skipped |
+| extern アドレス (COFF `.refptr`) | **済**（本家より先） | `src/amd64-isel.lisp` fixarg [E] + `be-emit-addr-op` / `emit-refptrs` |
+| TLS | 未（本家も `die`） | |
 
 検証:
 
 - `ros -Q run -- --script test/winabi-smoke.lisp` (18 件、全通過)
 - `ros -Q run -- --script test/winabi.lisp` — `qbe -t amd64_win -dA` とのパス単位オラクル。
   **180/180 functions が norm 一致**（raw 152/180 は下記の newtmp カウンタずれ）
-- `AMD64_CC=/c/msys64/ucrt64/bin/gcc.exe ros -Q run -- --script test/amd64-win-corpus-e2e.lisp`
+- `AMD64_CC=… ros -Q run -- --script test/amd64-win.lisp` — 方言 / Win64 固有の
+  規則 / extern の 27 件。**各項目に SysV 側の対の検査**を付けてあるので、ELF 側を
+  一緒にリファクタで消すと落ちる
+- `AMD64_CC=… ros -Q run -- --script test/amd64-win-corpus-e2e.lisp`
 
 ## 本家と qbe-cl の対応（毎回これを探すことになるので）
 
@@ -94,6 +99,23 @@
 - 分岐の反転条件だけ SysV と違う: `if (b->link == b->s2 || c >= NCmpI)`。
   浮動小数比較は否定が補集合にならないので常に swap する
 
+### extern (COFF `.refptr`) で踏んだもの
+
+- **COMDAT の書き方が aarch64 gas と x86 gas で違う。** arm64_win は
+  `.section .rdata$.refptr.sym,"dr",discard,.refptr.sym` で通るが、i386/x86-64 の
+  PE バックエンドはこれを解釈せず、`.section` の行で
+  `junk at end of line, first unrecognized character is ','` と言う。x86 側は
+  `.linkonce discard` を別の行として書く（mingw の gcc 自身もこの形）。
+  どちらも `LINK_ONCE_DISCARD` の同じセクションになる
+- 呼び出しには indirection が要らない。COFF では直接 `callq sym` でリンカが解決し、
+  相手が import なら thunk を合成してくれる。`@plt` は ELF だけの飾り
+- isel 側 (`fixarg` [E]) はオフセットを別の `add` に切り出す必要がある
+  （indirection はシンボル自体しか名指せない）。ここは `qbe -dI` と
+  **一時変数の番号まで含めてバイト一致**を確認した（`%isel.2 =l addr extern $g`
+  → `%isel.1 =l add %isel.2, 8` の順序も同じ）
+- SysV 側はこの実装で ELF の `@gotpcrel` を通るようになった（以前は isel が
+  `abi-unsupported` を出していたので、動いていたものは何も変わらない）
+
 ## 検証の道具立て（確認済み）
 
 ### ★ パス単位のオラクルが効く（これが一番大事）
@@ -133,12 +155,11 @@ run 単位のグローバルで、先行する関数の backend 一時変数の�
 
 ABI とコード生成は一巡した。残っているのは:
 
-1. **extern / TLS。** 本家も `die("extern/thread unsupported on amd64_win")` で
-   止まる。こちらも `be-win-check-sym` で同じ所で止めてある。**コーパスでは
-   計測できない**（上記のとおり skip 3 本の理由は別）ので、arm64_win と同じく
-   専用テストで押さえる必要がある。COFF なら `.refptr` COMDAT がそのまま効く
-   はず（`src/arm64-emit.lisp` の `a64-emit-fin` が実装）。TLS は arm64_win でも
-   未着手
+1. **TLS。** 本家は amd64_win で `die("extern/thread unsupported on amd64_win")`。
+   extern は `.refptr` で通した（arm64_win と同じ）が、TLS は arm64_win でも
+   未着手。Windows の TLS は `_tls_index` と TEB (`gs:0x58`) を辿る必要があり、
+   ELF の `@tpoff` / `@gottpoff` とは別物。なお `emit.c` の ELF TLS 2 形
+   (SThr / SExtThr) も qbe-cl の amd64 には無い（SThr は素の `lea` に落ちる）
 2. **`amd64-encode.lisp`（JIT/オブジェクト直吐き）は SysV 固定。** `*rclob*` を
    直接見ているので、Windows で JIT したくなったらここも `(tg-rclob)` に回す
 3. 大きいフレームの `__chkstk`。arm64_win では拒否する形で決着させた

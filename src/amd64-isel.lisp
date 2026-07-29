@@ -117,13 +117,36 @@
       ;; [D] load a fast local's address into a temporary right before the use
       (s
        (let ((tm (newtmp "isel" :l fn))) (emit :addr :l tm (make-slot-ref s) nil) tm))
-      ;; [E] extern symbols need GOT access (sysv: only SExt; thread-local
-      ;; SThr falls through to [F] and is relocated at emit time).  No corpus
-      ;; function uses extern *data*, so the GOT lowering itself is deferred.
+      ;; [E] an extern symbol's address is not a link-time constant: it has to
+      ;; be loaded through an indirection the linker builds (a GOT entry on ELF,
+      ;; a `.refptr` COMDAT on COFF).  So the symbol goes into its own :addr
+      ;; instruction, and any byte offset it carried becomes a separate add --
+      ;; the indirection can only name the symbol itself.  Thread-local SThr
+      ;; falls through to [F] and is relocated at emit time.
       ((and (not (eq op :call)) (hascon r)
             (eq (con-kind (hascon r)) :addr)
             (member :ext (con-symtype (hascon r))))
-       (abi-unsupported "extern (GOT) address operand"))
+       (when (member :thr (con-symtype (hascon r)))
+         ;; SExtThr (initial-exec TLS) needs the thread-base dance as well.
+         (abi-unsupported "initial-exec TLS address operand"))
+       (let* ((c (hascon r))
+              (r1 (newtmp "isel" :l fn))
+              (r2 r1))
+         (unless (zerop (con-off c))
+           (setf r2 (newtmp "isel" :l fn))
+           (emit :add :l r1 r2 (getcon (con-off c) fn)))
+         (emit :addr :l r2
+               (newcon (make-con :kind :addr :symname (con-symname c)
+                                 :symtype (con-symtype c) :off 0)
+                       fn)
+               nil)
+         ;; If the operand was a memory reference, the symbol was its
+         ;; displacement; it becomes the base register instead.
+         (cond ((mem-p r)
+                (setf (mem-offset r) (make-con :kind :undef :value 0)
+                      (mem-base r) r1)
+                r)
+               (t r1))))
       ;; [F] turn a (local) address operand into an lea/mov into a temporary
       ((and (con-p r) (eq (con-kind r) :addr)
             (not (eq op :call)) (not (isload-op op))
