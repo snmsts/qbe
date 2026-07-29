@@ -43,6 +43,10 @@
 (defconstant +rcx+ 2) (defconstant +rdx+ 3)
 (defconstant +rsi+ 4) (defconstant +rdi+ 5) (defconstant +r8+ 6)
 (defconstant +r9+ 7) (defconstant +r10+ 8) (defconstant +r11+ 9)
+;; callee-save on SysV; the Windows ABI (amd64-winabi.lisp) adds RSI/RDI to this
+;; set, which is why it needs the ids by name too.
+(defconstant +rbx+ 10) (defconstant +r12+ 11) (defconstant +r13+ 12)
+(defconstant +r14+ 13) (defconstant +r15+ 14)
 (defconstant +rbp+ 15) (defconstant +rsp+ 16)
 (defconstant +xmm15+ 32)
 

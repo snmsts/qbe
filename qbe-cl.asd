@@ -30,6 +30,7 @@
                              (:file "spill")
                              (:file "rega")
                              (:file "amd64-emit")
+                             (:file "amd64-winabi")
                              (:file "amd64-targ")
                              (:file "amd64-encode")
                              (:file "arm64")
