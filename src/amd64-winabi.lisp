@@ -95,3 +95,108 @@
     ;; and on Windows the registers are not contiguous, so a count is already an
     ;; approximation.  Keep the same approximation to stay byte-comparable.
     (values regs (logcount int-passed) (logcount float-passed))))
+
+;;; --------------------------------------------------- argument classification
+;;; winabi.c ArgPassStyle / ArgClass / RegisterUsage / classify_arguments.
+;;;
+;;; This is where the Windows semantics actually live; the lowering below is
+;;; plumbing.  Two rules do all the work:
+;;;
+;;;   1. ONE counter.  int and float arguments advance the same counter, so the
+;;;      register is chosen by *position*: argument 2 is R8 or XMM2.  (SysV has
+;;;      two independent counters, so f(int,double) is RDI+XMM0 there and
+;;;      RCX+XMM1 here.)
+;;;   2. Anything not exactly 1, 2, 4 or 8 bytes is passed BY POINTER to a
+;;;      caller-made copy -- not spread over the stack.  A 5-byte struct would
+;;;      "fit" in a register but is still copied.
+
+(defstruct (warg (:constructor make-warg))
+  type
+  (style :invalid)   ; :register :inline-on-stack :copy-and-pointer-in-register
+                     ; :copy-and-pointer-on-stack :varargs-tag :env-tag
+  (align 0) (size 0) (cls :l) ref)
+
+(defstruct (wusage (:constructor make-wusage))
+  (num-regs-passed 0)
+  ;; [int|float][0..3]: is that argument register actually carrying a value?
+  (regs-passed (make-array '(2 4) :initial-element nil))
+  (rax-returned nil) (xmm0-returned nil)
+  ;; also where va_start begins for a varargs function
+  (num-named-args-passed 0)
+  (is-varargs-call nil)
+  (has-env nil))
+
+(defun winabi-call-arg-value (u)
+  "winabi.c register_usage_to_call_arg_value: pack a RegisterUsage into RCall."
+  (let ((rp (wusage-regs-passed u)))
+    (flet ((bit-at (k i n) (if (aref rp k i) (ash 1 n) 0)))
+      (logior (if (wusage-rax-returned u) 1 0)
+              (if (wusage-xmm0-returned u) 2 0)
+              (bit-at 0 0 4) (bit-at 0 1 5) (bit-at 0 2 6) (bit-at 0 3 7)
+              (bit-at 1 0 8) (bit-at 1 1 9) (bit-at 1 2 10) (bit-at 1 3 11)
+              (if (wusage-has-env u) (ash 1 12) 0)))))
+
+(defun winabi-assign (u arg is-float by-copy)
+  "winabi.c assign_register_or_stack."
+  (if (= (wusage-num-regs-passed u) +winabi-nargregs+)
+      (setf (warg-style arg)
+            (if by-copy :copy-and-pointer-on-stack :inline-on-stack))
+      (progn
+        (setf (aref (wusage-regs-passed u) (if is-float 1 0)
+                    (wusage-num-regs-passed u))
+              t)
+        (incf (wusage-num-regs-passed u))
+        (setf (warg-style arg)
+              (if by-copy :copy-and-pointer-in-register :register))))
+  (incf (wusage-num-named-args-passed u))
+  arg)
+
+(defun winabi-by-copy-p (ty)
+  "winabi.c type_is_by_copy.  Only 1/2/4/8 go in a register; 5 does not."
+  (let ((sz (typ-size ty)))
+    (or (typ-isdark ty) (not (member sz '(1 2 4 8))))))
+
+(defun winabi-reg-for-arg (cls counter)
+  "winabi.c register_for_arg: position picks the register, class picks the bank."
+  (rg (if (= (cls-base cls) 0)
+          (aref *winabi-int-args* counter)
+          (aref *winabi-sse-args* counter))))
+
+(defun winabi-classify (u args)
+  "winabi.c classify_arguments.  ARGS is the arg/par ins list (source order).
+Returns (values warg-vector env-ref)."
+  (let ((acs (make-array (length args))) (env nil))
+    (loop for i in args for idx from 0 do
+      (let ((a (make-warg)) (op (ins-op i)))
+        (setf (aref acs idx) a)
+        (case op
+          ((:arg :par)
+           (winabi-assign u a (= 1 (cls-base (ins-cls i))) nil)
+           (setf (warg-cls a) (ins-cls i) (warg-align a) 3 (warg-size a) 8))
+          ((:argc :parc)
+           (let* ((ty (ins-arg0 i)) (by-copy (winabi-by-copy-p ty)))
+             (winabi-assign u a nil by-copy)
+             (setf (warg-cls a) (if (and (not by-copy) (<= (typ-size ty) 4)) :w :l)
+                   (warg-align a) 3
+                   (warg-size a) (typ-size ty)
+                   (warg-type a) ty)))
+          (:arge (setf env (ins-arg0 i) (warg-style a) :env-tag
+                       (wusage-has-env u) t))
+          (:pare (setf env (ins-to i)   (warg-style a) :env-tag
+                       (wusage-has-env u) t))
+          (:argv (setf (wusage-is-varargs-call u) t (warg-style a) :varargs-tag))
+          ;; QBE's winabi.c switch has no case for the subword pars; they would
+          ;; leave the style Invalid and die further down.  Refuse here instead,
+          ;; where the message can say what happened (the backend's rule is to
+          ;; raise rather than miscompile).
+          (t (abi-unsupported (format nil "win abi arg/par op ~a" op))))))
+    (when (and (wusage-has-env u) (wusage-is-varargs-call u))
+      (abi-unsupported "env with varargs"))
+    ;; A varargs call must ALSO put float arguments in the matching integer
+    ;; register, so the callee can spill them to shadow space without a
+    ;; prototype.  Mark those integer registers as in use.
+    (when (wusage-is-varargs-call u)
+      (dotimes (i +winabi-nargregs+)
+        (when (aref (wusage-regs-passed u) 1 i)
+          (setf (aref (wusage-regs-passed u) 0 i) t))))
+    (values acs env)))

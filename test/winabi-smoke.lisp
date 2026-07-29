@@ -36,5 +36,31 @@
 (ck "argregs env adds rax"
     (nth 0 (multiple-value-list (amd64-winabi-argregs (ash 1 12)))) (list +rax+))
 
+;;; --------------------------------------------- argument classification
+(defun mkins (op cls &optional a0 to) (make-instance (quote ins) :op op :cls cls :to to :arg0 a0 :arg1 nil))
+(defun mkty (size &optional dark) (let ((ty (make-instance (quote typ)))) (setf (typ-size ty) size (typ-isdark ty) dark (typ-align ty) 3) ty))
+(defun styles (args) (let ((u (make-wusage))) (multiple-value-bind (acs env) (winabi-classify u args) (declare (ignore env)) (values (map (quote list) (function warg-style) acs) u))))
+
+;; ONE counter: f(int, double) -> RCX and XMM1 (XMM0 skipped)
+(multiple-value-bind (st u) (styles (list (mkins :arg :l) (mkins :arg :d)))
+  (ck "classify (int,double) styles" st (list :register :register))
+  (ck "classify (int,double) mask" (format nil "~4,'0x" (winabi-call-arg-value u)) "0210"))
+
+;; five register-class arguments: the 5th spills to the stack
+(ck "5th argument goes on the stack"
+    (styles (list (mkins :arg :l) (mkins :arg :l) (mkins :arg :l) (mkins :arg :l) (mkins :arg :l)))
+    (list :register :register :register :register :inline-on-stack))
+
+;; 1/2/4/8 byte aggregates go in a register; anything else is copied by pointer
+(dolist (c (list (cons 8 :register) (cons 4 :register) (cons 5 :copy-and-pointer-in-register)
+                 (cons 16 :copy-and-pointer-in-register)))
+  (ck (format nil "struct of ~d bytes" (car c))
+      (styles (list (mkins :argc :l (mkty (car c))))) (list (cdr c))))
+
+;; a varargs call duplicates float args into the matching integer register
+(multiple-value-bind (st u) (styles (list (mkins :argv :w) (mkins :arg :d)))
+  (declare (ignore st))
+  (ck "varargs duplicates XMM0 into RCX" (format nil "~4,'0x" (winabi-call-arg-value u)) "0110"))
+
 (format t "~&~%  ~a  (~d 件中 ~d 失敗)~%" (if (zerop *bad*) "全部 ok" "FAILED") *n* *bad*)
 (uiop:quit (if (zerop *bad*) 0 1))
