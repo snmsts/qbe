@@ -32,6 +32,38 @@
    :cansel t)
   "The amd64 System V target (QBE T_amd64_sysv).")
 
+;;; QBE T_amd64_apple.  The ABI *is* SysV -- Apple's x86-64 ABI adopts it
+;;; wholesale, so abi1/isel/emitfn/registers are all shared with amd64_sysv.
+;;; What the target carries is the asm dialect amd64/emit.c keys off `T.apple`:
+;;; `_`-prefixed globals, bare `L` locals, no ELF `.type`/`.size` footer or
+;;; GNU-stack note, `@plt`-less calls, fp constants in `__TEXT,__literal*`
+;;; sections (macho_emitfin), and TLS through the mach-o `@tlvp` indirection
+;;; instead of `%fs`-relative offsets.
+(defparameter *amd64-apple-target*
+  (make-target
+   :name "amd64_apple"
+   :apple t
+   :asloc "L"                   ; QBE T_amd64_apple.asloc -- bare `L`, not `.L`
+   :assym "_"
+   :gpr0 +rax+   :ngpr +amd64-ngpr+
+   :fpr0 +xmm0+  :nfpr +amd64-nfpr+
+   :rglob *amd64-rglob* :nrglob 2
+   :rsave *sysv-rsave*  :nrsave *amd64-nrsave*
+   :rclob *rclob*
+   :rsave-mask *amd64-rsave-mask*
+   :regs *amd64-regs*
+   :abi0 nil
+   :abi1 #'amd64-abi
+   :isel #'amd64-isel
+   :emitfn #'be-emit-fn
+   :emitfin nil                 ; emit-fin is called by be-emit-module directly
+   :retregs #'amd64-retregs
+   :argregs #'amd64-argregs
+   :memargs #'amd64-memargs
+   :cansel t
+   :objfmt :macho)
+  "The amd64 Apple target (QBE T_amd64_apple).")
+
 ;;; QBE T_amd64_win.  Everything but the ABI is AMD64_COMMON: same registers,
 ;;; same isel, same instruction emitter.  What the target has to carry is the
 ;;; Microsoft calling convention (amd64-winabi.lisp), the caller/callee-save

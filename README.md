@@ -27,6 +27,7 @@ samples (collatz, euler9, prime, queen).
 | Target | Host | Status |
 |---|---|---|
 | `amd64_sysv` | x86-64 Linux | corpus 47/47 native, `minic` programs 4/4 |
+| `amd64_apple` | x86-64 macOS (incl. Rosetta 2 on Apple Silicon) | corpus 52/0/0 native (the 47 driver programs + 5 self-contained ones, incl. `tls.ssa`) |
 | `arm64_apple` | Apple Silicon | corpus 45/0/2 native, `minic` programs 4/4 |
 | `arm64_win` | Windows on ARM64 | corpus 45/0/2 native. No TLS. Frames large enough to need a `__chkstk` probe are **refused, not miscompiled** |
 | `amd64_win` | Windows x64 (incl. ARM64 emulation) | corpus 45/0/3 native. No TLS |
@@ -37,8 +38,11 @@ outside this backend — POSIX signals, pthreads, or an architecture the program
 cannot run on — so these are ceilings, not partial scores.
 
 Upstream QBE targets `amd64_sysv`, `amd64_apple`, `amd64_win`, `arm64`,
-`arm64_apple` and `rv64`. qbe-cl implements three of those six; `amd64_apple`,
-`arm64` (ELF) and `rv64` are not written.
+`arm64_apple` and `rv64`. qbe-cl implements four of those six; `arm64` (ELF)
+and `rv64` are not written. (`amd64_apple` is the SysV ABI under a mach-o
+dialect — `_` prefixes, `L` locals, `__TEXT` literal sections, `@tlvp` TLS —
+so it shares every pass with `amd64_sysv` and differs only in the target
+record and the emitter's dialect branches; see `test/amd64-apple.lisp`.)
 
 `arm64_win` is the exception in the other direction: **upstream has no Windows
 on ARM64 target at all**, so no fidelity claim is made for it — there is nothing
@@ -101,6 +105,7 @@ SBCL via [Roswell](https://roswell.github.io/). Golden dumps are checked in, so
 ```sh
 ci/run-tests.sh linux      # shared golden/unit + amd64 native exec + as-diff
 ci/run-tests.sh macos      # arm64_apple native exec + as-diff (Apple Silicon)
+                           # + amd64_apple native exec (Rosetta 2)
 ci/run-tests.sh windows    # shared golden/unit + arm64_win / amd64_win native exec
 ```
 
@@ -171,11 +176,13 @@ None of these affect the correctness of what is generated today.
 - **Register selection parity** (154/180) — benign, see above. Closing it would
   need a trace of the real QBE's allocator.
 - **TLS** — unimplemented on the Windows targets, where upstream QBE also
-  `die`s. On `amd64_sysv` the emit path (`%fs:sym@tpoff`) is unwritten and the
-  corpus's `tls.ssa` has no driver, so there is nothing to run it against.
-- **`extern` data through the GOT** on `amd64_sysv` — no corpus program uses it.
-  (On both Windows targets `extern` addresses do work, through a COFF `.refptr`
-  COMDAT.)
+  `die`s, and on `amd64_sysv`, where the emit path (`%fs:sym@tpoff`) is
+  unwritten. On `amd64_apple` it is implemented (the mach-o `@tlvp`
+  descriptor-call sequence) and `tls.ssa` runs natively.
+- **`extern` data through the GOT** on `amd64_sysv` — no corpus program uses
+  it. (On both Windows targets `extern` addresses do work, through a COFF
+  `.refptr` COMDAT, and on `amd64_apple` through `@gotpcrel`, checked against
+  the C compiler natively.)
 - **Large frames** on the Windows targets — a frame that reaches a guard page
   needs a `__chkstk` probe, which is a frame-layout change, not a prologue
   tweak. `arm64_win` refuses such frames rather than emitting code that faults.

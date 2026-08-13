@@ -118,15 +118,21 @@
       (s
        (let ((tm (newtmp "isel" :l fn))) (emit :addr :l tm (make-slot-ref s) nil) tm))
       ;; [E] an extern symbol's address is not a link-time constant: it has to
-      ;; be loaded through an indirection the linker builds (a GOT entry on ELF,
-      ;; a `.refptr` COMDAT on COFF).  So the symbol goes into its own :addr
-      ;; instruction, and any byte offset it carried becomes a separate add --
-      ;; the indirection can only name the symbol itself.  Thread-local SThr
-      ;; falls through to [F] and is relocated at emit time.
+      ;; be loaded through an indirection the linker builds (a GOT entry on ELF
+      ;; and mach-o, a `.refptr` COMDAT on COFF).  So the symbol goes into its
+      ;; own :addr instruction, and any byte offset it carried becomes a
+      ;; separate add -- the indirection can only name the symbol itself.
+      ;; Apple TLS rides the same path (amd64/isel.c: `(c->sym.type & SExt) ||
+      ;; (T.apple && c->sym.type == SThr)`): the :addr yields the tlv
+      ;; descriptor's address, and the pthread key dance behind it is a call
+      ;; through the descriptor's first quad, rdi = descriptor, result in rax.
+      ;; On ELF, thread-local SThr falls through to [F] and is relocated at
+      ;; emit time.
       ((and (not (eq op :call)) (hascon r)
             (eq (con-kind (hascon r)) :addr)
-            (member :ext (con-symtype (hascon r))))
-       (when (member :thr (con-symtype (hascon r)))
+            (or (member :ext (con-symtype (hascon r)))
+                (and (tg-apple) (member :thr (con-symtype (hascon r))))))
+       (when (and (member :thr (con-symtype (hascon r))) (not (tg-apple)))
          ;; SExtThr (initial-exec TLS) needs the thread-base dance as well.
          (abi-unsupported "initial-exec TLS address operand"))
        (let* ((c (hascon r))
@@ -135,6 +141,14 @@
          (unless (zerop (con-off c))
            (setf r2 (newtmp "isel" :l fn))
            (emit :add :l r1 r2 (getcon (con-off c) fn)))
+         (when (and (tg-apple) (member :thr (con-symtype c)))
+           (emit :copy :l r2 (rg +rax+) nil)
+           (let ((rd (newtmp "isel" :l fn))     ; descriptor address
+                 (rf (newtmp "isel" :l fn)))    ; its resolver function
+             (emit :call :w nil rf (make-call-ref 17))
+             (emit :copy :l (rg +rdi+) rd nil)
+             (emit :load :l rf rd nil)
+             (setf r2 rd)))
          (emit :addr :l r2
                (newcon (make-con :kind :addr :symname (con-symname c)
                                  :symtype (con-symtype c) :off 0)

@@ -97,7 +97,8 @@
 (defun be-emitcon (con e)
   (ecase (con-kind con)
     (:bits (es-out e "~d" (con-rawbits con)))   ; raw bits (a stored fp const)
-    (:addr (write-string (con-symname con) (es-stream e))
+    (:addr (write-string (be-sym-prefix (con-symname con)) (es-stream e))
+           (write-string (con-symname con) (es-stream e))
            (unless (zerop (con-off con)) (es-out e "~@d" (con-off con))))))
 
 (defun getarg (ch i)
@@ -293,16 +294,24 @@ dllimport form, but that needs source-level knowledge the IL does not carry;
              (sym (concatenate 'string (be-sym-prefix (con-symname c)) (con-symname c)))
              (rn (regtoa (reg-id to) +slong+)))
         (cond
+          ;; mach-o TLS: the operand is the address of the symbol's tlv
+          ;; descriptor; isel has already arranged the __tlv_get_addr call
+          ;; that turns it into the variable's address (amd64/emit.c Oaddr,
+          ;; `T.apple && (sym.type & SThr)`).
+          ((and (tg-apple) (member :thr st))
+           (es-out e "~Cmovq ~a@tlvp(%rip), %~a~%" #\Tab sym rn)
+           t)
           ((tg-windows)
            (when (member :thr st)
              (error "emit: thread-local ~a unsupported on amd64_win" sym))
            (pushnew sym *amd64-refptrs* :test #'string=)
            (es-out e "~Cmovq .refptr.~a(%rip), %~a~%" #\Tab sym rn)
            t)
-          ;; ELF SExt: load the address out of the GOT.  (The two TLS forms,
-          ;; SThr and SExtThr, are not written here -- isel refuses SExtThr, and
-          ;; plain SThr still falls through to the table as it always has.)
-          ((and (member :ext st) (not (member :thr st)) (not (tg-apple)))
+          ;; SExt: load the address out of the GOT.  Shared by ELF and mach-o
+          ;; (amd64/emit.c Oaddr case SExt is not apple-gated).  The two ELF TLS
+          ;; forms, SThr and SExtThr, are not written here -- isel refuses
+          ;; SExtThr, and plain SThr still falls through to the table.
+          ((and (member :ext st) (not (member :thr st)))
            (es-out e "~Cmovq ~a@gotpcrel(%rip), %~a~%" #\Tab sym rn)
            t))))))
 
@@ -404,8 +413,9 @@ dllimport form, but that needs source-level knowledge the IL does not carry;
                        (fn-blocks fn)))
          (e (make-es :stream stream :fn fn :leaf leaf)))
     (format stream ".text~%.balign 16~%")
-    (when (fn-export fn) (format stream ".globl ~a~%" (fn-name fn)))
-    (format stream "~a:~%~Cendbr64~%" (fn-name fn) #\Tab)
+    (let ((pfx (be-sym-prefix (fn-name fn))))
+      (when (fn-export fn) (format stream ".globl ~a~a~%" pfx (fn-name fn)))
+      (format stream "~a~a:~%~Cendbr64~%" pfx (fn-name fn) #\Tab))
     ;; Win64 varargs: the four integer argument registers go into the shadow
     ;; space the CALLER reserved, i.e. above the return address -- so this has
     ;; to happen before the rbp frame is pushed, and the ABI pass has already
@@ -445,8 +455,9 @@ dllimport form, but that needs source-level knowledge the IL does not carry;
           (format stream "~abb~d:~%" l (+ id0 (blk-id b))))
         (dolist (i (blk-ins b)) (be-emitins i e))
         (setf lbl (be-emit-jmp b e id0))))
-    ;; elf_emitfnfin; amd64_winabi_emitfn emits no symbol-size footer at all.
-    (unless (tg-windows)
+    ;; elf_emitfnfin -- ELF only: amd64_winabi_emitfn emits no symbol-size
+    ;; footer at all, and the shared emitfn skips it when T.apple.
+    (when (eq (tg-objfmt) :elf)
       (format stream ".type ~a, @function~%.size ~a, .-~a~%" (fn-name fn) (fn-name fn) (fn-name fn)))
     (format stream "/* end function ~a */~%~%" (fn-name fn))
     (+ id0 (fn-nblk fn))))
@@ -486,29 +497,51 @@ section, so the difference is purely assembler dialect."
                     .linkonce~Cdiscard~%.p2align~C3~%.refptr.~a:~%~C.quad~C~a~%"
             #\Tab s #\Tab s #\Tab #\Tab s #\Tab #\Tab s)))
 
+(defparameter *macho-litsec*
+  #("__TEXT,__literal4,4byte_literals"
+    "__TEXT,__literal8,8byte_literals"
+    "__TEXT,__literal16,16byte_literals")
+  "macho_emitfin: read-only literal sections, indexed by log2(size)-2.")
+
 (defun emit-fin (stream)
-  "emit.c elf_emitfin / pe_emitfin: the .rodata pool of stashed fp constants,
-   grouped by size (16/8/4) but labelled by insertion index.  Both formats put
-   everything in .rodata; only the label prefix and the trailing GNU-stack note
-   differ (the latter is be-emit-module's business)."
+  "emit.c elf_emitfin / macho_emitfin / pe_emitfin: the pool of stashed fp
+   constants, grouped by size (16/8/4) but labelled by insertion index.  ELF and
+   PE put everything in .rodata; mach-o has one literal section per size.  The
+   trailing GNU-stack note is be-emit-module's business."
   (when (> (fill-pointer *stash*) 0)
     (format stream "/* floating point constants */~%")
     (loop for lg from 4 downto 2 do
       (dotimes (i (fill-pointer *stash*))
         (let ((b (aref *stash* i)))
           (when (= (cdr b) (ash 1 lg))
-            (format stream ".section .rodata~%.p2align ~d~%~afp~d:" lg (tg-asloc) i)
+            (format stream ".section ~a~%.p2align ~d~%~afp~d:"
+                    (if (eq (tg-objfmt) :macho)
+                        (aref *macho-litsec* (- lg 2))
+                        ".rodata")
+                    lg (tg-asloc) i)
             (ecase lg
               (4 (format stream "~%~c.quad ~d~%~c.quad 0~%~%" #\Tab (car b) #\Tab))
               (3 (format stream "~%~c.quad ~d~%~%" #\Tab (car b)))
               (2 (format stream "~%~c.int ~d~%~%" #\Tab (s32* (car b)))))))))))
 
 (defun be-emit-data (d s)
-  "Emit one data definition (emit.c emitdat / emitlnk), everything to .data."
-  (format s (if (dat-thread d) ".section .tdata,\"awT\",@progbits~%" ".data~%"))
-  (format s ".balign ~d~%" (dat-align d))
-  (when (dat-export d) (format s ".globl ~a~%" (dat-name d)))
-  (format s "~a:~%" (dat-name d))
+  "Emit one data definition (emit.c emitdat / emitlnk), everything to .data.
+Apple thread-locals get the mach-o tlv machinery (emit.c emitlnk, `T.apple &&
+l->thread`): the symbol itself is a descriptor record in __thread_vars whose
+resolver __tlv_bootstrap hands out the address of the `$tlv$init` template."
+  (let ((pfx (be-sym-prefix (dat-name d)))
+        (sfx (if (and (tg-apple) (dat-thread d)) "$tlv$init" "")))
+    (cond
+      ((and (tg-apple) (dat-thread d))
+       (format s ".section __DATA,__thread_vars,thread_local_variables~%")
+       (format s "~a~a:~%~C.quad __tlv_bootstrap~%~C.quad 0~%~C.quad ~a~a~a~%~%"
+               pfx (dat-name d) #\Tab #\Tab #\Tab pfx (dat-name d) sfx)
+       (format s ".section __DATA,__thread_data,thread_local_regular~%"))
+      ((dat-thread d) (format s ".section .tdata,\"awT\",@progbits~%"))
+      (t (format s ".data~%")))
+    (format s ".balign ~d~%" (dat-align d))
+    (when (dat-export d) (format s ".globl ~a~a~%" pfx (dat-name d)))
+    (format s "~a~a~a:~%" pfx (dat-name d) sfx))
   (dolist (it (dat-items d))
     (ecase (first it)
       (:int (destructuring-bind (size value) (rest it)
@@ -518,7 +551,8 @@ section, so the difference is purely assembler dialect."
                 (format s "~C~a ~d~%" #\Tab decl v))))
       (:str (format s "~C.ascii ~a~%" #\Tab (second it)))
       (:ref (destructuring-bind (size name off) (rest it)
-              (format s "~C~a ~a~@[~a~]~%" #\Tab (if (= size 8) ".quad" ".int") name
+              (format s "~C~a ~a~a~@[~a~]~%" #\Tab (if (= size 8) ".quad" ".int")
+                      (be-sym-prefix name) name
                       (unless (zerop off) (format nil "~@d" off)))))
       (:zero (format s "~C.zero ~d~%" #\Tab (second it)))))
   (format s "~%"))
@@ -535,7 +569,7 @@ section, so the difference is purely assembler dialect."
     (dolist (d (module-data module)) (be-emit-data d s))
     (emit-refptrs s)
     (emit-fin s)
-    ;; elf_emitfin's trailer; pe_emitfin has none.
-    (unless (tg-windows)
+    ;; elf_emitfin's trailer; pe_emitfin and macho_emitfin have none.
+    (when (eq (tg-objfmt) :elf)
       (format s ".section .note.GNU-stack,\"\",@progbits~%"))
     (get-output-stream-string s)))
