@@ -1,319 +1,462 @@
-# qbe-cl 設計ドキュメント (v0)
+# qbe-cl design document (v0)
 
-QBE (https://c9x.me/compile/) のアーキテクチャを idiomatic な Common Lisp で
-再実装する。QBE 本体は「移植元」ではなく **仕様 + 差分オラクル** として使う。
+Reimplement the architecture of [QBE](https://c9x.me/compile/) in idiomatic
+Common Lisp. QBE itself is not the source being translated — it is the
+**specification and the differential oracle**.
 
-参照ソース: `git://c9x.me/qbe.git` (MIT)。本ドキュメントは実ソース
-(`all.h` / `main.c` / `ops.h` / `parse.c` ほか, ~9k行) を読んで書いている。
+Reference source: `git://c9x.me/qbe.git` (MIT). This document was written while
+reading the real sources (`all.h` / `main.c` / `ops.h` / `parse.c` and the rest,
+~9k lines).
 
----
-
-## 1. ゴールと非ゴール
-
-- **ゴール**: 純 CL で QBE IL (テキスト SSA) を読み、arm64 アセンブリテキストを吐く。
-  `as`/`cc` でアセンブル&リンクする AOT leaf ツール。host 非依存
-  (SBCL で開発、dotcl/standalone どちらからも使える可搬ライブラリ)。
-- **性能目標**: QBE 同様「LLVM の ~7割を極小の複雑さで」。まず正しさ、次に速度。
-- **最初のターゲット**: **arm64 一本**で dogfood(手元 Snapdragon)。amd64/rv64 は後。
-- **非ゴール**: 実行時 JIT(生きた callback 挿入)。asm→as subprocess は遅い。
-  JIT 半分は別プロジェクト(exec-pages 直吐き or Cranelift)。棲み分け維持。
-- **非ゴール(当面)**: C の bitset/ポインタ操作の逐行トランスリテレーション。
-  醜い部分だけが残る。データ→データ変換として書き直す。
+> **On reading this document.** Sections 1–5 are the original v0 design. Where
+> the implementation later went somewhere else, the original text is kept and
+> followed by a **Superseded** note saying what actually shipped and why — the
+> v0 reasoning is worth keeping as a record, but on its own it would now be
+> wrong. Section 6 is the milestone log, updated as milestones landed.
 
 ---
 
-## 2. オラクル戦略(この設計の心臓部)
+## 1. Goals and non-goals
 
-QBE を各段で走らせて出力を diff する。「ゼロから設計」の恐怖が無いのが本プロジェクトの肝。
+- **Goal**: read QBE IL (textual SSA) in pure CL and emit arm64 assembly text.
+  An AOT leaf tool that assembles and links via `as`/`cc`. Host-independent (developed
+  on SBCL, usable as a portable library from dotcl or standalone).
+- **Performance goal**: QBE's own — "70% of LLVM's performance in 10% of the
+  code". Correctness first, speed second.
+- **First target**: **arm64 only**, for dogfooding on a Snapdragon machine.
+  amd64/rv64 come later.
+- **Non-goal**: a runtime JIT (patching live callbacks in). Shelling out to `as`
+  is too slow for that. The JIT half belongs to a separate project (emitting
+  straight into executable pages, or Cranelift). Keep the division.
+- **Non-goal (for now)**: line-by-line transliteration of C bitset/pointer code.
+  That leaves only the ugly parts. Rewrite those as data-to-data transformations.
 
-### 2.1 パスごとの中間ダンプ (`qbe -d<FLAG>`)
+> **Superseded — first target.** amd64 shipped first, not arm64: the development
+> machine was x86-64 only, with no arm64 `as` or qemu available. arm64 followed
+> as a second implementation of the target protocol (§6, M6) once hardware was
+> at hand. There are now four targets: `amd64_sysv`, `amd64_win`, `arm64_apple`,
+> `arm64_win`.
+>
+> **Superseded — the JIT non-goal, partly.** The division still holds: the
+> loader/linker (symbol and relocation resolution, data pages) is
+> [solder](https://github.com/snmsts/solder)'s job, not this project's. But
+> qbe-cl does now emit machine code directly, not only assembly text —
+> `src/{amd64,arm64}-encode.lisp` produce bytes plus fixups, which is exactly
+> what solder consumes. `test/arm64-jit-smoke.lisp` maps those bytes executable
+> and calls them, but only for leaf functions that need no fixups.
 
-`main.c` の `debug[]` フラグ = 各パス後に `printfn` で IL をダンプする点。
-これがそのまま **中間段の diff オラクル**になる:
+---
 
-| flag | 段階 (dump point) | 対応パス |
-|------|------------------|---------|
+## 2. Oracle strategy (the heart of this design)
+
+Run QBE at each stage and diff the output. Not having to fear the "designed from
+nothing" failure mode is the whole point of this project.
+
+### 2.1 Per-pass intermediate dumps (`qbe -d<FLAG>`)
+
+The `debug[]` flags in `main.c` mark the points where QBE dumps IL through
+`printfn` after each pass. Those dump points are directly usable as
+**differential oracles for the intermediate stages**:
+
+| flag | dump point | pass |
+|------|------------|------|
 | `P` | after parsing | parse |
 | `M` | memory optimization | promote / coalesce |
 | `N` | ssa construction | ssa (Braun et al.) |
 | `C` | copy elimination | copy |
 | `G` | gvn / gcm | gvn, gcm |
-| `K` | if-conversion | ifconvert (cansel target のみ) |
+| `K` | if-conversion | ifconvert (only on a `cansel` target) |
 | `A` | abi lowering | abi0/abi1 (per-target) |
 | `I` | instruction selection | isel (per-target) |
 | `L` | liveness | filllive |
 | `S` | spilling | spill |
 | `R` | register allocation | rega |
 
-**含意**: QBE の textual dumper (`printfn`/`printref`, parse.c) と
-**バイト一致する pretty-printer を最初期に作る**。diff 戦略の全体がこれに乗る。
-既知の正規化差(名前付けの一意化など)は許容リストで吸収。
+**Implication**: build a pretty-printer that is **byte-identical to QBE's
+textual dumper** (`printfn`/`printref`, parse.c) at the very start. The entire
+diff strategy rests on it. Known normalization differences (uniquifying names
+and so on) are absorbed by an allow-list.
 
-### 2.2 エンドツーエンドの golden test
+### 2.2 End-to-end golden tests
 
-QBE の `test/*.ssa` をそのまま golden corpus に流用する。各ファイルに
-ドライバと期待出力が埋め込まれている:
+Reuse QBE's own `test/*.ssa` as the golden corpus. Each file embeds a driver and
+the expected output:
 
 ```
 # >>> driver
-#   ... C の main(呼び出し側) ...
+#   ... the C main() that calls in ...
 # <<<
 # >>> output
-#   期待 stdout
+#   expected stdout
 # <<<
 ```
 
-harness (`tools/test.sh` 相当を CL 側に用意):
-`qbe-cl foo.ssa → foo.s` → `cc foo.s driver.c` → 実行 → stdout を期待値と比較。
-さらに **実 QBE の出力ともバイナリ挙動を突き合わせる**(二重オラクル)。
+The harness (a CL equivalent of `tools/test.sh`) does:
+`qbe-cl foo.ssa → foo.s` → `cc foo.s driver.c` → run → compare stdout against the
+expected value. On top of that, cross-check the runtime behaviour against real
+QBE's output as well (a second oracle).
+
+> **Resolved.** The harness lives in CL alone (`test/harness.lisp` plus one
+> `--script` runner per pass); `tools/test.sh` is not wrapped. Goldens are
+> checked into `test/golden*/`, so the whole regression runs without a `qbe`
+> binary present.
 
 ---
 
-## 3. 権威的なパスパイプライン
+## 3. The authoritative pass pipeline
 
-`main.c: func()` の順序が唯一の正。`fill*` は解析情報の再計算
-(データ→データではなく副次情報)なので、CL では「その場で計算する派生値」
-または明示的な analysis オブジェクトとして持つ。
+The order in `main.c: func()` is the only truth. The `fill*` routines recompute
+analysis information (they are derived facts, not data-to-data transforms), so
+in CL they are either values computed on demand or explicit analysis objects.
 
 ```
-abi0                     ; per-target ABI 前処理 (elimsb 等)
+abi0                     ; per-target ABI preprocessing (elimsb and friends)
 fillcfg / filluse
-promote                  ; mem→reg (memory opt)
-ssa                      ; SSA 構築  ← Braun et al.
+promote                  ; mem→reg (memory optimization)
+ssa                      ; SSA construction  ← Braun et al.
 ssacheck
-fillalias / loadopt      ; load 最適化
+fillalias / loadopt      ; load optimization
 coalesce                 ; slot coalescing
 filldom
 gvn                      ; global value numbering
 simplcfg
 gcm                      ; global code motion
-[ifconvert]              ; T.cansel のときだけ
-abi1                     ; per-target ABI lowering(呼出規約/struct/可変長)
+[ifconvert]              ; only when T.cansel
+abi1                     ; per-target ABI lowering (calling convention/struct/varargs)
 simpl
-isel                     ; per-target 命令選択
+isel                     ; per-target instruction selection
 filllive / fillloop / fillcost
-spill                    ; スピル
-rega                     ; レジスタ割当
-simpljmp                 ; jump 簡約
-emitfn                   ; asm テキスト出力(per-target)
+spill                    ; spilling
+rega                     ; register allocation
+simpljmp                 ; jump simplification
+emitfn                   ; asm text output (per-target)
 ```
 
-**工数の分布**(正直に):
-- 軽い: SSA 構築, cfg/dom, copy, fold — well-understood。
-- **重い(工数の本体)**: `abi1` + `isel` + `emit`(per-target のグラインド、
-  忠実再現が要る)と `spill`+`rega`。ここは diff オラクル無しでは死ぬ。
-- arm64 一本に絞るのはこのため。
+**Where the work actually is** (honestly):
+
+- Light: SSA construction, cfg/dom, copy, fold — all well understood.
+- **Heavy (the bulk of it)**: `abi1` + `isel` + `emit` (the per-target grind,
+  which has to be faithful) and `spill` + `rega`. Without a diff oracle this is
+  where the project dies.
+- That is the reason for narrowing to arm64 alone.
+
+> **Superseded.** The narrowing happened, but to amd64 rather than arm64 (§1).
+> The prediction itself held up exactly: `abi1`/`isel`/`emit`/`spill`/`rega` were
+> the bulk of the work on every target, and the `-d` oracle is what made them
+> finishable. Notably, the second and later targets were far cheaper than the
+> first — arm64 reused the whole mid-end, and `arm64_win` reuses the arm64
+> register model, isel, abi1 and emit verbatim, differing only in assembler
+> dialect and vararg rules.
 
 ---
 
-## 4. IR データモデル (CLOS)
+## 4. The IR data model (CLOS)
 
-### 4.1 最重要判断: 「構造ノードは CLOS / opcode はデータ表」
+### 4.1 The key decision: "CLOS for structure nodes, data tables for opcodes"
 
-QBE 自身が **opcode ごとに struct を分けていない**。`Ins` は単一 struct
-(`op` enum + 引数2本 + 結果) で、算術/比較/メモリ等の性質は共有プロパティ表
-`optab[]` (`ops.h`) が持つ。~80 opcode ある。
+QBE itself does **not** give each opcode its own struct. `Ins` is a single struct
+(an `op` enum, two arguments, one result), and the properties that distinguish
+arithmetic from comparison from memory live in a shared property table,
+`optab[]` (`ops.h`). There are ~80 opcodes.
 
-→ **opcode ごとに CLOS サブクラスを作らない**(80クラスは破綻)。代わりに:
+→ **Do not make a CLOS subclass per opcode** (80 classes would collapse under
+their own weight). Instead:
 
-- **構造ノードだけ CLOS クラス**にする。dispatch と per-target 多態が効く所:
-  `module` / `target` / `fn` / `blk` / `phi` / `ins` / `con` / `typ`。
-- **opcode は keyword シンボル** (`:add`, `:loadw`, `:ceqw` …) で `ins` の slot に持つ。
-- opcode の性質は `ops.h` を移した**データ表 `*optab*`** (keyword → op-descriptor)
-  から引く。パスは「ノードクラスで generic dispatch + opcode で分岐(case/表引き)」。
+- **Only structure nodes become CLOS classes**, where dispatch and per-target
+  polymorphism earn their keep: `module` / `target` / `fn` / `blk` / `phi` /
+  `ins` / `con` / `typ`.
+- **Opcodes are keyword symbols** (`:add`, `:loadw`, `:ceqw`, …) held in a slot
+  of `ins`.
+- Opcode properties are looked up in a **data table `*optab*`** (keyword → op
+  descriptor) ported from `ops.h`. Passes then do "generic dispatch on the node
+  class, branch on the opcode (case or table lookup)".
 
-これは QBE 自身の設計と一致し、CL でも idiomatic(表駆動 + 総称関数の併用)。
+This matches QBE's own design, and it is idiomatic in CL too (table-driven code
+alongside generic functions).
 
-### 4.2 クラス階層(骨子)
+### 4.2 Class hierarchy (skeleton)
 
 ```
-module        ; トップレベル集約: functions, data-defs, type-defs, target
-  target      ; per-target 戦略。CLOS で総称関数を dispatch:
+module        ; top-level aggregate: functions, data-defs, type-defs, target
+  target      ; per-target strategy, dispatched through generic functions:
               ;   target-isel / target-abi0 / target-abi1 / target-emit
               ;   ret-regs / arg-regs / gpr-set / fpr-set / caller-save …
-              ; ← QBE の Target(関数ポインタの構造体)= CLOS が一番輝く所
-  fn          ; start-blk, tmps, cons, retty, flags(vararg/leaf/dynalloc)
-    blk       ; phis, ins(可変ベクタ), jmp(終端), s1/s2, preds,
-              ;   派生: idom/dom/fron/loop, liveness sets(bitset)
-      phi     ; to, cls, (blk . val) の列
-      ins     ; op(keyword), cls, to(ref), arg[2](ref)
-  con         ; :undef | :bits | :addr, sym, 値(int/double/float)
+              ; ← QBE's Target (a struct of function pointers); where CLOS shines
+  fn          ; start-blk, tmps, cons, retty, flags (vararg/leaf/dynalloc)
+    blk       ; phis, ins (growable vector), jmp (terminator), s1/s2, preds,
+              ;   derived: idom/dom/fron/loop, liveness sets (bitset)
+      phi     ; to, cls, a sequence of (blk . val)
+      ins     ; op (keyword), cls, to (ref), arg[2] (ref)
+  con         ; :undef | :bits | :addr, sym, value (int/double/float)
   typ         ; aggregate: name, union?, align, size, fields
 ```
 
-終端 `jmp` は QBE 同様 `blk` の slot(type + arg)。Jxxx enum は keyword 化。
+The `jmp` terminator is a slot on `blk` (type + arg), as in QBE. The `Jxxx` enum
+becomes keywords.
 
-### 4.3 値 (Ref) の表現 — idiomatic な逸脱
+> **Superseded — `target` is not a CLOS class.** It is a `defstruct` with
+> function-valued slots (`src/target.lisp`). QBE's design *is* a struct of
+> function pointers, and mirroring that 1:1 keeps the source correspondence with
+> `targ.c` while staying lighter than a class hierarchy. The generic backend
+> passes read the register model through thin `tg-*` accessors over `*target*`
+> instead of through generic-function dispatch. Every other class above landed
+> as described.
 
-QBE の `Ref` は 3bit tag + 29bit val(RTmp/RCon/RInt/RType/RSlot/RCall/RMem)、
-`val` は fn 内の配列 index。**CL では index ではなく実オブジェクト参照**を使う:
+### 4.3 Representing values (Ref) — an idiomatic divergence
 
-- temporary の被参照 → `tmp` インスタンスそのもの。
-- constant → `con` インスタンス。
-- RSlot/RInt/RType 等の小さなタグ付き値だけ軽量ラッパ(struct)。
+QBE's `Ref` is a 3-bit tag plus a 29-bit value (RTmp/RCon/RInt/RType/RSlot/
+RCall/RMem), where the value is an index into a per-function array. **In CL, use
+real object references rather than indices**:
 
-ただし **liveness/干渉グラフは bitset を temp id で回す**ので、`tmp` は安定な
-整数 `id` slot を持つ(オブジェクトかつ id 付き = identity と id 併用)。
-bitset パス(`live`/`spill`/`rega`)はここだけ id 経由で C 版を忠実移植。
+- a referenced temporary → the `tmp` instance itself
+- a constant → the `con` instance
+- small tagged values like RSlot/RInt/RType → a lightweight wrapper struct
 
-### 4.4 op-descriptor (ops.h の移植)
+But **liveness and the interference graph run over bitsets keyed by temp id**,
+so `tmp` carries a stable integer `id` slot (an object *and* an id — identity
+and index used side by side). The bitset passes (`live`/`spill`/`rega`) are the
+one place ported faithfully from the C, going through ids.
 
-`ops.h` の唯一「本当に表」な部分。keyword → descriptor:
+### 4.4 The op descriptor (porting ops.h)
+
+The one part of `ops.h` that genuinely is a table. Keyword → descriptor:
 
 ```
-name, argcls[結果class(w/l/s/d)][arg 0..1],
+name, argcls[result class (w/l/s/d)][arg 0..1],
 canfold, hasid, idval, commutes, assoc, idemp,
 cmpeqwl, cmplgtewl, eqval, pinned
 ```
 
-型クラスは `Kw/Kl/Ks/Kd` (= :w :l :s :d、`Kx` = :x top)。生成はマクロで
-`ops.h` 相当の DSL を一枚書いて展開(手写しにしない)。
+The type classes are `Kw/Kl/Ks/Kd` (= `:w :l :s :d`, with `Kx` = `:x`, top).
+Generate the table from a single DSL sheet equivalent to `ops.h` via a macro —
+do not transcribe it by hand.
 
-### 4.5 型システム(IL 仕様より)
+### 4.5 The type system (from the IL specification)
 
-- base: `w`(i32) `l`(i64) `s`(f32) `d`(f64)。extended: `b`(i8) `h`(i16)。
-  sub-word param/ret: `sb ub sh uh`。subtyping: l は w 文脈で使える(下位32bit)。
-- sigil: `:`集約型 / `$`グローバル / `%`一時 / `@`ブロックラベル。
-- 命令カテゴリ: 算術/ビット, load/store, alloc, blit, 比較(c*), 変換(ext*/*tof/*tosi),
-  cast/copy, call(env/可変長 `...`), vastart/vaarg, phi, jmp/jnz/ret/hlt。
+- base: `w` (i32), `l` (i64), `s` (f32), `d` (f64). Extended: `b` (i8),
+  `h` (i16). Sub-word params/returns: `sb ub sh uh`. Subtyping: an `l` may be
+  used in a `w` context (its low 32 bits).
+- sigils: `:` aggregate type, `$` global, `%` temporary, `@` block label.
+- instruction categories: arithmetic/bitwise, load/store, alloc, blit,
+  comparison (`c*`), conversion (`ext*`/`*tof`/`*tosi`), cast/copy, call
+  (with `env` and variadic `...`), vastart/vaarg, phi, jmp/jnz/ret/hlt.
 
 ---
 
-## 5. パッケージ / システム構成(実現形)
+## 5. Package and system layout (as built)
 
-ASDF system。SBCL 前提だが host 非依存(純 CL + `as`/`ld` subprocess のみ外部)。
-当初案の `opt.lisp`/`arm64/` サブディレクトリ等は、実装が育つにつれ以下の
-フラット構成に落ち着いた(パスごと 1 ファイル、per-target は `amd64-*` prefix)。
+An ASDF system. SBCL is assumed but nothing is host-specific (pure CL, with
+`as`/`ld` subprocesses as the only external dependency). The originally sketched
+`opt.lisp` and `arm64/` subdirectory gave way, as the implementation grew, to
+the flat layout below: one file per pass, per-target files carrying an
+`amd64-` prefix.
 
 ```
 qbe-cl.asd
 src/
-  packages.lisp ops.lisp ir.lisp        ; §4 の CLOS クラス群 + ops.h 表 + ref
-  parse.lisp print.lisp                 ; IL テキスト <-> module(-dP と byte 一致)
+  packages.lisp ops.lisp ir.lisp        ; the §4 CLOS classes + ops.h table + ref
+  target.lisp                           ; the per-target protocol
+  parse.lisp print.lisp                 ; IL text <-> module (byte-exact vs -dP)
   cfg.lisp                              ; rpo/preds/dom/fron + depth/loop
   ssa.lisp mem.lisp                     ; Braun SSA + fill-use/live, promote
-  gvn.lisp gcm.lisp ifopt.lisp          ; GVN(fold/copyref幅解析/assoccon)+ GCM + ifconvert
-  load.lisp                             ; alias 解析 + loadopt + coalesce
-  amd64.lisp amd64-abi.lisp             ; register model, SysV ABI(struct/stack/vararg)
-  amd64-isel.lisp                       ; 命令選択(アドレッシング/fp定数/blit)
+  gvn.lisp gcm.lisp ifopt.lisp          ; GVN (fold/copyref width analysis/assoccon) + GCM + ifconvert
+  load.lisp                             ; alias analysis + loadopt + coalesce
   backend.lisp spill.lisp rega.lisp     ; materialize-regs, live/spill/rega
-  amd64-emit.lisp                       ; asm テキスト出力(emit.c omap)
-  driver.lisp                           ; module -> asm -> as/ld -> 実行
+  amd64.lisp amd64-abi.lisp             ; x86-64 register model, SysV ABI
+  amd64-winabi.lisp                     ;   Microsoft x64 ABI
+  amd64-isel.lisp amd64-emit.lisp       ;   selection, asm output (emit.c omap)
+  amd64-encode.lisp amd64-targ.lisp     ;   machine code, target instances
+  arm64.lisp arm64-abi.lisp             ; AArch64 register model, AAPCS64/Apple
+  arm64-isel.lisp arm64-emit.lisp       ;   selection, asm output
+  arm64-encode.lisp arm64-targ.lisp     ;   machine code, target instances
+  driver.lisp                           ; module -> asm -> as/ld -> run
 test/
-  harness.lisp                          ; §2.2 golden runner + §2.1 pass-diff runner
-  corpus/  minic/                       ; QBE test/*.ssa + minic 生成 IL
-  golden*/                              ; 各 -d ダンプの golden(qbe 無しで回帰可能)
-  *.lisp                                ; 各パスの diff オラクル + e2e ランナー
+  harness.lisp                          ; the §2.2 golden runner + §2.1 pass-diff runner
+  corpus/  minic/                       ; QBE test/*.ssa + minic-generated IL
+  golden*/                              ; per-pass -d goldens, per target
+  *.lisp                                ; the diff oracles and e2e runners
+ci/
+  run-tests.sh                          ; the test groups, split by what a host can execute
 ```
 
-命名: パッケージ `qbe`。per-target は当面 `amd64-` prefix の平置き(arm64 追加時に
-`target.lisp` 総称関数へ切り出す想定)。C の型名 (Fn/Blk/Ins/Ref/Con/Typ) は
-CL 側でも `fn`/`blk`/`ins`/`ref`/`con`/`typ` を踏襲し、ソース対応を取りやすく保つ。
+Naming: the package is `qbe`. Per-target files were to stay flat under an
+`amd64-` prefix for the time being, with the intent of factoring them into
+generic functions in `target.lisp` once arm64 arrived. C type names
+(Fn/Blk/Ins/Ref/Con/Typ) are kept as `fn`/`blk`/`ins`/`ref`/`con`/`typ` on the CL
+side, to keep source correspondence easy.
+
+> **Superseded — how the factoring went.** `target.lisp` did arrive with arm64
+> (milestone G0), but as a struct of function-valued slots rather than generic
+> functions (§4.2). The flat `amd64-`/`arm64-` prefixes stayed; no subdirectories
+> were introduced.
 
 ---
 
-## 6. マイルストーン(縦に貫く walking skeleton 優先)
+## 6. Milestones (a walking skeleton first, vertically)
 
-横(パスごとに完璧)より縦(端まで貫通)を先に。diff ハーネスと「動く1関数」を
-Day 1 に手に入れ、以降は naive→賢いの差し替えで常に緑を保つ。
+Go deep (end to end) before going wide (each pass perfected). Have the diff
+harness and one working function on day 1, then keep replacing naive with clever
+while staying green throughout.
 
-- **M0 基盤** ✅ **達成 (2026-07-05)**: IR クラス + ops 表 + parse + print。
-  `parse→print` が実 QBE `-dP` と **QBE 全テストコーパス + 回帰フィクスチャで
-  180/180 関数・77/77 ファイル バイト一致**。golden を `test/golden/` に保存済みで
-  qbe 無しでも回帰可能。
-  再現した正規化: params→`par`、call args→`arg*`、`ret`→`ret<cls>`/`ret0`/`retc`、
-  `blit`→`blit0`+`blit1`、`loadw`→`loadsw`、jmp fall-through 省略、
-  定数 dedup(`newcon` の flt 無視 → `d_0`/`s_0`→`0`)、float の C `%f`、
-  整数リテラルの符号付き int64 ラップ(`getint`、`2^63`→負。`intwrap.ssa` で回帰)。
-- **M1 walking skeleton** ✅ **達成 (2026-07-05)**: 単一ブロック・整数(w/l)・
-  straight-line の1関数を **amd64** に下ろし `cc` で as/ld して**ネイティブ実行**、
-  exit code でクローズドループ検証(`test/m1.lisp`、7/7)。isel/rega は
-  「全 temp をスタックスロット、命令ごとにスクラッチへロード→計算→ストア」の
-  最ナイーブ方式(割当問題を回避)。対応 op: par/copy/add/sub/mul/and/or/xor/neg/ret。
-  **ターゲットが amd64 なのは開発環境が x86-64 のみ(arm64 の as/qemu 不在)のため。**
-  arm64 は target プロトコルの別実装として後で追加(実機 Snapdragon or qemu で検証)。
-  範囲外の op/多ブロック/phi はエラーにして誤コード生成を防ぐ。
-- **M1-B codegen 拡張** ✅ **達成 (2026-07-05)**: 同じ最ナイーブ方式のまま
-  **多ブロック + 制御フロー**へ。jmp/jnz、整数比較(c{eq,ne,slt..,ult..}{w,l}→0/1)、
-  load/store/alloc、**phi を edge copy に下ろす**(2-phase staging で並列コピー
-  ハザード対応)。SSA *構築* は M2 のまま、phi *下ろし*は codegen 側で実装。
-  分岐・ループ・メモリを使うプログラムが走り、実 QBE(amd64)と exit code 一致。
-  `test/m1.lisp` 12/12(branch/loop-sum/fact/mem/phi-swap 追加)。call/float/blit は未対応。
-- **M2 SSA を本物に**(byte-exact オラクル駆動、A1–A4 に分割):
-  - **A1 cfg + dom + fron** ✅ **達成 (2026-07-05)**: fill-rpo(DFS 後行順→RPO、
-    到達不能ブロック除去)/ fill-preds / fill-dom(Cooper-Harvey-Kennedy)/
-    fill-fron。**支配木を `qbe -dN` の `> Dominators:` ダンプと突き合わせ、全コーパス
-    180/180 関数・77/77 ファイル一致**(promote/abi0 は CFG 構造を変えないので parse 済み
-    IR で全件比較可)。`newtmp` の命名は `"%s.%d"`(モジュール横断の static counter)。
-  - **A2 filllive + A3 ssa** ✅ **達成 (2026-07-05)**: bitset(CL bit-vector、
-    dense id キー)、temp レジストリ(`fn-tmp`/`fn-ntmp`、parse で materialize)+
-    `newtmp`(run-global `*tmp-counter*`)、`fill-use`(+phicls union-find)、
-    `fill-live`(+`live-on`。ssa() 内で phiins を pruned させる pre-isel 生存。
-    RCall/RMem/rglob は isel 前で無効なので省略)、`phiins`、`renblk`(Name
-    スタック)。`ssa`=filldom→fillfron→filllive→phiins→renblk。要点: filllive は
-    下流でなく ssa() の構成要素 → A2→A3 順は必然。`src/ssa.lisp`、`test/ssa.lisp`。
-  - **A4 promote** ✅ **達成 (2026-07-06)**: `src/mem.c` の promote(mem2reg)。
-    start ブロックの alloc を走査し、全 use が一貫サイズ/クラスの load/store のみなら
-    alloc→nop、store→copy(slot を def 化)、load→copy/cast/ext に書換え。multi-def
-    になった slot を後段 ssa が phi 化。`src/mem.lisp`、`test/promote.lisp`。
-    **`qbe -dM` の "> After slot promotion:" と全コーパス 180/180 関数・77/77 ファイル
-    byte 一致**。promote+ssa の `-dN` "> After SSA construction:" は**構造が全 180/180
-    一致**(temp サフィックス正規化後)。生の byte 一致は 168/180 — 残差は純粋に
-    newtmp カウンタのずれで、qbe は各関数を**バックエンド(isel/rega、`%isel.N` を
-    生成)まで通してから次関数をパース**するため、後続関数の `.N` に先行関数の isel
-    temp が累積する(M3/isel で解消)。SSA/promote のバグではない。
-- **C(mid-end)** ✅ **達成 (2026-07-06〜11)**: `-dA`/`-dI` の diff は mid-end に
-  ゲートされる(gcm の code motion、gvn の可換正規化 `add 1,%x`→`add %x,1`)ため、
-  ABI/isel の前に mid-end を前倒しで実装した。**gvn**(gvn.c 508 + fold.c: normins/
-  copyref/foldref/gvndup(CSE)/dedupphi/dedupjmp/rebuildcfg、copyref の幅解析
-  usewidthle/defwidthle と assoccon 含む)+ **simplcfg** + **gcm**(schedearly/
-  late/gcmmove/sink)を `-dG`/`-dC` と diff。**loadopt**(load.c + alias.c: def の
-  後方走査による store/load 前方転送、部分重なりの shift/mask/or、phi 合成)+
-  **coalesce**(mem.c: 線形 liveness によるスロット融合・デッドストア除去)+
-  **ifconvert**(ifopt.c、T.cansel)。**全 180 関数で `-dG`/`-dC`/`-dM`(load
-  elimination / slot coalescing)が byte 一致**。`src/{gvn,gcm,ifopt,load}.lisp`。
-- **M3 amd64 ABI + isel を忠実に** ✅ **達成 (2026-07-06〜11)**: `-dA`/`-dI` と diff。
-  **abi1**(sysv.c 忠実移植: register/stack/memory 集約、スカラ溢れ引数、隠し
-  struct-return、`retc`、env、vararg の va_start/va_arg = ブロック分割+phi)→
-  **`-dA` byte一致 180/180**。**isel**(amd64/isel.c: スカラ整数、div/rem、可変
-  シフト、cmov(selsel)、比較→flag/jf、mgen テーブル駆動アドレッシング(seladdr/
-  amatch/runmatch)、fast-local/salloc、float 定数の .Lfp メモリ化、stoui/dtoui、
-  blit 展開)→ **`-dI` byte一致 180/180**。**開発環境が x86-64 のみのため amd64 を
-  第一ターゲットにした**(元設計の arm64 は §M6)。`src/amd64-*.lisp`。
-- **M4 spill + rega** ✅ **達成 (2026-07-06)**: bitset パスを temp id 経由で忠実移植。
-  materialize-regs で QBE の「レジスタ=temp id [0,Tmp0)」空間に橋渡し。**filllive/
-  fillcost**(`-dL`/`-dS`)+ **spill**(slot pack, limit/limit2)+ **rega**(RMap,
-  phicls hint, 並列move, 4-phase driver)+ **simpljmp** + **emit**(emit.c omap 完全)。
-  `-dL`/`-dS`/`-dR`(rega は 154/180、残差はレジスタ選択の割当順差で **e2e で良性を
-  実証**)。`src/{backend,spill,rega,amd64-emit}.lisp`。
-- **M5 corpus 緑化** ✅ **達成 (2026-07-11)**: `test/*.ssa`(ドライバ持ち全 47 本)を
-  data 定義・salloc・dynalloc まで含めて emit→cc→**実機実行**し、exit code/stdout を
-  検証(47/47)。さらに QBE 付属 C コンパイラ **minic** が実 C(collatz/prime/queen/
-  euler9)から吐いた IL を実機実行し、C 参照出力と一致(4/4)。手書き e2e も 15/15。
-  `test/{corpus-e2e,minic-e2e,e2e}.lisp`。
-- **M6+ 別ターゲット**(未着手): **arm64**(元設計の第一目標、実機 Snapdragon)を
-  target プロトコルの別実装として追加。amd64 の isel/abi/emit を範に arm64/{isel,
-  abi,emit,targ}.lisp を書く。rv64 も同様。残る amd64 の細部(rega バイト一致、TLS
-  emit、extern-GOT)は正しさに無関係/検証不能のため保留。
+- **M0 foundation** ✅ **done (2026-07-05)**: IR classes + ops table + parse +
+  print. `parse→print` is **byte-identical to real QBE `-dP` across the entire
+  test corpus plus the regression fixtures: 180/180 functions, 77/77 files**.
+  Goldens are saved under `test/golden/`, so regressions run without qbe.
+  Normalizations reproduced: params→`par`, call args→`arg*`,
+  `ret`→`ret<cls>`/`ret0`/`retc`, `blit`→`blit0`+`blit1`, `loadw`→`loadsw`,
+  omitted fall-through jmps, constant dedup (`newcon` ignores the float →
+  `d_0`/`s_0`→`0`), C `%f` for floats, and signed-int64 wrapping of integer
+  literals (`getint`; `2^63`→negative, regression-tested by `intwrap.ssa`).
+- **M1 walking skeleton** ✅ **done (2026-07-05)**: lower one single-block,
+  integer-only (w/l), straight-line function to **amd64**, assemble and link it
+  with `cc`, **run it natively**, and verify through the exit code — a closed
+  loop (`test/m1.lisp`, 7/7). isel and rega use the most naive scheme available
+  (every temp gets a stack slot; each instruction loads into a scratch register,
+  computes, stores back), which sidesteps allocation entirely. Ops covered:
+  par/copy/add/sub/mul/and/or/xor/neg/ret. **The target is amd64 because the
+  development environment is x86-64 only** (no arm64 `as`, no qemu); arm64 comes
+  later as a second implementation of the target protocol. Anything out of
+  scope — unknown ops, multiple blocks, phi — raises rather than miscompiles.
+- **M1-B extended codegen** ✅ **done (2026-07-05)**: same naive scheme, now with
+  **multiple blocks and control flow**. jmp/jnz, integer comparisons
+  (`c{eq,ne,slt..,ult..}{w,l}` → 0/1), load/store/alloc, and **phi lowered to
+  edge copies** (two-phase staging to handle parallel-copy hazards). SSA
+  *construction* is still M2's job; phi *lowering* is done in codegen. Programs
+  with branches, loops and memory run, and agree with real QBE (amd64) on exit
+  code. `test/m1.lisp` 12/12 (branch/loop-sum/fact/mem/phi-swap added). Calls,
+  floats and blit are not covered yet.
+- **M2 real SSA** (driven by the byte-exact oracle, split A1–A4):
+  - **A1 cfg + dom + fron** ✅ **done (2026-07-05)**: fill-rpo (DFS postorder →
+    RPO, unreachable blocks dropped) / fill-preds / fill-dom
+    (Cooper-Harvey-Kennedy) / fill-fron. **The dominator tree is checked against
+    `qbe -dN`'s `> Dominators:` dump and matches across the whole corpus:
+    180/180 functions, 77/77 files** (promote and abi0 do not change CFG shape,
+    so the comparison can be done on freshly parsed IR). `newtmp` names follow
+    `"%s.%d"` with a module-wide static counter.
+  - **A2 filllive + A3 ssa** ✅ **done (2026-07-05)**: bitsets (CL `bit-vector`
+    keyed by dense id), a temp registry (`fn-tmp`/`fn-ntmp`, materialized during
+    parse) plus `newtmp` (run-global `*tmp-counter*`), `fill-use` (with a phicls
+    union-find), `fill-live` (with `live-on`; the pre-isel liveness that lets
+    `phiins` prune inside `ssa()` — RCall/RMem/rglob do not exist before isel and
+    are skipped), `phiins`, and `renblk` (a Name stack).
+    `ssa` = filldom→fillfron→filllive→phiins→renblk. The key point: `fill-live`
+    is a component of `ssa()`, not a downstream pass, which makes the A2→A3 order
+    inevitable. `src/ssa.lisp`, `test/ssa.lisp`.
+  - **A4 promote** ✅ **done (2026-07-06)**: promote (mem2reg) from `src/mem.c`.
+    Walk the allocs in the start block; if every use is a load or store of
+    consistent size and class, rewrite alloc→nop, store→copy (making the slot a
+    def), and load→copy/cast/ext. Slots that become multi-def are turned into
+    phis by the later `ssa`. `src/mem.lisp`, `test/promote.lisp`. **Byte-identical
+    to `qbe -dM`'s "> After slot promotion:" across the whole corpus: 180/180
+    functions, 77/77 files.** For promote+ssa, `-dN`'s "> After SSA construction:"
+    matches **structurally on all 180/180** (after normalizing temp suffixes);
+    raw byte equality is 168/180, and the residue is purely a `newtmp` counter
+    offset: qbe runs each function all the way through the backend (isel/rega,
+    which generate `%isel.N`) before parsing the next one, so a later function's
+    `.N` has the earlier functions' isel temps accumulated into it. Resolved at
+    M3/isel. Not an SSA or promote bug.
+- **C (mid-end)** ✅ **done (2026-07-06 – 07-11)**: the `-dA`/`-dI` diffs are gated
+  on the mid-end (gcm's code motion, gvn's commutative normalization
+  `add 1,%x`→`add %x,1`), so the mid-end was pulled ahead of ABI and isel.
+  **gvn** (gvn.c 508 lines + fold.c: normins/copyref/foldref/gvndup (CSE)/
+  dedupphi/dedupjmp/rebuildcfg, including copyref's width analysis
+  usewidthle/defwidthle and assoccon) + **simplcfg** + **gcm** (schedearly/late/
+  gcmmove/sink), diffed against `-dG`/`-dC`. **loadopt** (load.c + alias.c:
+  backward walk from the def to forward stores into loads, shift/mask/or for
+  partial overlaps, phi synthesis) + **coalesce** (mem.c: slot fusion by linear
+  liveness, dead-store removal) + **ifconvert** (ifopt.c, T.cansel).
+  **`-dG`/`-dC`/`-dM` (load elimination and slot coalescing) are byte-identical
+  on all 180 functions.** `src/{gvn,gcm,ifopt,load}.lisp`.
+- **M3 amd64 ABI + isel, faithfully** ✅ **done (2026-07-06 – 07-11)**: diffed
+  against `-dA`/`-dI`. **abi1** (a faithful port of sysv.c: register/stack/memory
+  aggregate classification, scalar arguments spilling to the stack, hidden
+  struct returns, `retc`, `env`, and varargs' va_start/va_arg as block splitting
+  plus phis) → **`-dA` byte-exact 180/180**. **isel** (amd64/isel.c: scalar
+  integers, div/rem, variable shifts, cmov (selsel), comparison→flag/jf,
+  table-driven addressing through mgen (seladdr/amatch/runmatch), fast-local and
+  salloc, float constants materialized into `.Lfp` memory, stoui/dtoui, blit
+  expansion) → **`-dI` byte-exact 180/180**. **amd64 was made the first target
+  because the development environment was x86-64 only** (arm64 was the original
+  §M6). `src/amd64-*.lisp`.
+- **M4 spill + rega** ✅ **done (2026-07-06)**: the bitset passes ported
+  faithfully, going through temp ids. `materialize-regs` bridges into QBE's
+  "registers are temp ids in [0,Tmp0)" space. **filllive/fillcost** (`-dL`/`-dS`)
+  + **spill** (slot packing, limit/limit2) + **rega** (RMap, phicls hints,
+  parallel moves, the 4-phase driver) + **simpljmp** + **emit** (emit.c's omap in
+  full). `-dL`/`-dS`/`-dR` (rega reaches 154/180; the residue is a difference in
+  register selection order, **shown to be benign by e2e**).
+  `src/{backend,spill,rega,amd64-emit}.lisp`.
+- **M5 corpus green** ✅ **done (2026-07-11)**: all 47 driver-carrying `test/*.ssa`
+  files — including data definitions, salloc and dynalloc — emitted, run through
+  `cc`, **executed natively**, and verified on exit code and stdout (47/47). On
+  top of that, IL emitted by QBE's bundled C compiler **minic** from real C
+  (collatz/prime/queen/euler9) runs natively and matches the C reference output
+  (4/4). The hand-written e2e suite is 15/15.
+  `test/{corpus-e2e,minic-e2e,e2e}.lisp`.
+- **M3b/M3c amd64 machine code** ✅ **done**: an assembler-less encoder producing
+  bytes plus fixups (`src/amd64-encode.lisp`), diffed against the host `as` over
+  every corpus function (`test/encode.lisp`, `test/encode-corpus.lisp`).
+- **M6 arm64** ✅ **done (G0–G6)**: the original design's first target, added as a
+  second implementation of the target protocol.
+  **G0** extracted the register model into `target.lisp`;
+  **G1** a naive arm64 code generator running natively on Apple Silicon;
+  **G2** abi0 (`apple_extsb`) and abi1 in three stages (scalars → structs and
+  stack arguments → Apple varargs) to **`-dA` 180/180**;
+  **G3** isel mirroring arm64/isel.c to **`-dI` byte-exact 180/180**;
+  **G4** a real port of arm64/emit.c — the corpus runs natively;
+  **G5** minic's real C programs run natively 4/4;
+  **G6** an AArch64 machine-code encoder (`src/arm64-encode.lisp`) diffed against
+  Apple's `as` over the corpus, plus a JIT smoke test that executes the emitted
+  bytes. `src/arm64-*.lisp`.
+- **M7 the Windows targets** ✅ **done**:
+  **`arm64_win`** (Windows on ARM64) shares arm64's register model, isel, abi1
+  and emit with Apple verbatim; only the assembler dialect, the vararg rules and
+  a COFF fp-constant pool differ. It has **no upstream counterpart** — QBE has no
+  Windows-on-ARM64 target — so clang stands in as the oracle and correctness
+  rests on native execution (45 passed / 0 failed / 2 skipped).
+  **`amd64_win`** (Microsoft x64) ports `amd64/winabi.c`, with
+  `qbe -t amd64_win -dA` as a per-pass oracle: **`-dA` 180/180**, corpus 45/0/3
+  running through the OS's x64 emulation on an ARM64 host. Working notes for the
+  Win64 port are in [`src/AMD64-WIN-PORT.md`](src/AMD64-WIN-PORT.md).
+- **Not written**: of upstream QBE's six targets (`amd64_sysv`, `amd64_apple`,
+  `amd64_win`, `arm64`, `arm64_apple`, `rv64`), three are implemented here.
+  `amd64_apple` (mach-o x86-64) and `arm64` (ELF AArch64) are mostly dialect and
+  vararg deltas against targets that already exist; `rv64` is a whole backend.
+  The remaining amd64 details (rega byte-exactness, TLS emit, extern-GOT) are on
+  hold as either irrelevant to correctness or untestable.
 
-各段の受け入れ基準は「実 QBE との diff が空(or 既知許容差のみ)」。**amd64 は
-mid-end + ABI + isel + spill/liveness が全 180 関数で byte 一致し、QBE テスト
-スイート全体と実 C プログラムが正しく走る、検証済みの完全なバックエンドになった。**
+The acceptance criterion at every stage is "the diff against real QBE is empty
+(or contains only known, allowed differences)". **For amd64 and arm64 alike, the
+mid-end, ABI lowering, isel and spill/liveness are byte-identical across all 180
+corpus functions, and the whole QBE test suite plus real C programs run
+correctly — a verified, complete backend.**
 
 ---
 
-## 7. 併読すべき参照
+## 7. Worth reading alongside
 
-- QBE IL 仕様: https://c9x.me/compile/doc/il.html
-- QBE ソース(オラクル/仕様): `git://c9x.me/qbe.git`
-- Braun et al. "Simple and Efficient SSA Construction"(QBE の SSA の下敷き)
+- The QBE IL specification: https://c9x.me/compile/doc/il.html
+- The QBE source (oracle and specification): `git://c9x.me/qbe.git`
+- Braun et al., "Simple and Efficient SSA Construction" (the basis of QBE's SSA)
 
 ---
 
-## 8. 未決事項(次に詰める)
+## 8. Open questions (originally: to be settled next)
 
-- `ref` の最終表現: 生オブジェクト参照 vs 軽量タグ付き struct の境界線を確定。
-- bitset: CL の `bit-vector` で足りるか、id 密度的に専用実装が要るか。
-- print の正規化許容リスト: どの差異を「同値」と見なすか(temp 名の付番等)。
-- golden harness を CL 単体で回すか、`tools/test.sh` を wrap するか。
-- target プロトコルの総称関数の粒度(1 protocol class か mixin 群か)。
+All five have since been settled by the implementation:
+
+- **The final representation of `ref`** — where the line falls between raw object
+  references and lightweight tagged structs. → Real object references for `tmp`
+  and `con`; lightweight structs for the small tagged values (§4.3). `tmp` also
+  carries a stable id so the bitset passes can key on it.
+- **Bitsets** — is CL's `bit-vector` enough, or is a dedicated implementation
+  needed for this id density? → `bit-vector` was enough.
+- **The print normalization allow-list** — which differences count as equivalent
+  (temp numbering and so on). → Resolved per pass; the residual `-dN` numbering
+  offset turned out to be an artifact of qbe's per-function pipeline order and
+  disappeared at M3 (§6, A4).
+- **Whether to run the golden harness from CL alone or wrap `tools/test.sh`** →
+  CL alone (§2.2).
+- **The granularity of the target protocol** — one protocol class or a set of
+  mixins? → Neither: a `defstruct` with function-valued slots, mirroring QBE's
+  own struct of function pointers (§4.2).

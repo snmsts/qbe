@@ -1,132 +1,185 @@
 # qbe-cl
 
-QBE ([c9x.me/compile](https://c9x.me/compile/)) のコンパイラバックエンドを
-idiomatic な Common Lisp で再実装するプロジェクト。QBE 本体は「移植元」ではなく
-**仕様 + 差分オラクル**として使う。設計は [`DESIGN.md`](DESIGN.md)。
+A reimplementation of the [QBE](https://c9x.me/compile/) compiler backend in
+idiomatic Common Lisp.
 
-## 現状: amd64 バックエンドが完成・検証済み
+QBE is not the source being translated — it is the **specification and the
+differential oracle**. qbe-cl reads QBE IL (textual SSA), runs the mid-end
+optimizations and target lowering, and emits assembly (or machine code
+directly).
 
-QBE IL(テキスト SSA)を読み、mid-end 最適化と amd64 SysV のコード生成を通して
-x86-64 アセンブリを吐き、`cc` でアセンブル&リンクしてネイティブ実行する。
-**QBE の全テストコーパスに対し、各中間段の出力が実 QBE の `-d` ダンプとバイト一致**
-(下表)。さらに **QBE のテストプログラムと、QBE 付属の C コンパイラ `minic` が
-生成した IL が、実機で正しく走る**ことまで確認済み。
+Two separate claims are made here, and they are tested differently. **Fidelity**
+— that a pass reproduces what upstream QBE does — is checked by diffing against
+the real `qbe`'s `-d` debug dumps over QBE's own test corpus (77 files, 180
+functions). Every pass through instruction selection matches byte for byte;
+register allocation deliberately does not (see below). **Correctness** — that
+the emitted code computes the right thing — is checked by assembling, linking
+and running the corpus programs natively, which is what "the backend is done"
+means here. The two claims are kept apart on purpose: a pass can be correct
+without being byte-identical, and the tables below say which is which.
 
-| 段 | パス | オラクル(`qbe -d…`)| 結果(全 180 関数) |
-|----|------|------|------|
-| parse→print | `-dP` after parsing | byte 一致 180/180・77/77 ファイル |
-| dominators / SSA | `-dN` | 180/180 |
-| slot promotion | `-dM` after slot promotion | byte 一致 180/180 |
-| **load elimination** | `-dM` after load elimination | 180/180 |
-| **slot coalescing** | `-dM` slot coalescing | 180/180 |
-| **GVN / GCM / simplcfg** | `-dG` / `-dC` | 180/180 |
-| **ABI lowering** | `-dA` | 180/180(struct/stack/vararg/env 含む) |
-| **isel** | `-dI` | 180/180(byte 一致) |
-| **liveness / spill costs** | `-dL` / `-dS` | 180/180(byte 一致) |
-| **spilling** | `-dS` after spilling | 180/180(byte 一致) |
-| register allocation | `-dR` | 154/180(※) |
+The full chain **C → `minic` → QBE IL → qbe-cl → native executable** runs, on
+`amd64_sysv` and `arm64_apple`, for the four C programs QBE ships as `minic`
+samples (collatz, euler9, prime, queen).
 
-※ rega はレジスタ選択(割当順)が QBE と異なる関数が残るが、**生成コードは正しい**
-(下記 e2e で実証)。ミスコンパイルではなく良性の割当順差。
+## Targets
 
-### end-to-end(実機実行)
+| Target | Host | Status |
+|---|---|---|
+| `amd64_sysv` | x86-64 Linux | corpus 47/47 native, `minic` programs 4/4 |
+| `arm64_apple` | Apple Silicon | corpus 45/0/2 native, `minic` programs 4/4 |
+| `arm64_win` | Windows on ARM64 | corpus 45/0/2 native. No TLS. Frames large enough to need a `__chkstk` probe are **refused, not miscompiled** |
+| `amd64_win` | Windows x64 (incl. ARM64 emulation) | corpus 45/0/3 native. No TLS |
 
-- **手書き e2e**(`test/e2e.lisp`, 15/15): 算術/除算/シフト/ループ/phi/呼出/
-  callee-save/メモリ/SIB アドレッシング/float 定数/float→uint/struct 値渡し・
-  返り値/vararg。すべて `cc` で実行し結果検証。
-- **コーパス e2e**(`test/corpus-e2e.lisp`, 47/47): QBE の `test/*.ssa` のうち
-  C ドライバを持つ全プログラムをコンパイル→リンク→実行し、exit code / stdout を検証。
-- **minic e2e**(`test/minic-e2e.lisp`, 4/4): QBE 付属の C コンパイラ `minic` が
-  実 C プログラム(collatz / euler9 / prime / queen)から吐いた IL を、この
-  バックエンドで実機実行し、C を直接コンパイルした参照出力とバイト一致。
+Corpus scores are *passed / failed / skipped* over the 47 corpus files that
+carry a C driver. Every skip is the corpus's own `# skip` marker for something
+outside this backend — POSIX signals, pthreads, or an architecture the program
+cannot run on — so these are ceilings, not partial scores.
 
-つまり **任意の C → minic → QBE IL → qbe-cl → x86-64 → ネイティブ実行** が通る。
+Upstream QBE targets `amd64_sysv`, `amd64_apple`, `amd64_win`, `arm64`,
+`arm64_apple` and `rv64`. qbe-cl implements three of those six; `amd64_apple`,
+`arm64` (ELF) and `rv64` are not written.
 
-## 設計の要点
+`arm64_win` is the exception in the other direction: **upstream has no Windows
+on ARM64 target at all**, so no fidelity claim is made for it — there is nothing
+to be faithful to. Its assembler dialect and its vararg rules are pinned
+textually with clang as the oracle instead, and its correctness rests on the
+corpus running natively (`test/arm64-win.lisp`,
+`test/arm64-win-corpus-e2e.lisp`).
 
-- **構造ノードは CLOS、opcode はデータ表**: `module/fn/blk/phi/ins/typ` は CLOS、
-  ~80 の opcode は keyword + `ops.h` 由来のプロパティ表(クラスにしない)。
-- **Ref は実オブジェクト参照**: temporary は `tmp`、定数は `con`、RMem は `mem`
-  など実オブジェクト。ただし liveness/干渉は temp の安定 id 経由の bitset。
-- **忠実移植 vs データ変換**: 難所(isel/spill/rega/abi/loadopt)は QBE C を忠実に
-  移植し `-d` ダンプとバイト一致を取る。それ以外は idiomatic に書き直す。
+`amd64` and `arm64` each also have an **assembler-less machine-code encoder**
+(`src/{amd64,arm64}-encode.lisp`), producing bytes plus relocations rather than
+assembly text. Each is diffed against the host `as` over every corpus function
+— byte-identical on amd64, and on arm64 modulo two expected differences that
+are counted separately (ops the encoder does not cover yet, and local `bl`s that
+`as` resolves but the encoder leaves as a relocation). On Apple Silicon the
+emitted bytes are also mapped executable and called, in `test/arm64-jit-smoke.lisp`.
 
-```
-src/
-  packages.lisp ops.lisp ir.lisp        ; opタ表 + IR モデル
-  parse.lisp print.lisp                 ; IL テキスト <-> IR(-dP と byte 一致)
-  cfg.lisp ssa.lisp mem.lisp            ; rpo/dom/fron, SSA 構築, promote
-  gvn.lisp gcm.lisp ifopt.lisp          ; GVN(copyref幅解析/assoccon)+ GCM + ifconvert
-  load.lisp                             ; alias 解析 + loadopt + coalesce
-  amd64.lisp amd64-abi.lisp             ; register model, SysV ABI(struct/stack/vararg)
-  amd64-isel.lisp backend.lisp          ; 命令選択(アドレッシング/fp/blit), backend 共通
-  spill.lisp rega.lisp amd64-emit.lisp  ; spill, レジスタ割当, asm 出力
-  driver.lisp
-test/
-  corpus/  minic/                       ; QBE test/*.ssa + minic 生成 IL(MIT)
-  golden*/                              ; 各 -d ダンプの golden(qbe 無しで回帰可能)
-  *.lisp                                ; 各パスの diff オラクル + e2e ランナー
-```
+## How it is verified
 
-## 実行
+**Fidelity — per-pass byte-exactness** against `qbe -d…`. The mid-end passes
+are target-independent and shared; the numbers below are over all 180 corpus
+functions.
 
-処理系は SBCL(Roswell 経由 `ros -Q run`)。golden を同梱しているので **qbe バイナリ
-無しで全回帰**が回る。
+| Pass | Oracle | Result |
+|---|---|---|
+| parse → print | `-dP` | 180/180, 77/77 files |
+| dominators / SSA construction | `-dN` | 180/180 |
+| slot promotion (mem2reg) | `-dM` | 180/180 |
+| load elimination | `-dM` | 180/180 |
+| slot coalescing | `-dM` | 180/180 |
+| GVN / GCM / simplcfg | `-dG`, `-dC` | 180/180 |
+| ABI lowering | `-dA` | 180/180 × `amd64_sysv`, `arm64_apple`, `amd64_win` — structs, stack args, varargs, `env` |
+| instruction selection | `-dI` | 180/180 × `amd64_sysv`, `arm64_apple` |
+| liveness / spill costs | `-dL`, `-dS` | 180/180 |
+| spilling | `-dS` | 180/180 |
+| register allocation | `-dR` | 154/180 structural (see below) |
+
+Register allocation is the one pass that does not reach parity: it picks
+different registers than QBE for some functions. Nothing suggests those
+allocations are wrong — every end-to-end test below passes — but that is
+behavioural evidence, not the byte-exact parity the other rows report. CI gates
+this row on the 154 baseline rather than on equality.
+
+**Correctness — native execution**, which is what "the backend is done"
+actually means:
+
+- hand-written programs (`test/e2e.lisp`) — arithmetic, division, shifts, loops,
+  phis, calls, callee-save, SIB addressing, float constants, float→uint, struct
+  by value and by return, varargs.
+- QBE's own corpus programs (`test/*corpus-e2e.lisp`) — compiled, linked against
+  the embedded C driver, run, and checked on exit code and stdout.
+- real C programs (`test/*minic-e2e.lisp`) — collatz, euler9, prime, queen,
+  compiled by QBE's sample C compiler `minic`, run through this backend, and
+  compared against the output of a C compiler on the same source.
+
+## Running the tests
+
+SBCL via [Roswell](https://roswell.github.io/). Golden dumps are checked in, so
+**the full regression runs without a `qbe` binary**.
 
 ```sh
-ros -Q run -- --script test/run.lisp          # M0 parse/print 回帰
-ros -Q run -- --script test/ssa.lisp          # SSA 構築 (-dN)
-ros -Q run -- --script test/gvn.lisp          # GVN (-dG)
-ros -Q run -- --script test/isel.lisp         # 命令選択 (-dI)
-ros -Q run -- --script test/spill.lisp        # spill (-dS)
-ros -Q run -- --script test/rega.lisp         # レジスタ割当 (-dR)
-ros -Q run -- --script test/e2e.lisp          # 手書きプログラム実行
-ros -Q run -- --script test/corpus-e2e.lisp   # QBE テストプログラム実行
-ros -Q run -- --script test/minic-e2e.lisp    # minic 生成 IL 実行
+ci/run-tests.sh linux      # shared golden/unit + amd64 native exec + as-diff
+ci/run-tests.sh macos      # arm64_apple native exec + as-diff (Apple Silicon)
+ci/run-tests.sh windows    # shared golden/unit + arm64_win / amd64_win native exec
 ```
 
-golden の再取得や新規 `.ssa` の diff には実 QBE が要る:
+Each test is also a self-contained script that exits 0 on success:
+
+```sh
+ros -Q run -- --script test/run.lisp             # parse/print       (-dP)
+ros -Q run -- --script test/ssa.lisp             # SSA construction  (-dN)
+ros -Q run -- --script test/gvn.lisp             # GVN               (-dG)
+ros -Q run -- --script test/abi.lisp             # SysV ABI lowering (-dA)
+ros -Q run -- --script test/winabi.lisp          # Win64 ABI lowering
+ros -Q run -- --script test/isel.lisp            # instruction selection
+ros -Q run -- --script test/corpus-e2e.lisp      # corpus programs, natively
+ros -Q run -- --script test/minic-e2e.lisp       # real C programs, natively
+```
+
+Regenerating goldens, or diffing a new `.ssa`, needs the real QBE:
 
 ```sh
 git clone git://c9x.me/qbe.git && cd qbe && make
 export QBE_BIN=$PWD/qbe
 ```
 
-## arm64_win (Windows on ARM)
+## Design
 
-ARM64 Windows のネイティブ DLL / exe を吐くための移植。`arm64_apple` から
-`:apple nil` で派生した形で、記号の綴り (`_` 接頭辞の有無)・`adrp` の
-リロケーション書式・可変長引数の規則が違う。
+- **CLOS for structure, data tables for opcodes.** `module` / `fn` / `blk` /
+  `phi` / `ins` / `typ` are classes; the ~80 opcodes are keywords plus a
+  property table derived from `ops.h`, not a class hierarchy.
+- **Refs are real object references.** A temporary is a `tmp`, a constant a
+  `con`, an addressing mode a `mem`. Liveness and interference still go through
+  each temp's stable id as a bitset, the way QBE does.
+- **Faithful port where there is an oracle, rewritten where there is not.** The
+  hard passes — isel, spill, rega, ABI lowering, load elimination — are ported
+  closely enough to match the `-d` dumps byte for byte. Everything else is
+  written the way Common Lisp wants to be written.
 
+```
+src/
+  packages.lisp ops.lisp ir.lisp        ; op table + IR model
+  target.lisp                           ; the per-target protocol
+  parse.lisp print.lisp                 ; IL text <-> IR  (byte-exact vs -dP)
+  cfg.lisp ssa.lisp mem.lisp            ; rpo/dom/frontier, SSA, promotion
+  gvn.lisp gcm.lisp ifopt.lisp          ; GVN + GCM + if-conversion
+  load.lisp                             ; alias analysis, loadopt, coalescing
+  backend.lisp spill.lisp rega.lisp     ; shared backend: liveness, spill, rega
+  amd64.lisp amd64-abi.lisp             ; x86-64 register model, SysV ABI
+  amd64-winabi.lisp                     ;   Microsoft x64 ABI
+  amd64-isel.lisp amd64-emit.lisp       ;   selection, asm output
+  amd64-encode.lisp amd64-targ.lisp     ;   machine code, target instances
+  arm64.lisp arm64-abi.lisp             ; AArch64 register model, AAPCS64/Apple
+  arm64-isel.lisp arm64-emit.lisp       ;   selection, asm output
+  arm64-encode.lisp arm64-targ.lisp     ;   machine code, target instances
+  driver.lisp
+test/
+  corpus/  minic/                       ; QBE test/*.ssa + minic-generated IL (MIT)
+  golden*/                              ; per-pass -d goldens, per target
+  *.lisp                                ; the diff oracles and e2e runners
+```
 
-## amd64_win (Microsoft x64 ABI)
+Longer notes: [`DESIGN.md`](DESIGN.md) for the overall design and milestone
+history, [`src/AMD64-WIN-PORT.md`](src/AMD64-WIN-PORT.md) for the Win64 port
+(correspondence table with `amd64/winabi.c`, pitfalls, open items).
 
-ARM64 Windows で走る x64 エミュレーションのアプリを覆うための移植。
-本家 `amd64/winabi.c` が移植元、`qbe -t amd64_win -dA` がパス単位のオラクル。
+## Known gaps
 
-**作業メモ・対応表・残件は [`src/AMD64-WIN-PORT.md`](src/AMD64-WIN-PORT.md)。**
-冷たい状態から再開するときはまずそれを読むこと。
+None of these affect the correctness of what is generated today.
 
-一巡した。ABI lowering は `qbe -t amd64_win -dA` に対して **180/180 functions
-一致** (`test/winabi.lisp`)、コーパスは **45 passed / 0 failed / 3 skipped**
-で実際に走る (`test/amd64-win-corpus-e2e.lisp`)。skip 3 本は corpus 側の
-`# skip amd64_win` マーカーで、理由はどれもこちらのバックエンドではない。
-方言・Win64 固有の規則・extern は `test/amd64-win.lisp` が 27 件（うち 6 件は
-実際にリンクして走らせる）。extern アドレスは本家が `die` するところを COFF の
-`.refptr` COMDAT で通してある。
+- **Register selection parity** (154/180) — benign, see above. Closing it would
+  need a trace of the real QBE's allocator.
+- **TLS** — unimplemented on the Windows targets, where upstream QBE also
+  `die`s. On `amd64_sysv` the emit path (`%fs:sym@tpoff`) is unwritten and the
+  corpus's `tls.ssa` has no driver, so there is nothing to run it against.
+- **`extern` data through the GOT** on `amd64_sysv` — no corpus program uses it.
+  (On both Windows targets `extern` addresses do work, through a COFF `.refptr`
+  COMDAT.)
+- **Large frames** on the Windows targets — a frame that reaches a guard page
+  needs a `__chkstk` probe, which is a frame-layout change, not a prologue
+  tweak. `arm64_win` refuses such frames rather than emitting code that faults.
+- **The JIT encoders assume SysV**, so they are not usable from the Windows
+  targets yet.
 
-残: TLS（本家も `die`。arm64_win でも未着手）、`amd64-encode.lisp` (JIT) の
-SysV 固定、大フレームの `__chkstk`。
-
-## 残課題
-
-いずれも「正しさに無関係」または「検証不能」で、実質的なバックエンドは完成済み:
-
-- **rega のレジスタ選択バイト一致**(154/180)— 良性(全 e2e が正しく走る)。厳密に
-  合わせるには実 QBE の rega トレースが要る。
-- **TLS の emit**(`%fs:sym@tpoff`)— コーパスの `tls.ssa` にドライバが無く実行対象外。
-- **extern データの GOT アクセス** — コーパスに使用関数が無い。
-- **TLS** — 本家も `die`。arm64_win でも未着手。
-- **`amd64-encode.lisp` (JIT) の SysV 固定**、大フレームの `__chkstk`。
-
-ライセンス: MIT(QBE と同じ)。
+License: MIT, the same as QBE.
