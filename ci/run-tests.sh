@@ -77,9 +77,12 @@ case "$OS" in
     # rv64: built and run inside a linux/riscv64 container through qemu
     # user emulation (self-skips without docker)
     run rv64-corpus-e2e
-    # wasm (W1 skeleton): .s -> clang --target=wasm64 -> wasm-ld -> node
+    # wasm: .s -> clang --target=wasm64 -> wasm-ld -> node
     # (self-skips without a wasm64 clang / wasm-ld / memory64 node)
     run wasm-smoke
+    # wasm corpus e2e: C drivers + libc via emscripten -sMEMORY64 in a
+    # container (self-skips without docker)
+    run wasm-corpus-e2e
     ;;
   windows)
     for t in $PURE; do run "$t"; done

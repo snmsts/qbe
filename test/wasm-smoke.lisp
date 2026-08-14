@@ -141,6 +141,136 @@ export function w $tabsum() {
 	%r =w add %s, %c
 	ret %r
 }
+
+# ---- W2: the wasm C ABI ----
+type :one = { l }
+type :two = { l, l }
+
+export function l $take1(:one %s) {
+@start
+	%a =l load %s
+	ret %a
+}
+export function l $take2(:two %s) {
+@start
+	%a =l load %s
+	%p =l add %s, 8
+	%b =l load %p
+	%r =l add %a, %b
+	ret %r
+}
+export function :two $mk2(l %x, l %y) {
+@start
+	%s =l alloc8 16
+	storel %x, %s
+	%p =l add %s, 8
+	storel %y, %p
+	ret %s
+}
+export function :one $mk1(l %x) {
+@start
+	%s =l alloc8 8
+	storel %x, %s
+	ret %s
+}
+export function l $agg(l %x, l %y) {
+@start
+	%t =:two call $mk2(l %x, l %y)
+	%a =l call $take2(:two %t)
+	%o =:one call $mk1(l %a)
+	%b =l call $take1(:one %o)
+	ret %b
+}
+
+export function w $vsum(w %n, ...) {
+@start
+	%ap =l alloc8 8
+	vastart %ap
+	jmp @loop
+@loop
+	%i =w phi @start 0, @body %i1
+	%s =w phi @start 0, @body %s1
+	%c =w csltw %i, %n
+	jnz %c, @body, @end
+@body
+	%v =w vaarg %ap
+	%s1 =w add %s, %v
+	%i1 =w add %i, 1
+	jmp @loop
+@end
+	ret %s
+}
+export function d $vsumd(w %n, ...) {
+@start
+	%ap =l alloc8 8
+	vastart %ap
+	jmp @loop
+@loop
+	%i =w phi @start 0, @body %i1
+	%s =d phi @start d_0, @body %s1
+	%c =w csltw %i, %n
+	jnz %c, @body, @end
+@body
+	%v =d vaarg %ap
+	%s1 =d add %s, %v
+	%i1 =w add %i, 1
+	jmp @loop
+@end
+	ret %s
+}
+export function w $vcall() {
+@start
+	%r =w call $vsum(w 3, ..., w 10, w 20, w 30)
+	ret %r
+}
+export function d $vcalld() {
+@start
+	%r =d call $vsumd(w 2, ..., d d_1.5, d d_2.25)
+	ret %r
+}
+
+function w $inc(w %x) {
+@start
+	%r =w add %x, 1
+	ret %r
+}
+export function w $apply(l %f, w %x) {
+@start
+	%r =w call %f(w %x)
+	ret %r
+}
+export function w $indir(w %x) {
+@start
+	%p =l copy $inc
+	%r =w call $apply(l %p, w %x)
+	ret %r
+}
+
+function l $enved(env %e, l %x) {
+@start
+	%r =l add %e, %x
+	ret %r
+}
+export function l $useenv() {
+@start
+	%r =l call $enved(env 7, l 35)
+	ret %r
+}
+
+export function w $dyn(w %n) {
+@start
+	%sz =l extsw %n
+	%p =l alloc8 %sz
+	storew 42, %p
+	%r =w loadw %p
+	ret %r
+}
+
+export function w $dropper(w %x) {
+@start
+	call $inc(w %x)
+	ret 5
+}
 ")
 
 ;;; JS checks: name, argument list (JS syntax), expected (JS syntax).
@@ -155,7 +285,17 @@ export function w $tabsum() {
     ("bits(1.5)" "4609434218613702656n")
     ("unord(NaN, 1.0)" "1")
     ("unord(2.0, 1.0)" "0")
-    ("tabsum()" "66")))
+    ("tabsum()" "66")
+    ;; W2: aggregates (direct + indirect + sret), varargs, call_indirect,
+    ;; env, dynamic alloc, discarded-result drop
+    ("take1(77n)" "77n")
+    ("agg(30n, 12n)" "42n")
+    ("vcall()" "60")
+    ("vcalld()" "3.75")
+    ("indir(41)" "42")
+    ("useenv()" "42n")
+    ("dyn(9)" "42")
+    ("dropper(1)" "5")))
 
 ;;; exts(0x1ff81): low byte 0x81 -> -127; low half 0xff81 -> -127; sum -254.
 (setf (second (assoc "exts(0x1ff81)" *checks* :test #'string=)) "-254")
