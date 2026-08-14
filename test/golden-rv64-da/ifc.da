@@ -1,0 +1,205 @@
+**** Function ifc1 ****
+> After ABI lowering:
+function $ifc1() {
+@start
+	%c =w copy R9
+	%v1 =l copy R8
+	%v0 =l copy R7
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.1 =l phi @false %v0, @true %v1
+	R7 =l copy %v.1
+	ret0 0001
+}
+
+**** Function ifc2 ****
+> After ABI lowering:
+function $ifc2() {
+@start
+	%p =w copy R9
+	%v1 =l copy R8
+	%v0 =l copy R7
+	%c =w cnew %p, 42
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.4 =l phi @false %v0, @true %v1
+	R7 =l copy %v.4
+	ret0 0001
+}
+
+**** Function ifc3 ****
+> After ABI lowering:
+function $ifc3() {
+@start
+	%p =w copy R9
+	%v1 =l copy R8
+	%v0 =l copy R7
+	%c =w cugtw %p, 42
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.8 =l phi @false %v0, @true %v1
+	R7 =l copy %v.8
+	ret0 0001
+}
+
+**** Function ifclts ****
+> After ABI lowering:
+function $ifclts() {
+@start
+	%v1 =l copy R8
+	%v0 =l copy R7
+	%s1 =s copy R43
+	%s0 =s copy R42
+	%c =w clts %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.12 =l phi @false %v0, @true %v1
+	R7 =l copy %v.12
+	ret0 0001
+}
+
+**** Function ifcles ****
+> After ABI lowering:
+function $ifcles() {
+@start
+	%v1 =l copy R8
+	%v0 =l copy R7
+	%s1 =s copy R43
+	%s0 =s copy R42
+	%c =w cles %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.15 =l phi @false %v0, @true %v1
+	R7 =l copy %v.15
+	ret0 0001
+}
+
+**** Function ifcgts ****
+> After ABI lowering:
+function $ifcgts() {
+@start
+	%v1 =l copy R8
+	%v0 =l copy R7
+	%s1 =s copy R43
+	%s0 =s copy R42
+	%c =w cgts %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.18 =l phi @false %v0, @true %v1
+	R7 =l copy %v.18
+	ret0 0001
+}
+
+**** Function ifcges ****
+> After ABI lowering:
+function $ifcges() {
+@start
+	%v1 =l copy R8
+	%v0 =l copy R7
+	%s1 =s copy R43
+	%s0 =s copy R42
+	%c =w cges %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.21 =l phi @false %v0, @true %v1
+	R7 =l copy %v.21
+	ret0 0001
+}
+
+**** Function ifceqs ****
+> After ABI lowering:
+function $ifceqs() {
+@start
+	%v1 =l copy R8
+	%v0 =l copy R7
+	%s1 =s copy R43
+	%s0 =s copy R42
+	%c =w ceqs %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.24 =l phi @false %v0, @true %v1
+	R7 =l copy %v.24
+	ret0 0001
+}
+
+**** Function ifcnes ****
+> After ABI lowering:
+function $ifcnes() {
+@start
+	%v1 =l copy R8
+	%v0 =l copy R7
+	%s1 =s copy R43
+	%s0 =s copy R42
+	%c =w cnes %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.27 =l phi @false %v0, @true %v1
+	R7 =l copy %v.27
+	ret0 0001
+}
+
+**** Function ifcos ****
+> After ABI lowering:
+function $ifcos() {
+@start
+	%v1 =l copy R8
+	%v0 =l copy R7
+	%s1 =s copy R43
+	%s0 =s copy R42
+	%c =w cos %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.31 =l phi @false %v0, @true %v1
+	R7 =l copy %v.31
+	ret0 0001
+}
+
+**** Function ifcuos ****
+> After ABI lowering:
+function $ifcuos() {
+@start
+	%v1 =l copy R8
+	%v0 =l copy R7
+	%s1 =s copy R43
+	%s0 =s copy R42
+	%c =w cuos %s0, %s1
+	jnz %c, @true, @false
+@true
+	jmp @end
+@false
+@end
+	%v.36 =l phi @false %v0, @true %v1
+	R7 =l copy %v.36
+	ret0 0001
+}
+

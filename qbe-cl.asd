@@ -39,6 +39,10 @@
                              (:file "arm64-emit")
                              (:file "arm64-encode")
                              (:file "arm64-targ")
+                             (:file "rv64-abi")
+                             (:file "rv64-isel")
+                             (:file "rv64-emit")
+                             (:file "rv64-targ")
                              (:file "driver")))))
 
 (asdf:defsystem "qbe-cl/test"

@@ -418,12 +418,18 @@ while staying green throughout.
   `qbe -t amd64_win -dA` as a per-pass oracle: **`-dA` 180/180**, corpus 45/0/3
   running through the OS's x64 emulation on an ARM64 host. Working notes for the
   Win64 port are in [`src/AMD64-WIN-PORT.md`](src/AMD64-WIN-PORT.md).
-- **Not written**: of upstream QBE's six targets (`amd64_sysv`, `amd64_apple`,
-  `amd64_win`, `arm64`, `arm64_apple`, `rv64`), three are implemented here.
-  `amd64_apple` (mach-o x86-64) and `arm64` (ELF AArch64) are mostly dialect and
-  vararg deltas against targets that already exist; `rv64` is a whole backend.
-  The remaining amd64 details (rega byte-exactness, TLS emit, extern-GOT) are on
-  hold as either irrelevant to correctness or untestable.
+  **`rv64`** (RISC-V 64 Linux, LP64D) ports `rv64/{abi,isel,emit,targ}.c` whole:
+  the two-field aggregate flattening (`fpstruct`), the float-in-GPR overflow
+  rule (`Cfpint`), register/stack splits (`Cstk1/Cstk2`), the 64-byte vararg
+  save area, `lla`/`lga` addressing and tprel TLS. Oracles: `qbe -t rv64 -dA`
+  **norm 180/180** and `-dI` **raw 180/180** (`test/rv64.lisp`), corpus 51/0/1
+  running in a linux/riscv64 container through qemu
+  (`test/rv64-corpus-e2e.lisp`).
+- **Coverage**: all six upstream QBE targets (`amd64_sysv`, `amd64_apple`,
+  `amd64_win`, `arm64`, `arm64_apple`, `rv64`) are implemented, plus
+  `arm64_win`, which upstream does not have. The remaining amd64 details
+  (rega byte-exactness, TLS emit, extern-GOT) are on hold as either irrelevant
+  to correctness or untestable.
 
 The acceptance criterion at every stage is "the diff against real QBE is empty
 (or contains only known, allowed differences)". **For amd64 and arm64 alike, the

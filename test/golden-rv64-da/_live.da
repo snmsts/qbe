@@ -1,0 +1,8 @@
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@start
+@inloop
+	jmp @inloop
+}
+

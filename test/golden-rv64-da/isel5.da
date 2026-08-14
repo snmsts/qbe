@@ -1,0 +1,13 @@
+**** Function main ****
+> After ABI lowering:
+function $main() {
+@start
+	%abi.1 =l cast d_1.200000
+	R8 =l copy %abi.1
+	R7 =l copy $fmt
+	call $printf, 0021
+	%x =w copy R7
+	R7 =w copy 0
+	ret0 0001
+}
+

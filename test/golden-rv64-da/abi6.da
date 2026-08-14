@@ -1,0 +1,58 @@
+**** Function f ****
+> After ABI lowering:
+function $f() {
+@start
+	%d2 =d copy R43
+	%abi.11 =l copy R12
+	%abi.9 =l copy R11
+	%d1 =d copy R42
+	%abi.7 =l copy R10
+	%abi.5 =l copy R9
+	%abi.3 =l copy R8
+	%abi.1 =l copy R7
+	%h1 =l alloc4 16
+	%h2 =l alloc4 16
+	%h3 =l alloc4 16
+	%abi.12 =l add %h3, 8
+	storel %abi.11, %abi.12
+	%abi.10 =l add %h3, 0
+	storel %abi.9, %abi.10
+	%abi.8 =l add %h2, 8
+	storel %abi.7, %abi.8
+	%abi.6 =l add %h2, 0
+	storel %abi.5, %abi.6
+	%abi.4 =l add %h1, 8
+	storel %abi.3, %abi.4
+	%abi.2 =l add %h1, 0
+	storel %abi.1, %abi.2
+	%abi.20 =l add %h1, 8
+	R8 =l load %abi.20
+	%abi.19 =l add %h1, 0
+	R7 =l load %abi.19
+	call $phfa3, 0021
+	copy R7
+	%abi.18 =l add %h2, 8
+	R8 =l load %abi.18
+	%abi.17 =l add %h2, 0
+	R7 =l load %abi.17
+	call $phfa3, 0021
+	copy R7
+	%abi.16 =l add %h3, 8
+	R8 =l load %abi.16
+	%abi.15 =l add %h3, 0
+	R7 =l load %abi.15
+	call $phfa3, 0021
+	copy R7
+	%abi.14 =l cast %d1
+	R8 =l copy %abi.14
+	R7 =l copy $dfmt
+	call $printf, 0021
+	copy R7
+	%abi.13 =l cast %d2
+	R8 =l copy %abi.13
+	R7 =l copy $dfmt
+	call $printf, 0021
+	copy R7
+	ret0
+}
+

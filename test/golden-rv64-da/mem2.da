@@ -1,0 +1,36 @@
+**** Function func ****
+> After ABI lowering:
+function $func() {
+@start.0
+	%ret =l alloc4 8
+	storew 1, %ret
+	%field =l add %ret, 4
+	blit0 %ret, %field
+	blit1 -4
+	storew 2, %ret
+	%abi.1 =l add %ret, 0
+	R7 =l load %abi.1
+	ret0 0001
+}
+
+**** Function main ****
+> After ABI lowering:
+function $main() {
+@start
+	%ret =l alloc4 8
+	call $func, 0001
+	%abi.10 =l copy R7
+	%abi.11 =l add %ret, 0
+	storel %abi.10, %abi.11
+	%fptr =l add %ret, 4
+	%field =w loaduw %fptr
+	%x =w ceqw %field, 1
+	jnz %x, @passed, @failed
+@failed
+	call $abort, 0001
+	copy R7
+@passed
+	R7 =w copy 0
+	ret0 0001
+}
+

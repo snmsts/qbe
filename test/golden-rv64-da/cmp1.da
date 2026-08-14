@@ -1,0 +1,14 @@
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@start
+	%c =w copy R7
+	%cmp.1 =w cultw 1, %c
+	jnz %cmp.1, @yes, @no
+@yes
+@no
+	%cmp.2 =w phi @start %cmp.1, @yes 1
+	R7 =w copy %cmp.2
+	ret0 0001
+}
+

@@ -1,0 +1,37 @@
+**** Function main ****
+> After ABI lowering:
+function $main() {
+@start
+	%argv =l copy R8
+	%argc =w copy R7
+	%fmt =l alloc8 8
+	storel 1663398693, %fmt
+	%av0 =l add %argv, 8
+	%ac0 =w sub %argc, 1
+@loop
+	%av =l phi @start %av0, @loop2 %av1
+	%ac =w phi @start %ac0, @loop2 %ac1
+	%c0 =w ceqw %ac, 0
+	jnz %c0, @end, @loop1
+@loop1
+	%c1 =w ceqw %ac, 1
+	jnz %c1, @last, @nolast
+@last
+	jmp @loop2
+@nolast
+@loop2
+	%sep =w phi @last 10, @nolast 32
+	%arg =l load %av
+	R9 =w copy %sep
+	R8 =l copy %arg
+	R7 =l copy %fmt
+	call $printf, 0031
+	%r =w copy R7
+	%av1 =l add %av, 8
+	%ac1 =w sub %ac, 1
+	jmp @loop
+@end
+	R7 =w copy 0
+	ret0 0001
+}
+

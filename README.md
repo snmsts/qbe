@@ -32,6 +32,7 @@ samples (collatz, euler9, prime, queen).
 | `arm64_apple` | Apple Silicon | corpus 45/0/2 native, `minic` programs 4/4 |
 | `arm64_win` | Windows on ARM64 | corpus 45/0/2 native. No TLS. Frames large enough to need a `__chkstk` probe are **refused, not miscompiled** |
 | `amd64_win` | Windows x64 (incl. ARM64 emulation) | corpus 45/0/3 native. No TLS |
+| `rv64` | RISC-V 64 Linux (runs in a linux/riscv64 container through qemu) | corpus 51/0/1 native, incl. `tls.ssa` (tprel) and the LP64D two-field float ABI |
 
 Corpus scores are *passed / failed / skipped* over the 47 corpus files that
 carry a C driver. Every skip is the corpus's own `# skip` marker for something
@@ -39,14 +40,19 @@ outside this backend — POSIX signals, pthreads, or an architecture the program
 cannot run on — so these are ceilings, not partial scores.
 
 Upstream QBE targets `amd64_sysv`, `amd64_apple`, `amd64_win`, `arm64`,
-`arm64_apple` and `rv64`. qbe-cl implements five of those six; only `rv64` is
-not written. (`amd64_apple` is the SysV ABI under a mach-o dialect — `_`
-prefixes, `L` locals, `__TEXT` literal sections, `@tlvp` TLS — so it shares
-every pass with `amd64_sysv` and differs only in the target record and the
-emitter's dialect branches; see `test/amd64-apple.lisp`. `arm64` is AAPCS64
-under the ELF dialect, and adds the two things Apple's variant never needed:
-`elimsb` as abi0 and the real 4-field va_list over a 192-byte register save
-area; see `test/arm64-elf.lisp`.)
+`arm64_apple` and `rv64`. qbe-cl implements all six. (`amd64_apple` is the
+SysV ABI under a mach-o dialect — `_` prefixes, `L` locals, `__TEXT` literal
+sections, `@tlvp` TLS — so it shares every pass with `amd64_sysv` and differs
+only in the target record and the emitter's dialect branches; see
+`test/amd64-apple.lisp`. `arm64` is AAPCS64 under the ELF dialect, and adds
+the two things Apple's variant never needed: `elimsb` as abi0 and the real
+4-field va_list over a 192-byte register save area; see `test/arm64-elf.lisp`.
+`rv64` is the LP64D calling convention — small aggregates flattened onto up to
+two registers by field class, floats overflowing into GPRs as raw bits, a
+64-byte vararg register save area — with `lla`/`lga` symbol addressing and
+tprel TLS; its ABI and isel dumps match upstream structurally over the whole
+corpus, byte-exactly for isel; see `test/rv64.lisp` and
+`test/rv64-corpus-e2e.lisp`.)
 
 `arm64_win` is the exception in the other direction: **upstream has no Windows
 on ARM64 target at all**, so no fidelity claim is made for it — there is nothing

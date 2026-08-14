@@ -1,0 +1,38 @@
+**** Function alpha ****
+> After ABI lowering:
+function $alpha() {
+@ini
+	%n =l copy R9
+	%l =w copy R8
+	%p =l copy R7
+	%pe =l add %p, %n
+@lop
+	%p1 =l phi @ini %p, @lop %p2
+	%l1 =w phi @ini %l, @lop %l2
+	storeb %l1, %p1
+	%p2 =l add %p1, 1
+	%l2 =w add %l1, 1
+	%c1 =w ceql %pe, %p1
+	jnz %c1, @end, @lop
+@end
+	%snk.1 =l add %p, %n
+	storeb 0, %snk.1
+	ret0
+}
+
+**** Function test ****
+> After ABI lowering:
+function $test() {
+@ini
+	%abi.4 =l copy R7
+	%p =l alloc4 17
+	R9 =l copy 16
+	R8 =w copy 65
+	R7 =l copy %p
+	call $alpha, 0031
+	%r0 =w copy R7
+	blit0 %p, %abi.4
+	blit1 17
+	ret0 0000
+}
+

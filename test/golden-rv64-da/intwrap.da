@@ -1,0 +1,7 @@
+**** Function intwrap ****
+> After ABI lowering:
+function $intwrap() {
+@s
+	ret0
+}
+
