@@ -57,6 +57,7 @@
   ;; varargs use a 64-byte GPR-only save area (unlike either).  Keep them as
   ;; data slots so a new target is a `make-target` call, not new `if` branches.
   (vararg-abi :stack)  ; where variadic args live: :stack (apple) | :gpr (windows)
+                       ; | :regsave (AAPCS64: 192-byte GPR+FPR save area)
                        ; | NIL = this target's vararg lowering is not written yet
   (store-tmp -1)       ; scratch reg id for the far-store address fixup; -1 = none free
   (stack-probe nil)    ; frame size at/above which the platform demands a stack
@@ -110,7 +111,11 @@ platform's rule would be a silent miscompile."
     (:stack 0)
     ;; Windows spills x0-x7 immediately below the incoming stack arguments, so
     ;; the register half and the stack half form one array.
-    (:gpr 64)))
+    (:gpr 64)
+    ;; Linux AAPCS64: x0-x7 (64 bytes) then q0-q7 (128 bytes), pushed between
+    ;; the frame and the incoming stack arguments; va_list carries separate
+    ;; gr/vr cursors into it.
+    (:regsave 192)))
 
 (defun tg-rg (id) (aref (target-regs *target*) id))
 (defun tg-retregs (mask) (funcall (target-retregs *target*) mask))

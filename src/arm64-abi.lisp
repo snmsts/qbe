@@ -68,6 +68,19 @@
             (t (push i *emitted*)))))
       (setf (blk-ins b) *emitted*))))
 
+;;; elimsb (abi.c, abi0 for T_arm64): on Linux AAPCS64 the sub-word arg/par/ret
+;;; forms carry no ABI meaning -- caller and callee both see the full register
+;;; and the C type alone decides who extends -- so they degrade to their word
+;;; forms before anything else looks at them.
+(defun elimsb (fn)
+  "abi.c elimsb (abi0): rewrite sub-word args/pars to arg/par, retbh to retw."
+  (dolist (b (fn-blocks fn))
+    (dolist (i (blk-ins b))
+      (when (argbh-op-p (ins-op i)) (setf (ins-op i) :arg))
+      (when (position (ins-op i) *par-bh-ops*) (setf (ins-op i) :par)))
+    (when (assoc (blk-jmp-type b) *retbh->ext*)
+      (setf (blk-jmp-type b) :retw))))
+
 ;;; ------------------------------------------------------- abi1: register model
 ;;; arm64 register ids (arm64/all.h, RXX=0): R0=1..R7=8, R8=9 (indirect result),
 ;;; R9=10 (env), ..., SP=32, V0=33..V7=40.
@@ -287,7 +300,11 @@ its named parameters on the normal AAPCS64 path, so it never passes it."
             ((:arge :pare)
              (setf (aref (a64class-reg c) 0) +a64-r9+ (aref (a64class-cls c) 0) :l
                    envc 1 env (if (eq op :pare) (ins-to i) (ins-arg0 i))))
-            ((:argv) (setf va t))
+            ;; arm64/abi.c Oargv: `va = T.apple != 0`.  Only Apple (and the
+            ;; Windows imaginary stack, via FORCE-VA) treats post-`...`
+            ;; arguments specially; AAPCS64 proper classifies them exactly
+            ;; like named ones -- registers first, save area at the callee.
+            ((:argv) (setf va (and (member (tg-vararg-abi) '(:stack :gpr)) t)))
             (t (abi-unsupported (format nil "arm64 arg op ~a" op)))))))
     ;; NB: QBE recomputes gp/fp deltas from pointer arithmetic; ngp/nfp above only
     ;; track *remaining* capacity, so cty uses the consumed counts (aref gp/fp 0).
@@ -504,7 +521,86 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
 ;;; ------------------------------------------------------------ abi1: vararg
 ;;; Apple's va_list is a single pointer into the on-stack overflow area (there
 ;;; is no register-save area), so apple_selvaarg / apple_selvastart need no
-;;; block splitting — unlike the Linux arm64_selva* (deferred, error-stub).
+;;; block splitting.  Linux AAPCS64 (a64-elf-selva*) has the real thing: a
+;;; 32-byte va_list { stack, gr_top, vr_top, gr_offs, vr_offs } walking the
+;;; 192-byte register save area the prologue pushed at S(-1), and va_arg
+;;; splits its block into a register path and a stack path joined by a phi
+;;; (the same shape as amd64 sysv's sel-vaarg, whose abi-split/abi-chpred
+;;; this reuses).
+
+(defun a64-elf-selvastart (fn stk ngp nfp ap)
+  "arm64/abi.c arm64_selvastart: fill the AAPCS64 va_list at AP.
+STK/NGP/NFP are the named parameters' Params -- stack bytes and register
+counts -- so `stack` starts past the named stack args, gr_top/vr_top point
+past the x- and q-halves of the save area, and gr_offs/vr_offs hold the
+(negative) bytes still to consume from it."
+  (let ((rsave (newtmp "abi" :l fn)))
+    (let ((r0 (newtmp "abi" :l fn)))
+      (emit :storel :w nil r0 ap)                          ; va.stack
+      (emit :add :l r0 rsave (getcon (+ stk 192) fn)))
+    (let ((r0 (newtmp "abi" :l fn)) (r1 (newtmp "abi" :l fn)))
+      (emit :storel :w nil r1 r0)                          ; va.gr_top
+      (emit :add :l r1 rsave (getcon 64 fn))
+      (emit :add :l r0 ap (getcon 8 fn)))
+    (let ((r0 (newtmp "abi" :l fn)) (r1 (newtmp "abi" :l fn)))
+      (emit :storel :w nil r1 r0)                          ; va.vr_top
+      (emit :add :l r1 rsave (getcon 192 fn))
+      (emit :addr :l rsave (make-slot-ref -1) nil)         ; rsave = &S(-1)
+      (emit :add :l r0 ap (getcon 16 fn)))
+    (let ((r0 (newtmp "abi" :l fn)))
+      (emit :storew :w nil (getcon (* 8 (- ngp 8)) fn) r0) ; va.gr_offs
+      (emit :add :l r0 ap (getcon 24 fn)))
+    (let ((r0 (newtmp "abi" :l fn)))
+      (emit :storew :w nil (getcon (* 16 (- nfp 8)) fn) r0); va.vr_offs
+      (emit :add :l r0 ap (getcon 28 fn)))))
+
+(defun a64-elf-selvaarg (fn b i)
+  "arm64/abi.c arm64_selvaarg: lower va_arg against the AAPCS64 va_list,
+splitting B into a register-save path (@breg) and a stack path (@bstk) that a
+phi in the continuation (@b0) joins:
+    @b     r0 =l add ap, (24 or 28)      ; &gr_offs / &vr_offs
+           nr =l loadsw r0
+           r1 =w csltw nr, 0
+           jnz r1, @breg, @bstk
+    @breg  loc =l (gr_top or vr_top) + nr ; and bump the offs cursor
+    @bstk  loc =l va.stack               ; and bump it by 8
+    @b0    i->to =(i->cls) load loc"
+  (let* ((c8 (getcon 8 fn)) (c16 (getcon 16 fn))
+         (c24 (getcon 24 fn)) (c28 (getcon 28 fn))
+         (ap (ins-arg0 i)) (isgp (= (cls-base (ins-cls i)) 0))
+         (loc (newtmp "abi" :l fn)))
+    (emit :load (ins-cls i) (ins-to i) loc nil)
+    (let ((b0 (abi-split fn b)))
+      (setf (blk-jmp-type b0) (blk-jmp-type b) (blk-jmp-arg b0) (blk-jmp-arg b)
+            (blk-s1 b0) (blk-s1 b) (blk-s2 b0) (blk-s2 b))
+      (when (blk-s1 b) (abi-chpred (blk-s1 b) b b0))
+      (when (and (blk-s2 b) (not (eq (blk-s2 b) (blk-s1 b)))) (abi-chpred (blk-s2 b) b b0))
+      (let ((lreg (newtmp "abi" :l fn)) (nr (newtmp "abi" :l fn)))
+        (let ((r0 (newtmp "abi" :w fn)) (r1 (newtmp "abi" :l fn)))
+          (emit :storew :w nil r0 r1)                      ; offs += 8/16
+          (emit :add :l r1 ap (if isgp c24 c28))
+          (emit :add :w r0 nr (if isgp c8 c16)))
+        (let ((r0 (newtmp "abi" :l fn)) (r1 (newtmp "abi" :l fn)))
+          (emit :add :l lreg r1 nr)                        ; loc = top + nr
+          (emit :load :l r1 r0 nil)
+          (emit :add :l r0 ap (if isgp c8 c16)))
+        (let ((breg (abi-split fn b)))
+          (setf (blk-jmp-type breg) :jmp (blk-s1 breg) b0 (blk-s2 breg) nil)
+          (let ((lstk (newtmp "abi" :l fn)) (r0 (newtmp "abi" :l fn)))
+            (emit :storel :w nil r0 ap)                    ; va.stack += 8
+            (emit :add :l r0 lstk c8)
+            (emit :load :l lstk ap nil)                    ; loc = va.stack
+            (let ((bstk (abi-split fn b)))
+              (setf (blk-jmp-type bstk) :jmp (blk-s1 bstk) b0 (blk-s2 bstk) nil)
+              (setf (blk-phis b0)
+                    (list (make-instance 'phi :to loc :cls :l
+                                         :args (list (cons bstk lstk) (cons breg lreg)))))
+              (let ((r0 (newtmp "abi" :l fn)) (r1 (newtmp "abi" :w fn)))
+                (setf (blk-jmp-type b) :jnz (blk-jmp-arg b) r1
+                      (blk-s1 b) breg (blk-s2 b) bstk)
+                (emit :csltw :w r1 nr (getcon 0 fn))
+                (emit :loadsw :l nr r0 nil)
+                (emit :add :l r0 ap (if isgp c24 c28))))))))))
 
 (defun a64-apple-selvastart (fn stk ap)
   "arm64/abi.c apple_selvastart: init the va_list at AP to point past STK."
@@ -530,14 +626,14 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
   "arm64/abi.c arm64_abi (abi1): lower params, returns, calls.  Rewrites FN."
   (dolist (b (fn-blocks fn)) (setf (blk-visit b) 0))
   (let ((il (make-array 1 :initial-element nil))   ; shared Insl (stkblob) list
-        (*a64-par-tmps* nil) (pstk 0) (pgp 0))      ; Params.stk / ngp, for vastart
+        (*a64-par-tmps* nil) (pstk 0) (pgp 0) (pfp 0)) ; Params, for vastart
     ;; 1. lower parameters (leading par run of the start block)
     (let* ((start (fn-start fn)) (pars '()) (rest nil))
       (dolist (i (blk-ins start))
         (if (and (null rest) (ispar-a64 (ins-op i))) (push i pars) (push i rest)))
       (setf pars (nreverse pars) rest (nreverse rest))
       (let ((*emitted* nil))
-        (multiple-value-setq (pstk pgp) (a64-selpar fn pars))
+        (multiple-value-setq (pstk pgp pfp) (a64-selpar fn pars))
         (setf (blk-ins start) (append *emitted* rest))))
     ;; 2. lower returns / calls / varargs; start block LAST, then flush `il`.
     (let* ((blocks (fn-blocks fn)) (start (car blocks)))
@@ -554,16 +650,22 @@ are pushed onto ILP (a list cell in a 1-vector), hoisted into the start block."
                    (a64-selcall fn (coerce (subseq vec i0 k) 'list) i il)
                    (setf k i0)))
                 ((eq (ins-op i) :vastart)
-                 ;; Both platforms want `*ap = &S(-1) + off`; only `off` differs.
+                 ;; apple/win want `*ap = &S(-1) + off`, and only `off` differs:
                  ;;   apple  S(-1) is the incoming stack args, and the named
                  ;;          params' stack bytes are what to skip.
                  ;;   win    S(-1) is the register save area the prologue filled,
                  ;;          and the imaginary stack counts the named params'
                  ;;          register slots first, then their stack bytes.
-                 (a64-apple-selvastart
-                  fn (if (eq (tg-vararg-abi) :gpr) (+ (* 8 pgp) pstk) pstk)
-                  (ins-arg0 i)))
-                ((eq (ins-op i) :vaarg) (a64-apple-selvaarg fn i))
+                 ;; AAPCS64 (:regsave) fills the real 32-byte va_list instead.
+                 (if (eq (tg-vararg-abi) :regsave)
+                     (a64-elf-selvastart fn pstk pgp pfp (ins-arg0 i))
+                     (a64-apple-selvastart
+                      fn (if (eq (tg-vararg-abi) :gpr) (+ (* 8 pgp) pstk) pstk)
+                      (ins-arg0 i))))
+                ((eq (ins-op i) :vaarg)
+                 (if (eq (tg-vararg-abi) :regsave)
+                     (a64-elf-selvaarg fn b i)
+                     (a64-apple-selvaarg fn i)))
                 (t (push i *emitted*)))))
           ;; start block is processed last: flush accumulated stkblob allocs.
           ;; QBE iterates the Insl list head-first (newest blob first); each

@@ -67,6 +67,46 @@
    :litsec *a64-macho-litsec*)
   "The arm64 Apple target (QBE T_arm64_apple).")
 
+;;; ------------------------------------------------------- arm64 ELF instance
+;;; QBE T_arm64: Linux AAPCS64.  ARM64_COMMON with the apple target -- same
+;;; register model, same abi1/isel/emit passes -- under the ELF/GNU dialect:
+;;; no `_` prefix, `.L` locals, `.rodata` literals, `.type`/`.size` footers and
+;;; the GNU-stack note.  The platform differences the dialect cannot express:
+;;;   * abi0 is elimsb, not apple_extsb -- AAPCS64 leaves sub-word extension
+;;;     to the C type system, so the sub-word arg forms just degrade.
+;;;   * varargs use the real AAPCS64 va_list: a 192-byte register save area
+;;;     (x0-x7 + q0-q7) pushed ahead of the frame, walked through separate
+;;;     gr/vr cursors (:regsave).
+;;;   * x18 is reserved but not owned by anyone at run time, so it IS the
+;;;     far-store scratch (arm64/emit.c: `t = T.apple ? -1 : R18`).
+(defparameter *arm64-elf-target*
+  (make-target
+   :name "arm64"
+   :apple nil
+   :asloc ".L"
+   :assym ""
+   :gpr0 +a64-r0+ :ngpr +a64-ngpr+
+   :fpr0 +a64-v0+ :nfpr +a64-nfpr+
+   :rglob *arm64-rglob* :nrglob 4
+   :rsave *arm64-rsave* :nrsave *arm64-nrsave*
+   :rclob *arm64-rclob*
+   :rsave-mask *arm64-rsave-mask*
+   :regs *arm64-regs*
+   :abi0 #'elimsb
+   :abi1 #'arm64-abi
+   :isel #'arm64-isel
+   :emitfn #'a64-be-emit-fn
+   :emitfin #'a64-emit-fin
+   :retregs #'arm64-retregs
+   :argregs #'arm64-argregs
+   :memargs #'arm64-memargs
+   :cansel nil                  ; no if-conversion on arm64 (T.cansel = 0)
+   :vararg-abi :regsave         ; AAPCS64: 192-byte GPR+FPR save area
+   :store-tmp +a64-r18+         ; reserved-but-free: the far-store scratch
+   :objfmt :elf
+   :litsec *a64-elf-litsec*)
+  "The arm64 ELF/Linux target (QBE T_arm64).")
+
 ;;; ------------------------------------------------------- arm64_win instance
 ;;; Windows on ARM64.  MS documents the non-variadic ABI as plain AAPCS64, so
 ;;; the register model, isel, abi1 and emit passes are shared verbatim with

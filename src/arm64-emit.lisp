@@ -160,9 +160,18 @@
   (let* ((st (con-symtype c))
          (tmpl (cond
                  ((member :thr st)
-                  (if (tg-apple)
-                      "~Cadrp~CR, S@tlvppage~%~Cldr~CR, [R, S@tlvppageoff]~%"
-                      (error "arm64 emit: elf TLS unsupported")))
+                  (cond
+                    ((tg-apple)
+                     "~Cadrp~CR, S@tlvppage~%~Cldr~CR, [R, S@tlvppageoff]~%")
+                    ;; SExtThr: upstream dies too ("extern thread unavailable")
+                    ((member :ext st)
+                     (error "arm64 emit: extern thread unavailable on arm64"))
+                    ((eq (tg-objfmt) :elf)
+                     ;; local-exec TLS: thread base out of tpidr_el0, then the
+                     ;; symbol's offset in two tprel halves (arm64/emit.c).
+                     "~Cmrs~CR, tpidr_el0~%~Cadd~CR, R, #:tprel_hi12:SO, lsl #12~%~Cadd~CR, R, #:tprel_lo12_nc:SO~%")
+                    (t (error "arm64 emit: TLS unsupported on ~a"
+                              (target-name *target*)))))
                  ((member :ext st)
                   ;; Reaching an extern symbol's address needs one indirection
                   ;; through a linker-built pointer.  Same two instructions
@@ -174,7 +183,7 @@
                     ;; `__imp_<sym>`, but that needs source-level knowledge the
                     ;; IL does not carry, and .refptr works for both).
                     (:coff "~Cadrp~CR, .refptr.S~%~Cldr~CR, [R, #:lo12:.refptr.S]~%")
-                    (:elf (error "arm64 emit: elf GOT unsupported"))))
+                    (:elf "~Cadrp~CR, :got:S~%~Cldr~CR, [R, #:got_lo12:S]~%")))
                  (t                              ; SGlo: plain global
                   (if (tg-apple)
                       "~Cadrp~CR, S@pageO~%~Cadd~CR, R, S@pageoffO~%"
@@ -327,7 +336,10 @@ spill slots, and locals."
   ;; allocating it is just a bigger frame.
   (let* ((fn (ae-fn e))
          (vsave (if (fn-vararg fn) (tg-vararg-save) 0))
-         (frame (+ (ae-frame e) vsave)))
+         ;; :gpr (win) carves its save area out of the stp-allocated frame;
+         ;; :regsave (AAPCS64) pushes its own 192 bytes before the frame below.
+         (frame (+ (ae-frame e)
+                   (if (eq (tg-vararg-abi) :regsave) 0 vsave))))
     ;; Windows grows the stack through guard pages, so a frame of a page or more
     ;; must touch every page on the way down -- `mov x15,#(n/16); bl __chkstk;
     ;; sub sp,sp,x15,lsl #4` -- or the store that skips the guard page faults.
@@ -342,6 +354,15 @@ spill slots, and locals."
          (format nil "arm64_win frame of ~d bytes needs a __chkstk stack probe"
                  (+ frame 16)))))
     (ae-out e "~Chint~C#34~%" #\Tab #\Tab)
+    ;; AAPCS64 varargs: push the whole register save area -- q7..q0, then the
+    ;; x-register pairs -- so it sits between the incoming stack arguments and
+    ;; the frame (arm64/emit.c `if (e->fn->vararg && !T.apple)`).  Memory
+    ;; ascending: x0..x7 (64 bytes), q0..q7 (128 bytes).
+    (when (and (fn-vararg fn) (eq (tg-vararg-abi) :regsave))
+      (loop for n from 7 downto 0
+            do (ae-out e "~Cstr~Cq~d, [sp, -16]!~%" #\Tab #\Tab n))
+      (loop for n from 7 downto 1 by 2
+            do (ae-out e "~Cstp~Cx~d, x~d, [sp, -16]!~%" #\Tab #\Tab (1- n) n)))
     (cond
       ((<= (+ frame 16) 512)
        (ae-out e "~Cstp~Cx29, x30, [sp, -~d]!~%" #\Tab #\Tab (+ frame 16)))
@@ -431,7 +452,8 @@ spill slots, and locals."
     ;; function link (emitfnlnk / emitlnk): text section, Apple 4-byte align,
     ;; globl, label — all at column 0.
     (ae-out e ".text~%")
-    (when (tg-apple) (ae-out e ".balign 4~%"))
+    (cond ((tg-apple) (ae-out e ".balign 4~%"))
+          ((eq (tg-objfmt) :elf) (ae-out e ".balign 16~%")))
     (let* ((name (fn-name fn))
            (pfx (target-assym *target*)))
       (when (fn-export fn) (ae-out e ".globl ~a~a~%" pfx name))
@@ -444,13 +466,21 @@ spill slots, and locals."
           (ae-out e "~a~d:~%" (tg-asloc) (+ *a64-id0* (blk-id b))))
         (dolist (i (blk-ins b)) (a64-emitins i e))
         (setf lbl (a64-emit-jmp b e lbl))))
+    ;; elf_emitfnfin (arm64/emit.c: `if (!T.apple)`) -- ELF only; the COFF
+    ;; assembler has no .type/.size and arm64_win never emitted them.
+    (when (eq (tg-objfmt) :elf)
+      (let ((sym (format nil "~a~a" (target-assym *target*) (fn-name fn))))
+        (ae-out e ".type ~a, @function~%.size ~a, .-~a~%" sym sym sym))
+      ;; main.c prints this for every target; only the ELF output is ever
+      ;; diffed against the oracle, so only it carries the cosmetics.
+      (ae-out e "/* end function ~a */~%~%" (fn-name fn)))
     (incf *a64-id0* (fn-nblk fn))))
 
 ;;; ------------------------------------------------------------ backend driver
 (defun a64-backend-pipeline (fn)
-  "Full arm64_apple backend (main.c func, T.cansel=0 -> NO ifconvert): abi0,
+  "Full arm64 backend (main.c func, T.cansel=0 -> NO ifconvert): abi0,
 SSA, mid-end, abi1, isel, then spill/rega and simpljmp."
-  (a64-apple-extsb fn)
+  (funcall (target-abi0 *target*) fn)
   (fill-cfg fn) (fill-use fn) (promote fn) (fill-use fn)
   (ssa fn) (fill-use fn)
   (fill-alias fn) (loadopt fn) (fill-use fn) (fill-alias fn) (coalesce fn)
@@ -467,19 +497,26 @@ SSA, mid-end, abi1, isel, then spill/rega and simpljmp."
 (defun a64-emit-data (d s)
   "Emit one data definition for mach-o (arm64/emit.c emitdat / emitlnk apple)."
   (let ((pfx (target-assym *target*)) (name (dat-name d)))
-    (if (dat-thread d)
-        ;; Apple thread-local: a $tlv$init that the __thread_vars descriptor
-        ;; points at (arm64/emit.c emitlnk apple TLS).
-        (progn
-          (format s ".section __DATA,__thread_vars,thread_local_variables~%")
-          (format s "~a~a:~%~C.quad __tlv_bootstrap~%~C.quad 0~%~C.quad ~a~a$tlv$init~%~%"
-                  pfx name #\Tab #\Tab #\Tab pfx name)
-          (format s ".section __DATA,__thread_data,thread_local_regular~%")
-          (format s ".balign ~d~%~a~a$tlv$init:~%" (dat-align d) pfx name))
-        (progn                          ; emitlnk sec[0][SecData] = ".data"
-          (format s ".data~%.balign ~d~%" (dat-align d))
-          (when (dat-export d) (format s ".globl ~a~a~%" pfx name))
-          (format s "~a~a:~%" pfx name)))
+    (cond
+      ((and (dat-thread d) (tg-apple))
+       ;; Apple thread-local: a $tlv$init that the __thread_vars descriptor
+       ;; points at (arm64/emit.c emitlnk apple TLS).
+       (format s ".section __DATA,__thread_vars,thread_local_variables~%")
+       (format s "~a~a:~%~C.quad __tlv_bootstrap~%~C.quad 0~%~C.quad ~a~a$tlv$init~%~%"
+               pfx name #\Tab #\Tab #\Tab pfx name)
+       (format s ".section __DATA,__thread_data,thread_local_regular~%")
+       (format s ".balign ~d~%~a~a$tlv$init:~%" (dat-align d) pfx name))
+      ((dat-thread d)
+       (unless (eq (tg-objfmt) :elf)
+         (error "emit: thread-local ~a unsupported on ~a" name (target-name *target*)))
+       ;; emitlnk sec[1][SecData] = `.section .tdata,"awT"`
+       (format s ".section .tdata,\"awT\"~%.balign ~d~%" (dat-align d))
+       (when (dat-export d) (format s ".globl ~a~a~%" pfx name))
+       (format s "~a~a:~%" pfx name))
+      (t                                ; emitlnk sec[0][SecData] = ".data"
+       (format s ".data~%.balign ~d~%" (dat-align d))
+       (when (dat-export d) (format s ".globl ~a~a~%" pfx name))
+       (format s "~a~a:~%" pfx name)))
     (dolist (it (dat-items d))
       (ecase (first it)
         (:int (destructuring-bind (size value) (rest it)
@@ -512,6 +549,10 @@ SSA, mid-end, abi1, isel, then spill/rega and simpljmp."
     "__TEXT,__literal8,8byte_literals"
     "__TEXT,__literal16,16byte_literals")
   "arm64/emit.c macho_emitfin sec[]: mach-o literal sections by log2 size-4.")
+
+(defparameter *a64-elf-litsec*
+  #(".rodata" ".rodata" ".rodata")
+  "emit.c elf_emitfin sec[]: ELF puts every fp constant in .rodata.")
 
 (defparameter *a64-coff-litsec*
   #(".rdata,\"dr\"" ".rdata,\"dr\"" ".rdata,\"dr\"")
@@ -548,4 +589,7 @@ then any COFF .refptr indirections."
             (ecase lg
               (4 (format stream "~%~C.quad ~d~%~C.quad 0~%~%" #\Tab (car b) #\Tab))
               (3 (format stream "~%~C.quad ~d~%~%" #\Tab (car b)))
-              (2 (format stream "~%~C.int ~d~%~%" #\Tab (s32* (car b)))))))))))
+              (2 (format stream "~%~C.int ~d~%~%" #\Tab (s32* (car b))))))))))
+  ;; elf_emitfin's trailer; macho_emitfin and pe_emitfin have none.
+  (when (eq (tg-objfmt) :elf)
+    (format stream ".section .note.GNU-stack,\"\",@progbits~%")))

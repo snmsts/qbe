@@ -28,6 +28,7 @@ samples (collatz, euler9, prime, queen).
 |---|---|---|
 | `amd64_sysv` | x86-64 Linux | corpus 47/47 native, `minic` programs 4/4 |
 | `amd64_apple` | x86-64 macOS (incl. Rosetta 2 on Apple Silicon) | corpus 52/0/0 native (the 47 driver programs + 5 self-contained ones, incl. `tls.ssa`) |
+| `arm64` | Linux ARM64 (runs in a linux/arm64 container, native on Apple Silicon) | corpus 51/0/1 native, incl. `tls.ssa` and the AAPCS64 va_list |
 | `arm64_apple` | Apple Silicon | corpus 45/0/2 native, `minic` programs 4/4 |
 | `arm64_win` | Windows on ARM64 | corpus 45/0/2 native. No TLS. Frames large enough to need a `__chkstk` probe are **refused, not miscompiled** |
 | `amd64_win` | Windows x64 (incl. ARM64 emulation) | corpus 45/0/3 native. No TLS |
@@ -38,11 +39,14 @@ outside this backend — POSIX signals, pthreads, or an architecture the program
 cannot run on — so these are ceilings, not partial scores.
 
 Upstream QBE targets `amd64_sysv`, `amd64_apple`, `amd64_win`, `arm64`,
-`arm64_apple` and `rv64`. qbe-cl implements four of those six; `arm64` (ELF)
-and `rv64` are not written. (`amd64_apple` is the SysV ABI under a mach-o
-dialect — `_` prefixes, `L` locals, `__TEXT` literal sections, `@tlvp` TLS —
-so it shares every pass with `amd64_sysv` and differs only in the target
-record and the emitter's dialect branches; see `test/amd64-apple.lisp`.)
+`arm64_apple` and `rv64`. qbe-cl implements five of those six; only `rv64` is
+not written. (`amd64_apple` is the SysV ABI under a mach-o dialect — `_`
+prefixes, `L` locals, `__TEXT` literal sections, `@tlvp` TLS — so it shares
+every pass with `amd64_sysv` and differs only in the target record and the
+emitter's dialect branches; see `test/amd64-apple.lisp`. `arm64` is AAPCS64
+under the ELF dialect, and adds the two things Apple's variant never needed:
+`elimsb` as abi0 and the real 4-field va_list over a 192-byte register save
+area; see `test/arm64-elf.lisp`.)
 
 `arm64_win` is the exception in the other direction: **upstream has no Windows
 on ARM64 target at all**, so no fidelity claim is made for it — there is nothing
@@ -106,6 +110,7 @@ SBCL via [Roswell](https://roswell.github.io/). Golden dumps are checked in, so
 ci/run-tests.sh linux      # shared golden/unit + amd64 native exec + as-diff
 ci/run-tests.sh macos      # arm64_apple native exec + as-diff (Apple Silicon)
                            # + amd64_apple native exec (Rosetta 2)
+                           # + arm64 ELF native exec (linux/arm64 container)
 ci/run-tests.sh windows    # shared golden/unit + arm64_win / amd64_win native exec
 ```
 
@@ -177,8 +182,9 @@ None of these affect the correctness of what is generated today.
   need a trace of the real QBE's allocator.
 - **TLS** — unimplemented on the Windows targets, where upstream QBE also
   `die`s, and on `amd64_sysv`, where the emit path (`%fs:sym@tpoff`) is
-  unwritten. On `amd64_apple` it is implemented (the mach-o `@tlvp`
-  descriptor-call sequence) and `tls.ssa` runs natively.
+  unwritten. On `amd64_apple` (the mach-o `@tlvp` descriptor-call sequence)
+  and `arm64` (local-exec `tpidr_el0` + `:tprel_*`) it is implemented and
+  `tls.ssa` runs natively on both.
 - **`extern` data through the GOT** on `amd64_sysv` — no corpus program uses
   it. (On both Windows targets `extern` addresses do work, through a COFF
   `.refptr` COMDAT, and on `amd64_apple` through `@gotpcrel`, checked against

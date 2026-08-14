@@ -54,7 +54,7 @@ echo "=== qbe-cl CI: $OS ==="
 # is an x86_64 Windows cc (AMD64_CC); the textual half of each runs anywhere.
 PURE="run ssa gvn gcm dom live spill coalesce isel simplcfg promote loadopt \
       depth abi winabi winabi-smoke amd64-win amd64-apple arm64-isel arm64-abi \
-      arm64-rega arm64-win"
+      arm64-rega arm64-win arm64-elf"
 
 case "$OS" in
   linux)
@@ -71,6 +71,9 @@ case "$OS" in
     # amd64_apple: x86_64 Mach-O, executed through Rosetta 2 (self-skips
     # without it; the dialect half of amd64-apple also runs in PURE elsewhere)
     for t in amd64-apple amd64-apple-corpus-e2e; do run "$t"; done
+    # arm64 (ELF): built and run inside a linux/arm64 container -- native
+    # speed on Apple Silicon (self-skips without docker)
+    for t in arm64-elf arm64-elf-corpus-e2e; do run "$t"; done
     ;;
   windows)
     for t in $PURE; do run "$t"; done
