@@ -61,6 +61,17 @@ textually with clang as the oracle instead, and its correctness rests on the
 corpus running natively (`test/arm64-win.lisp`,
 `test/arm64-win-corpus-e2e.lisp`).
 
+A **wasm64 backend is underway** (`src/wasm.lisp`, no upstream counterpart, so
+like `arm64_win` it is execution-verified).  The current walking skeleton goes
+straight from the parsed IL — wasm has no registers to allocate, so every temp
+is a typed local and the open problem is control flow, currently handled by a
+universal dispatcher (`loop` + `br_table`), later by a real stackifier.  It
+emits LLVM wasm assembly that `clang --target=wasm64` assembles, `wasm-ld
+-mwasm64` links, and node (memory64) runs: scalar arithmetic, phi loops,
+recursion, memory, floats, and data sections all check out
+(`test/wasm-smoke.lisp`).  Aggregates, varargs, indirect calls and the corpus
+e2e (via a wasi-sdk container) are the next stages.
+
 `amd64` and `arm64` each also have an **assembler-less machine-code encoder**
 (`src/{amd64,arm64}-encode.lisp`), producing bytes plus relocations rather than
 assembly text. Each is diffed against the host `as` over every corpus function

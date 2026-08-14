@@ -43,6 +43,7 @@
                              (:file "rv64-isel")
                              (:file "rv64-emit")
                              (:file "rv64-targ")
+                             (:file "wasm")
                              (:file "driver")))))
 
 (asdf:defsystem "qbe-cl/test"

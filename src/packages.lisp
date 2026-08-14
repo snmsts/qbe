@@ -56,4 +56,6 @@
    ;; rv64 (RISC-V 64, LP64D/ELF)
    #:elimsb #:rv64-abi #:rv64-isel #:rv64-retregs #:rv64-argregs
    #:rv64-emit-fn #:rv64-emit-fin #:rv64-backend-pipeline #:rv64-emit-module
-   #:*rv64-target*))
+   #:*rv64-target*
+   ;; wasm (wasm64, LLVM .s) -- W1 naive walking skeleton
+   #:wa-emit-module #:wa-emit-fn))
